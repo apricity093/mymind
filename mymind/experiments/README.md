@@ -15,7 +15,12 @@ D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer
 The real-model layer is opt-in because it incurs API cost:
 
 ```powershell
-D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer real --confirm-cost
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer real --confirm-cost --provider deepseek --repeat 5 --cache-scenario stable-prefix
 ```
+
+Supported real-model providers are `deepseek`, `openai`, and `anthropic`. The
+cache scenario can be `identical`, `stable-prefix`, or `invalidation`. Existing
+`ANTHROPIC_*` variables remain supported; provider-neutral deployments may use
+`LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, and `LLM_BASE_URL`.
 
 Every layer writes timestamped JSON and Markdown reports under `artifacts/experiments/`.

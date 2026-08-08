@@ -25,6 +25,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.llm_gateway import LLMGateway, LLMRequest
 from core.cache_store import CacheStore, InMemoryCacheStore
 
 logger = logging.getLogger(__name__)
@@ -141,11 +142,13 @@ class MCPToolManager:
         base_url: Optional[str] = None,
         model: str = "claude-3-5-sonnet-20241022",
         cache_store: Optional[CacheStore] = None,
+        gateway: Optional[LLMGateway] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = AsyncAnthropic(**kwargs)
+        self._gateway = gateway
         self._model  = model
         self._tools: Dict[str, Tool] = {}
         self._cache_store = cache_store or InMemoryCacheStore(max_entries=5000)
@@ -308,11 +311,7 @@ class MCPToolManager:
 返回 JSON 数组，例如: ["子查询1", "子查询2", "子查询3"]"""
         prompt = self._clean_text(prompt)
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=256, temperature=0.3,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            raw = await self._complete_text(prompt, 0.3, "rewrite-v1")
             s, e = raw.find("["), raw.rfind("]") + 1
             queries = json.loads(raw[s:e])
             # 原始查询也保留，去重
@@ -387,11 +386,7 @@ class MCPToolManager:
         prompt = self._clean_text(prompt)
 
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=256, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            raw = await self._complete_text(prompt, 0.0, "rerank-v1")
             s, e = raw.find("["), raw.rfind("]") + 1
             order: List[int] = json.loads(raw[s:e])
             reranked = [items[i] for i in order if 0 <= i < len(items)]
@@ -475,6 +470,23 @@ class MCPToolManager:
         if not isinstance(value, str):
             value = str(value)
         return value.encode("utf-8", errors="ignore").decode("utf-8")
+
+    async def _complete_text(self, prompt: str, temperature: float, identity: str) -> str:
+        if self._gateway is not None:
+            result = await self._gateway.complete(LLMRequest(
+                model=self._model,
+                stable_prompt="你是知识库检索辅助程序，只输出任务要求的 JSON。",
+                messages=[{"role": "user", "content": prompt}],
+                cache_identity=f"tool:{self._model}:{identity}",
+                max_tokens=256,
+                temperature=temperature,
+            ))
+            return extract_text_content(result.text)
+        resp = await self._client.messages.create(
+            model=self._model, max_tokens=256, temperature=temperature,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return extract_text_content(resp.content)
 
     # ── 统计 ──────────────────────────────────────────────────────────────────
 

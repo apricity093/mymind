@@ -12,6 +12,8 @@ import chromadb
 import redis
 
 from core.cache_store import RedisCacheStore
+from core.cache_metrics import RedisCacheMetricsCollector
+from core.llm_gateway import CacheUsage
 from mcp.tool_manager import MCPToolManager, Tool
 from memory.conversation_memory import MemoryManager, MsgRole
 from experiments.reporting import metadata, write_report
@@ -41,6 +43,7 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
     episodic_name = f"mymind_experiment_episodic_{run_id}"
     profile_name = f"mymind_experiment_profile_{run_id}"
     cache_prefix = f"mymind:experiment:{run_id}"
+    metrics_key = f"{cache_prefix}:metrics"
     llm = SimpleNamespace(messages=DeterministicMessages())
     config = {
         "redis_db": database,
@@ -72,6 +75,15 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
             failures.append(f"message_accounting:{represented_messages}!={expected_messages}")
 
         stores = [RedisCacheStore(redis_client, cache_prefix) for _ in range(4)]
+        metric_collectors = [RedisCacheMetricsCollector(redis_client, metrics_key) for _ in range(4)]
+        for collector in metric_collectors:
+            collector.record_provider(
+                "deepseek", "experiment",
+                CacheUsage("deepseek", 100, 70, 0, 30, True, "hit"),
+            )
+        shared_metrics = metric_collectors[0].snapshot()["counters"]
+        if shared_metrics.get("provider.deepseek.experiment.requests") != 4:
+            failures.append("cross_worker_metric_aggregation")
         stores[0].set("knowledge", "shared", {"value": 1}, 300)
         cross_worker_visible = all(store.get("knowledge", "shared") == {"value": 1} for store in stores)
         stores[-1].invalidate_namespace("knowledge")
@@ -117,6 +129,7 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
                 "cross_worker_cache_visible": cross_worker_visible,
                 "cross_worker_invalidation": cross_worker_invalidated,
                 "fifty_request_handler_calls": handler_calls,
+                "cross_worker_provider_requests": shared_metrics.get("provider.deepseek.experiment.requests", 0),
             },
             "C2": {"retrieval_collection": episodic_name, "context_budget_chars": 8000},
             "C3": {"status": "not_run_in_integration_layer"},
@@ -135,6 +148,7 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
             "profile:fingerprint:experiment-user",
             "profile:updated_at:experiment-user",
             "lock:memory:experiment-user:experiment-conversation",
+            metrics_key,
         )
 
     report = {

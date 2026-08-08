@@ -27,6 +27,8 @@ from anthropic import AsyncAnthropic
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import extract_text_content
+from core.llm_gateway import LLMGateway, LLMRequest, build_gateway
+from core.cache_metrics import CacheMetricsCollector
 from core.prompt_cache import PromptCachePolicy
 
 logger = logging.getLogger(__name__)
@@ -72,6 +74,7 @@ class AgentResponse:
     confidence:  float = 1.0
     latency_ms:  float = 0.0
     escalate:    bool  = False   # 是否需要升级
+    cache_metadata: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -110,20 +113,28 @@ class BaseAgent:
         model: str,
         skill_manager: Optional[Any] = None,
         prompt_cache_policy: Optional[PromptCachePolicy] = None,
+        gateway: Optional[LLMGateway] = None,
+        metrics: Optional[CacheMetricsCollector] = None,
     ):
         self._client = client
+        self._gateway = gateway
+        self._metrics = metrics
         self._model  = model
         self._skill_manager = skill_manager
         self.stats   = AgentStats()
         self._prompt_cache_policy = prompt_cache_policy or PromptCachePolicy()
-        self.last_cache_metadata: Dict[str, Any] = {}
 
     async def handle(self, req: Request) -> AgentResponse:
         t0 = time.monotonic()
         self.stats.total += 1
         try:
-            content = await self._call_llm(req)
+            content, cache_metadata = await self._call_llm(req)
             ms = (time.monotonic() - t0) * 1000
+            if self._metrics is not None and self._gateway is not None:
+                self._metrics.record_provider(
+                    getattr(self._gateway, "provider", "unknown"), self._model,
+                    getattr(self, "_last_usage", None), ms,
+                )
             self.stats.success += 1
             self.stats.total_ms += ms
             escalate = self._needs_escalation(content)
@@ -133,6 +144,7 @@ class BaseAgent:
                 success=True,
                 latency_ms=ms,
                 escalate=escalate,
+                cache_metadata=cache_metadata,
             )
         except Exception as ex:
             ms = (time.monotonic() - t0) * 1000
@@ -145,7 +157,7 @@ class BaseAgent:
                 latency_ms=ms,
             )
 
-    async def _call_llm(self, req: Request) -> str:
+    async def _call_llm(self, req: Request) -> tuple[str, Dict[str, Any]]:
         def _clean(s: str) -> str:
             return s.encode("utf-8", errors="ignore").decode("utf-8")
 
@@ -160,6 +172,19 @@ class BaseAgent:
             skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
             if skill_prompt:
                 dynamic_prompt = f"[动态 Skills]\n{skill_prompt}"
+        if self._gateway is not None:
+            result = await self._gateway.complete(LLMRequest(
+                model=self._model,
+                stable_prompt=self.system_prompt,
+                dynamic_prompt=dynamic_prompt,
+                messages=messages,
+                cache_identity=f"{self._model}:{self.agent_type.value}:prompt-v1",
+                cache_mode="automatic",
+                max_tokens=1024,
+            ))
+            self._last_usage = result.usage
+            return result.text, result.metadata
+
         system, cache_metadata = self._prompt_cache_policy.build_system(self.system_prompt, dynamic_prompt)
         resp = await self._client.messages.create(
             model=self._model,
@@ -173,8 +198,7 @@ class BaseAgent:
             "cache_read_input_tokens": int(getattr(usage, "cache_read_input_tokens", 0) or 0),
             "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
         })
-        self.last_cache_metadata = cache_metadata
-        return extract_text_content(resp.content)
+        return extract_text_content(resp.content), cache_metadata
 
     def _build_system_prompt(self, req: Request) -> str:
         """把动态加载的 Skills 拼入 system prompt，让业务规则随请求生效。"""
@@ -244,21 +268,32 @@ class AgentOrchestrator:
         skill_manager: Optional[Any] = None,
         prompt_cache_enabled: bool = False,
         prompt_cache_min_chars: int = 4096,
+        provider: str = "anthropic",
+        metrics: Optional[CacheMetricsCollector] = None,
+        gateway: Optional[LLMGateway] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
         client = AsyncAnthropic(**kwargs)
 
-        self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model)
         self._skill_manager = skill_manager
+        self.metrics = metrics or CacheMetricsCollector()
         cache_policy = PromptCachePolicy(prompt_cache_enabled, prompt_cache_min_chars)
+        gateway = gateway or build_gateway(
+            provider, api_key, model, base_url,
+            cache_enabled=prompt_cache_enabled or provider != "anthropic",
+        )
+        self.gateway = gateway
+        self._intent_recognizer = IntentRecognizer(
+            api_key=api_key, base_url=base_url, model=model, gateway=gateway
+        )
 
         # Agent 池：每种类型可有多个实例（水平扩展）
         self._pool: Dict[AgentType, List[BaseAgent]] = {
-            AgentType.GENERAL:   [GeneralAgent(client, model, skill_manager, cache_policy)],
-            AgentType.TECHNICAL: [TechnicalAgent(client, model, skill_manager, cache_policy)],
-            AgentType.BILLING:   [BillingAgent(client, model, skill_manager, cache_policy)],
+            AgentType.GENERAL:   [GeneralAgent(client, model, skill_manager, cache_policy, gateway, self.metrics)],
+            AgentType.TECHNICAL: [TechnicalAgent(client, model, skill_manager, cache_policy, gateway, self.metrics)],
+            AgentType.BILLING:   [BillingAgent(client, model, skill_manager, cache_policy, gateway, self.metrics)],
         }
 
     def set_skill_manager(self, skill_manager: Optional[Any]) -> None:
@@ -425,8 +460,12 @@ class AgentOrchestrator:
                     "avg_ms":       round(agent.stats.avg_ms, 1),
                     "monitor_penalty": round(agent.stats.monitor_penalty, 3),
                     "routing_score": round(agent.stats.routing_score(), 3),
-                    "prompt_cache": dict(agent.last_cache_metadata),
+                    "prompt_cache": {
+                        "provider": getattr(agent._gateway, "provider", "anthropic"),
+                        "status": getattr(getattr(agent, "_last_usage", None), "status", "unknown"),
+                    },
                 }
+        result["cache_metrics"] = self.metrics.snapshot()
         return result
 
     def update_routing_penalties(self, penalties: Dict[str, float]) -> None:

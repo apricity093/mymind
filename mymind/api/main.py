@@ -53,16 +53,19 @@ _context_builder = None
 _last_context_metadata: Dict[str, Any] = {}
 
 def _anthropic_cfg() -> Dict[str, Any]:
-    key = os.getenv("ANTHROPIC_API_KEY", "")
+    key = os.getenv("LLM_API_KEY", "") or os.getenv("ANTHROPIC_API_KEY", "")
     if not key:
-        raise RuntimeError("未设置 ANTHROPIC_API_KEY")
+        raise RuntimeError("未设置 LLM_API_KEY 或 ANTHROPIC_API_KEY")
     cfg: Dict[str, Any] = {
         "api_key":  key,
-        "model":    os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022").strip(),
+        "model":    (os.getenv("LLM_MODEL", "") or os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")).strip(),
+        "provider": os.getenv("LLM_PROVIDER", "").strip().lower(),
     }
-    base_url = os.getenv("ANTHROPIC_BASE_URL", "").strip()
+    base_url = (os.getenv("LLM_BASE_URL", "") or os.getenv("ANTHROPIC_BASE_URL", "")).strip()
     if base_url:
         cfg["base_url"] = base_url
+    if not cfg["provider"]:
+        cfg["provider"] = "deepseek" if "deepseek" in base_url.lower() else "anthropic"
     return cfg
 
 
@@ -81,16 +84,23 @@ async def lifespan(app: FastAPI):
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
     from core.cache_store import RedisCacheStore
+    from core.cache_metrics import ObservedCacheStore
+    from core.llm_gateway import build_gateway
     from memory.context_builder import ContextBuilder
 
     cfg = _anthropic_cfg()
     logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
+    gateway = build_gateway(
+        cfg["provider"], cfg["api_key"], cfg["model"], cfg.get("base_url"),
+        cache_enabled=True,
+    )
 
     # 意图识别器（Orchestrator 内部也会创建，这里单独暴露给 Evaluator）
     recognizer = IntentRecognizer(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        gateway=gateway,
     )
 
     # Skills：启动时从目录加载业务能力说明，并在 Agent 调用 LLM 时动态注入。
@@ -109,6 +119,8 @@ async def lifespan(app: FastAPI):
         skill_manager=_skill_manager,
         prompt_cache_enabled=(not cfg.get("base_url") and os.getenv("PROMPT_CACHE_ENABLED", "0") == "1"),
         prompt_cache_min_chars=int(os.getenv("PROMPT_CACHE_MIN_CHARS", "4096")),
+        provider=cfg["provider"],
+        gateway=gateway,
     )
 
     # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
@@ -120,6 +132,7 @@ async def lifespan(app: FastAPI):
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        gateway=gateway,
         episodic_collection=os.getenv("EPISODIC_COLLECTION", "episodic"),
         profile_collection=os.getenv("PROFILE_COLLECTION", "user_profile"),
     )
@@ -130,9 +143,10 @@ async def lifespan(app: FastAPI):
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
-        cache_store=RedisCacheStore(
-            _memory._redis,
-            prefix=os.getenv("CACHE_PREFIX", "mymind:cache"),
+        gateway=gateway,
+        cache_store=ObservedCacheStore(
+            RedisCacheStore(_memory._redis, prefix=os.getenv("CACHE_PREFIX", "mymind:cache")),
+            _orchestrator.metrics,
         ),
     )
     kb = KnowledgeBase(
@@ -188,6 +202,7 @@ async def lifespan(app: FastAPI):
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
+        gateway=gateway,
     )
 
     logger.info("mymind 已就绪")
@@ -583,6 +598,7 @@ async def _cli():
         skill_manager=skill_manager,
         prompt_cache_enabled=(not cfg.get("base_url") and os.getenv("PROMPT_CACHE_ENABLED", "0") == "1"),
         prompt_cache_min_chars=int(os.getenv("PROMPT_CACHE_MIN_CHARS", "4096")),
+        provider=cfg["provider"],
     )
     mem  = MemoryManager(
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),

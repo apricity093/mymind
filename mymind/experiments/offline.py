@@ -8,7 +8,7 @@ from pathlib import Path
 
 from core.cache_store import InMemoryCacheStore
 from core.intent_recognizer import IntentRecognizer
-from core.prompt_cache import PromptCachePolicy
+from core.llm_gateway import CacheUsage
 from memory.context_builder import ContextBuilder
 from memory.conversation_memory import MemoryContext, Message, MsgRole
 from mcp.tool_manager import MCPToolManager, Tool
@@ -140,8 +140,12 @@ def run_offline(output_dir: Path) -> dict:
     recall = selected_hits / expected_hits if expected_hits else 0.0
     profile_b0_calls = config["profile_users"] * config["profile_sessions"]
     profile_c1_calls = config["profile_users"]
-    prompt_policy = PromptCachePolicy(enabled=True, min_stable_chars=4096)
-    _, c3_meta = prompt_policy.build_system("short stable support prompt")
+    stable_prompt = "你是客服助手。遵守固定安全规则，只根据背景回答，不确定时转人工。"
+    provider_fixtures = {
+        "anthropic": CacheUsage("anthropic", 20, 100, 10, None, True, "hit"),
+        "openai": CacheUsage("openai", 130, 100, 0, 30, True, "hit"),
+        "deepseek": CacheUsage("deepseek", 130, 100, 0, 30, True, "hit"),
+    }
 
     variants = {
         "B0": {
@@ -169,9 +173,16 @@ def run_offline(output_dir: Path) -> dict:
             "cache_p95_reduction": round(1 - hit_p95 / miss_p95, 4),
         },
         "C3": {
-            "prompt_cache_status": "not_applicable" if not c3_meta["prompt_cache_eligible"] else "eligible",
-            "stable_prefix_chars": c3_meta["stable_prefix_chars"],
-            "minimum_chars": c3_meta["prompt_cache_min_chars"],
+            "stable_prefix_chars": len(stable_prompt),
+            "providers": {
+                provider: {
+                    "status": usage.status,
+                    "cache_read_tokens": usage.cache_read_tokens,
+                    "cache_write_tokens": usage.cache_write_tokens,
+                    "total_input_tokens": usage.total_input_tokens,
+                }
+                for provider, usage in provider_fixtures.items()
+            },
         },
     }
     checks = {

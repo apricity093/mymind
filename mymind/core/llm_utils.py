@@ -4,6 +4,8 @@ from typing import Any, Iterable, List
 
 def extract_text_content(content: Iterable[Any]) -> str:
     """Return text blocks from Anthropic-style response content."""
+    if isinstance(content, str):
+        return content
     texts: List[str] = []
     for block in content or []:
         if isinstance(block, str):

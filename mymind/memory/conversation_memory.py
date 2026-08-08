@@ -28,6 +28,7 @@ import redis
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.llm_gateway import LLMGateway, LLMRequest
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +102,7 @@ class MemoryManager:
         redis_client: Optional[Any] = None,
         chroma_client: Optional[Any] = None,
         llm_client: Optional[Any] = None,
+        gateway: Optional[LLMGateway] = None,
         clock: Callable[[], float] = time.time,
         episodic_collection: str = "episodic",
         profile_collection: str = "user_profile",
@@ -109,6 +111,7 @@ class MemoryManager:
         if base_url:
             kwargs["base_url"] = base_url
         self._client = llm_client or AsyncAnthropic(**kwargs)
+        self._gateway = gateway
         self._model  = model
         self._clock = clock
 
@@ -218,11 +221,7 @@ class MemoryManager:
         prompt = self._safe_text(prompt)
 
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=512, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            raw = await self._complete_text(prompt, 512, "profile-v1")
             s, e = raw.find("{"), raw.rfind("}") + 1
             profile_data = json.loads(raw[s:e])
 
@@ -300,11 +299,7 @@ class MemoryManager:
         text = self._safe_text("\n".join(f"{m.role.value}: {m.content}" for m in to_compress))
         prompt = self._safe_text(f"用 2-3 句话总结以下对话的关键信息：\n{text}")
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=256, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            summary = self._safe_text(extract_text_content(resp.content)).strip()
+            summary = (await self._complete_text(prompt, 256, "summary-v1")).strip()
         except Exception:
             summary = f"对话包含 {len(to_compress)} 条消息（摘要生成失败）"
 
@@ -334,11 +329,7 @@ class MemoryManager:
             return combined
         prompt = self._safe_text(f"将以下会话摘要重新归并，保留事实、偏好和未解决事项，控制在 1200 字以内：\n{combined}")
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=512, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            merged = self._safe_text(extract_text_content(resp.content)).strip()
+            merged = (await self._complete_text(prompt, 512, "summary-merge-v1")).strip()
             return merged[: self.SUMMARY_MAX_CHARS]
         except Exception:
             return combined[-self.SUMMARY_MAX_CHARS :]
@@ -476,6 +467,23 @@ class MemoryManager:
         if not isinstance(value, str):
             value = str(value)
         return value.encode("utf-8", errors="ignore").decode("utf-8")
+
+    async def _complete_text(self, prompt: str, max_tokens: int, identity: str) -> str:
+        if self._gateway is not None:
+            result = await self._gateway.complete(LLMRequest(
+                model=self._model,
+                stable_prompt="你是客服记忆管理助手，只输出任务要求的内容。",
+                messages=[{"role": "user", "content": prompt}],
+                cache_identity=f"memory:{self._model}:{identity}",
+                max_tokens=max_tokens,
+                temperature=0.0,
+            ))
+            return self._safe_text(result.text)
+        resp = await self._client.messages.create(
+            model=self._model, max_tokens=max_tokens, temperature=0.0,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return self._safe_text(extract_text_content(resp.content))
 
     @classmethod
     def _safe_metadata_value(cls, value: Any) -> Any:

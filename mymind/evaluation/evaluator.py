@@ -26,6 +26,7 @@ from typing import Any, Dict, List, Optional
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.llm_gateway import LLMGateway, LLMRequest
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer
 
@@ -106,9 +107,10 @@ Agent 响应: {response}
 
 只返回 JSON，例如: {{"relevance": 0.9, "accuracy": 0.8, "completeness": 0.7, "helpfulness": 0.85}}"""
 
-    def __init__(self, client: AsyncAnthropic, model: str):
+    def __init__(self, client: AsyncAnthropic, model: str, gateway: Optional[LLMGateway] = None):
         self._client = client
         self._model  = model
+        self._gateway = gateway
 
     async def judge(
         self,
@@ -124,11 +126,19 @@ Agent 响应: {response}
         )
         prompt = self._clean_text(prompt)
         try:
-            resp = await self._client.messages.create(
-                model=self._model, max_tokens=256, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            if self._gateway is not None:
+                result = await self._gateway.complete(LLMRequest(
+                    model=self._model, stable_prompt="你是严格的客服答案评审，只返回要求的 JSON。",
+                    messages=[{"role": "user", "content": prompt}],
+                    cache_identity=f"evaluation:{self._model}:rubric-v1", max_tokens=256, temperature=0.0,
+                ))
+                raw = result.text
+            else:
+                resp = await self._client.messages.create(
+                    model=self._model, max_tokens=256, temperature=0.0,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                raw = extract_text_content(resp.content)
             s, e = raw.find("{"), raw.rfind("}") + 1
             data = json.loads(raw[s:e])
             return QualityScores(
@@ -232,6 +242,7 @@ class EndToEndEvaluator:
         base_url: Optional[str] = None,
         model:    str = "claude-3-5-sonnet-20241022",
         baseline_path: Optional[str] = None,
+        gateway: Optional[LLMGateway] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -239,7 +250,7 @@ class EndToEndEvaluator:
         client = AsyncAnthropic(**kwargs)
 
         self._orchestrator     = orchestrator
-        self._judge            = LLMJudge(client, model)
+        self._judge            = LLMJudge(client, model, gateway)
         self._intent_evaluator = IntentEvaluator(recognizer)
         self._history:         List[EvalReport] = []
         self._baseline_path = pathlib.Path(baseline_path) if baseline_path else None

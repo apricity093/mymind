@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.llm_gateway import LLMGateway, LLMRequest
 from core.cache_store import CacheStore, InMemoryCacheStore
 
 logger = logging.getLogger(__name__)
@@ -101,11 +102,13 @@ class IntentRecognizer:
         confidence_threshold: float = 0.5,
         cache_store: Optional[CacheStore] = None,
         cache_ttl: float = 600.0,
+        gateway: Optional[LLMGateway] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
         self.client    = AsyncAnthropic(**kwargs)
+        self._gateway = gateway
         self.model     = model
         self.threshold = confidence_threshold
         # 第三方兼容 API（如 DeepSeek）通常不支持 Embedding，禁用该策略。
@@ -213,13 +216,19 @@ class IntentRecognizer:
         prompt = self._clean_text(prompt)
 
         try:
-            resp = await self.client.messages.create(
-                model=self.model,
-                max_tokens=256,
-                temperature=0.1,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            if self._gateway is not None:
+                result = await self._gateway.complete(LLMRequest(
+                    model=self.model, stable_prompt="识别客服消息意图并仅返回要求的 JSON。",
+                    messages=[{"role": "user", "content": prompt}],
+                    cache_identity=f"intent:{self.model}:rules-v1", max_tokens=256, temperature=0.1,
+                ))
+                raw = result.text
+            else:
+                resp = await self.client.messages.create(
+                    model=self.model, max_tokens=256, temperature=0.1,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                raw = extract_text_content(resp.content)
             s, e = raw.find("{"), raw.rfind("}") + 1
             data = json.loads(raw[s:e])
             try:
@@ -304,11 +313,19 @@ class IntentRecognizer:
 格式: {{"order_id":[],"product":[],"date":[],"amount":[],"error_code":[]}}"""
         prompt = self._clean_text(prompt)
         try:
-            resp = await self.client.messages.create(
-                model=self.model, max_tokens=256, temperature=0.0,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            raw = extract_text_content(resp.content)
+            if self._gateway is not None:
+                result = await self._gateway.complete(LLMRequest(
+                    model=self.model, stable_prompt="提取客服消息实体并仅返回要求的 JSON。",
+                    messages=[{"role": "user", "content": prompt}],
+                    cache_identity=f"entities:{self.model}:schema-v1", max_tokens=256, temperature=0.0,
+                ))
+                raw = result.text
+            else:
+                resp = await self.client.messages.create(
+                    model=self.model, max_tokens=256, temperature=0.0,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                raw = extract_text_content(resp.content)
             s, e = raw.find("{"), raw.rfind("}") + 1
             return json.loads(raw[s:e])
         except Exception:

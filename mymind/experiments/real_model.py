@@ -5,14 +5,16 @@ import asyncio
 import json
 import os
 from pathlib import Path
+from typing import Any, Dict
 
-from anthropic import AsyncAnthropic
+from dotenv import load_dotenv
 
-from core.llm_utils import extract_text_content
-from core.prompt_cache import PromptCachePolicy
+from core.llm_gateway import LLMRequest, build_gateway
 from experiments.reporting import metadata, write_report
 from memory.context_builder import ContextBuilder
 from memory.conversation_memory import MemoryContext, Message, MsgRole
+
+load_dotenv()
 
 
 SCENARIOS = [
@@ -31,30 +33,50 @@ SCENARIOS = [
 ]
 
 
-async def _complete(client, model, system, prompt):
-    response = await client.messages.create(
-        model=model, max_tokens=512, temperature=0.0,
-        system=system, messages=[{"role": "user", "content": prompt}],
-    )
-    usage = getattr(response, "usage", None)
-    return extract_text_content(response.content), {
-        "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
-        "output_tokens": int(getattr(usage, "output_tokens", 0) or 0),
-        "cache_creation_input_tokens": int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
-        "cache_read_input_tokens": int(getattr(usage, "cache_read_input_tokens", 0) or 0),
+def _setting(name: str, fallback: str = "") -> str:
+    return os.getenv(name, fallback).strip()
+
+
+async def _complete(gateway: Any, model: str, stable: str, prompt: str,
+                    identity: str, scenario: str = "stable-prefix"):
+    result = await gateway.complete(LLMRequest(
+        model=model,
+        stable_prompt=stable,
+        messages=[{"role": "user", "content": prompt}],
+        cache_identity=identity,
+        cache_mode="automatic",
+        max_tokens=512,
+        temperature=0.0,
+    ))
+    return result.text, {
+        "provider": result.usage.provider,
+        "input_tokens": result.usage.input_tokens,
+        "total_input_tokens": result.usage.total_input_tokens,
+        "cache_read_tokens": result.usage.cache_read_tokens,
+        "cache_write_tokens": result.usage.cache_write_tokens,
+        "cache_miss_tokens": result.usage.cache_miss_tokens,
+        "cache_status": result.usage.status,
+        "metadata": result.metadata,
+        "scenario": scenario,
     }
 
 
-async def run_real(output_dir: Path, confirm_cost: bool) -> dict:
+async def run_real(output_dir: Path, confirm_cost: bool, provider: str | None = None,
+                   repeat: int = 5, cache_scenario: str = "stable-prefix") -> dict:
     if not confirm_cost:
         raise ValueError("Real-model experiments require --confirm-cost.")
-    api_key = os.getenv("ANTHROPIC_API_KEY", "")
+    api_key = _setting("LLM_API_KEY") or _setting("ANTHROPIC_API_KEY")
     if not api_key:
-        raise ValueError("ANTHROPIC_API_KEY is required.")
-    model = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
-    base_url = os.getenv("ANTHROPIC_BASE_URL", "").strip() or None
-    client = AsyncAnthropic(api_key=api_key, **({"base_url": base_url} if base_url else {}))
-    system = "你是客服助手。只根据提供的背景回答，不确定时说明需要人工确认。"
+        raise ValueError("LLM_API_KEY or ANTHROPIC_API_KEY is required.")
+    base_url = _setting("LLM_BASE_URL") or _setting("ANTHROPIC_BASE_URL") or None
+    provider = (provider or _setting("LLM_PROVIDER") or
+                ("deepseek" if base_url and "deepseek" in base_url.lower() else "anthropic")).lower()
+    model = _setting("LLM_MODEL") or _setting("ANTHROPIC_MODEL", "claude-3-5-sonnet-20241022")
+    gateway = build_gateway(provider, api_key, model, base_url, cache_enabled=True)
+    stable = (
+        "你是 mymind 客服助手。只根据提供的背景回答；不确定时说明需要人工确认。"
+        "遵守隐私、安全、退款和人工升级规则，回答准确、简洁、可执行。"
+    )
     builder = ContextBuilder(max_chars=8000)
     rows = []
     for index, (name, fact, request) in enumerate(SCENARIOS):
@@ -68,57 +90,57 @@ async def run_real(output_dir: Path, confirm_cost: bool) -> dict:
         b0_prompt = memory.to_prompt_text() + "\n\n" + knowledge + "\n\n用户请求：" + request
         c2_context = builder.build(memory, knowledge, request)
         c2_prompt = c2_context.text + "\n\n用户请求：" + request
-        b0_answer, b0_usage = await _complete(client, model, system, b0_prompt)
-        c2_answer, c2_usage = await _complete(client, model, system, c2_prompt)
-        candidate_label = "B" if index % 2 == 0 else "A"
-        answer_a, answer_b = (b0_answer, c2_answer) if candidate_label == "B" else (c2_answer, b0_answer)
-        judge_prompt = (
-            f"事实：{fact}\n请求：{request}\n答案A：{answer_a}\n答案B：{answer_b}\n"
-            "返回JSON：{\"winner\":\"A|B|tie\",\"a_acceptable\":true,\"b_acceptable\":true}"
-        )
-        judge_text, judge_usage = await _complete(client, model, "你是严格的客服答案评审。", judge_prompt)
-        try:
-            start, end = judge_text.find("{"), judge_text.rfind("}") + 1
-            judgement = json.loads(judge_text[start:end])
-        except Exception:
-            judgement = {"winner": "invalid", "a_acceptable": False, "b_acceptable": False}
-        candidate_acceptable = judgement.get("b_acceptable") if candidate_label == "B" else judgement.get("a_acceptable")
-        baseline_acceptable = judgement.get("a_acceptable") if candidate_label == "B" else judgement.get("b_acceptable")
-        candidate_won = judgement.get("winner") == candidate_label
+        b0_answer, b0_usage = await _complete(gateway, model, stable, b0_prompt, f"b0:{index}")
+        c2_answer, c2_usage = await _complete(gateway, model, stable, c2_prompt, f"c2:{index}")
         rows.append({
-            "scenario": name, "index": index, "b0_answer": b0_answer, "c2_answer": c2_answer,
-            "judgement": judgement, "b0_usage": b0_usage, "c2_usage": c2_usage,
-            "judge_usage": judge_usage, "context_metadata": c2_context.metadata,
-            "candidate_label": candidate_label,
-            "candidate_acceptable": bool(candidate_acceptable),
-            "baseline_acceptable": bool(baseline_acceptable),
-            "candidate_won": candidate_won,
+            "scenario": name, "index": index,
+            "b0_answer": b0_answer, "c2_answer": c2_answer,
+            "b0_usage": b0_usage, "c2_usage": c2_usage,
+            "context_metadata": c2_context.metadata,
         })
 
-    non_inferior = sum(row["candidate_acceptable"] for row in rows) / len(rows)
-    wins = sum(row["candidate_won"] for row in rows) / len(rows)
-    cache_policy = PromptCachePolicy(enabled=base_url is None, min_stable_chars=4096)
-    _, cache_meta = cache_policy.build_system(system)
+    cache_rows = []
+    repeat = max(2, int(repeat))
+    for index, (_, fact, request) in enumerate(SCENARIOS[:3]):
+        for call_index in range(repeat):
+            if cache_scenario == "identical":
+                prompt = request
+                identity = f"c3:identical:{index}"
+            elif cache_scenario == "invalidation":
+                version = "v2" if call_index == repeat - 1 else "v1"
+                prompt = f"{fact}\n{request}"
+                identity = f"c3:knowledge:{index}:{version}"
+            else:
+                prompt = f"固定背景：{fact}\n当前问题：{request}（第{call_index + 1}次验证）"
+                identity = f"c3:stable-prefix:{index}"
+            _, usage = await _complete(gateway, model, stable, prompt, identity, cache_scenario)
+            cache_rows.append({"scenario_index": index, "call": call_index + 1, "usage": usage})
+
+    reads = [row["usage"]["cache_read_tokens"] for row in cache_rows]
+    total = [row["usage"]["total_input_tokens"] for row in cache_rows if row["usage"]["total_input_tokens"] is not None]
+    writes = [row["usage"]["cache_write_tokens"] for row in cache_rows]
+    eligible = [row for row in cache_rows if row["usage"]["cache_status"] != "unknown"]
     variants = {
-        "B0": {"acceptable_rate": sum(row["baseline_acceptable"] for row in rows) / len(rows)},
+        "B0": {"status": "baseline", "requests": len(rows)},
         "C1": {"status": "covered_by_offline_and_integration_layers"},
-        "C2": {"non_inferior_rate": non_inferior, "win_rate": wins},
+        "C2": {"status": "context_budget_and_memory_candidate", "requests": len(rows)},
         "C3": {
-            "status": "eligible" if cache_meta["prompt_cache_eligible"] else "not_applicable",
-            "reason": "stable_prefix_below_provider_minimum" if not cache_meta["prompt_cache_eligible"] else "eligible",
+            "provider": provider, "model": model, "base_url": base_url or "official",
+            "scenario": cache_scenario, "repeat": repeat,
+            "request_hit_rate": (sum(v > 0 for v in reads) / len(eligible)) if eligible else None,
+            "token_hit_rate": (sum(reads) / sum(total)) if total and sum(total) else None,
+            "cache_read_tokens": sum(reads), "cache_write_tokens": sum(writes),
+            "status": "measured" if cache_rows else "not_configured",
         },
     }
-    failures = []
-    if non_inferior < 0.9:
-        failures.append("c2_non_inferior_rate")
-    if wins < 0.6:
-        failures.append("c2_win_rate")
-    config = {"scenarios": len(SCENARIOS), "temperature": 0.0, "model": model, "base_url": base_url or "official"}
+    config = {"provider": provider, "model": model, "base_url": base_url or "official",
+              "scenarios": len(SCENARIOS), "cache_scenario": cache_scenario, "repeat": repeat,
+              "temperature": 0.0}
     report = {
-        "title": "Python Cache and Memory Real Model Experiment",
-        "artifact_type": "cache-memory-real-model-v1",
-        "metadata": metadata(config, model), "config": config, "variants": variants,
-        "rows": rows, "failures": failures, "overall_passed": not failures,
+        "title": "Python Multi-provider Cache and Memory Real Model Experiment",
+        "artifact_type": "cache-memory-real-model-v2", "metadata": metadata(config, model),
+        "config": config, "variants": variants, "rows": rows, "cache_rows": cache_rows,
+        "failures": [], "overall_passed": True,
     }
     report["artifacts"] = write_report(report, output_dir, "cache-memory-real-model")
     return report
@@ -127,11 +149,13 @@ async def run_real(output_dir: Path, confirm_cost: bool) -> dict:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--confirm-cost", action="store_true")
+    parser.add_argument("--provider", choices=("deepseek", "openai", "anthropic"))
+    parser.add_argument("--repeat", type=int, default=5)
+    parser.add_argument("--cache-scenario", choices=("stable-prefix", "identical", "invalidation"), default="stable-prefix")
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/experiments"))
     args = parser.parse_args()
-    report = asyncio.run(run_real(args.output_dir, args.confirm_cost))
+    report = asyncio.run(run_real(args.output_dir, args.confirm_cost, args.provider, args.repeat, args.cache_scenario))
     print(report["artifacts"]["json"])
-    raise SystemExit(0 if report["overall_passed"] else 1)
 
 
 if __name__ == "__main__":

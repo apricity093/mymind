@@ -14,6 +14,9 @@ def main():
     parser.add_argument("--chroma-host", default="localhost")
     parser.add_argument("--chroma-port", type=int, default=8001)
     parser.add_argument("--confirm-cost", action="store_true")
+    parser.add_argument("--provider", choices=("deepseek", "openai", "anthropic"))
+    parser.add_argument("--repeat", type=int, default=5)
+    parser.add_argument("--cache-scenario", choices=("stable-prefix", "identical", "invalidation"), default="stable-prefix")
     args = parser.parse_args()
     if args.layer == "offline":
         report = run_offline(args.output_dir)
@@ -26,7 +29,9 @@ def main():
     else:
         import asyncio
         from experiments.real_model import run_real
-        report = asyncio.run(run_real(args.output_dir, args.confirm_cost))
+        report = asyncio.run(run_real(
+            args.output_dir, args.confirm_cost, args.provider, args.repeat, args.cache_scenario
+        ))
     print(report["artifacts"]["json"])
     raise SystemExit(0 if report["overall_passed"] else 1)
 
