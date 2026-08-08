@@ -49,6 +49,8 @@ _tool_manager = None
 _monitor      = None
 _evaluator    = None
 _skill_manager = None
+_context_builder = None
+_last_context_metadata: Dict[str, Any] = {}
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("ANTHROPIC_API_KEY", "")
@@ -66,7 +68,7 @@ def _anthropic_cfg() -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager
+    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _context_builder
 
     print(BANNER, flush=True)
 
@@ -78,6 +80,8 @@ async def lifespan(app: FastAPI):
     from memory.conversation_memory import MemoryManager
     from monitor.performance_monitor import PerformanceMonitor
     from core.skill_loader import SkillManager
+    from core.cache_store import RedisCacheStore
+    from memory.context_builder import ContextBuilder
 
     cfg = _anthropic_cfg()
     logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
@@ -103,6 +107,8 @@ async def lifespan(app: FastAPI):
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         skill_manager=_skill_manager,
+        prompt_cache_enabled=(not cfg.get("base_url") and os.getenv("PROMPT_CACHE_ENABLED", "0") == "1"),
+        prompt_cache_min_chars=int(os.getenv("PROMPT_CACHE_MIN_CHARS", "4096")),
     )
 
     # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
@@ -114,13 +120,20 @@ async def lifespan(app: FastAPI):
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        episodic_collection=os.getenv("EPISODIC_COLLECTION", "episodic"),
+        profile_collection=os.getenv("PROFILE_COLLECTION", "user_profile"),
     )
+    _context_builder = ContextBuilder(max_chars=int(os.getenv("CONTEXT_MAX_CHARS", "8000")))
 
     # MCP 工具管理器 + RAG 知识库（基于 ChromaDB 的真实检索）
     _tool_manager = MCPToolManager(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        cache_store=RedisCacheStore(
+            _memory._redis,
+            prefix=os.getenv("CACHE_PREFIX", "mymind:cache"),
+        ),
     )
     kb = KnowledgeBase(
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
@@ -268,10 +281,10 @@ async def chat(req: ChatRequest):
     ] if mem_ctx.recent_messages else None
 
     knowledge_text, knowledge_used = await _build_knowledge_context(req.message)
-    context_parts = [mem_ctx.to_prompt_text()]
-    if knowledge_text:
-        context_parts.append(knowledge_text)
-    full_context = "\n\n".join(part for part in context_parts if part)
+    global _last_context_metadata
+    built_context = _context_builder.build(mem_ctx, knowledge_text, req.message)
+    full_context = built_context.text
+    _last_context_metadata = built_context.metadata
 
     orch_req = OrcReq(
         message=req.message,
@@ -360,7 +373,9 @@ async def monitor_summary():
     """实时监控摘要：Agent 成功率、工具统计、告警、优化建议。"""
     if _monitor is None:
         raise HTTPException(503, "服务未就绪")
-    return _monitor.summary()
+    summary = _monitor.summary()
+    summary["context"] = dict(_last_context_metadata)
+    return summary
 
 
 @app.get("/metrics")
@@ -435,6 +450,7 @@ async def add_knowledge(body: BatchDocInput):
         raise HTTPException(503, "知识库未初始化")
     kb = tool.handler.__self__
     count = kb.add_documents([{"title": d.title, "content": d.content} for d in body.documents])
+    _tool_manager.invalidate_cache()
     return {"message": f"成功导入 {count} 个文档片段", "added_chunks": count, "total_chunks": kb.doc_count}
 
 
@@ -475,6 +491,7 @@ async def upload_knowledge(file: UploadFile = File(...)):
         docs = [{"title": title, "content": text}]
 
     count = kb.add_documents(docs)
+    _tool_manager.invalidate_cache()
     return {
         "message": f"文件 {filename} 导入成功",
         "added_chunks": count,
@@ -550,6 +567,7 @@ async def _cli():
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
     from memory.conversation_memory import MemoryManager, MsgRole
+    from memory.context_builder import ContextBuilder
     from core.skill_loader import SkillManager
 
     cfg = _anthropic_cfg()
@@ -563,6 +581,8 @@ async def _cli():
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         skill_manager=skill_manager,
+        prompt_cache_enabled=(not cfg.get("base_url") and os.getenv("PROMPT_CACHE_ENABLED", "0") == "1"),
+        prompt_cache_min_chars=int(os.getenv("PROMPT_CACHE_MIN_CHARS", "4096")),
     )
     mem  = MemoryManager(
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
@@ -572,7 +592,10 @@ async def _cli():
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
+        episodic_collection=os.getenv("EPISODIC_COLLECTION", "episodic"),
+        profile_collection=os.getenv("PROFILE_COLLECTION", "user_profile"),
     )
+    context_builder = ContextBuilder(max_chars=int(os.getenv("CONTEXT_MAX_CHARS", "8000")))
 
     user_id, conv_id = "cli_user", str(uuid.uuid4())
 
@@ -591,7 +614,8 @@ async def _cli():
             {"role": m.role.value, "content": m.content}
             for m in ctx.recent_messages[-5:]
         ] if ctx.recent_messages else None
-        req = Request(message=msg, user_id=user_id, conv_id=conv_id, context=ctx.to_prompt_text(), history=history)
+        context = context_builder.build(ctx, current_message=msg)
+        req = Request(message=msg, user_id=user_id, conv_id=conv_id, context=context.text, history=history)
         result = await orch.run(req)
 
         await mem.add_message(user_id, conv_id, MsgRole.USER, msg)

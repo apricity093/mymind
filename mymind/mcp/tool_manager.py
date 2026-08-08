@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import time
+import weakref
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -24,6 +25,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.cache_store import CacheStore, InMemoryCacheStore
 
 logger = logging.getLogger(__name__)
 
@@ -133,14 +135,22 @@ class MCPToolManager:
       用户查询 → 查询改写（多角度子查询）→ 并行召回 → 结果重排 → 返回 Top-K
     """
 
-    def __init__(self, api_key: str, base_url: Optional[str] = None, model: str = "claude-3-5-sonnet-20241022"):
+    def __init__(
+        self,
+        api_key: str,
+        base_url: Optional[str] = None,
+        model: str = "claude-3-5-sonnet-20241022",
+        cache_store: Optional[CacheStore] = None,
+    ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
         self._client = AsyncAnthropic(**kwargs)
         self._model  = model
         self._tools: Dict[str, Tool] = {}
-        self._cache: Dict[str, tuple] = {}   # key → (result, expire_at, reranked)
+        self._cache_store = cache_store or InMemoryCacheStore(max_entries=5000)
+        self._cache_locks: "weakref.WeakValueDictionary[str, asyncio.Lock]" = weakref.WeakValueDictionary()
+        self._cache_namespace = "knowledge"
 
     # ── 注册 / 注销 ───────────────────────────────────────────────────────────
 
@@ -185,6 +195,28 @@ class MCPToolManager:
                     tool_name=name,
                     cached=True,
                     reranked=cached_reranked,
+                )
+            lock_key = self._cache_key(name, params, cache_rerank_top_k)
+            lock = self._cache_locks.setdefault(lock_key, asyncio.Lock())
+            async with lock:
+                cached = self._get_cache(name, params, cache_rerank_top_k)
+                if cached is not None:
+                    cached_data, cached_reranked = cached
+                    tool.stats.total += 1
+                    tool.stats.success += 1
+                    return ToolResult(
+                        success=True,
+                        data=cached_data,
+                        tool_name=name,
+                        cached=True,
+                        reranked=cached_reranked,
+                    )
+                return await self.call(
+                    name,
+                    params,
+                    context,
+                    use_cache=False,
+                    rerank_top_k=rerank_top_k,
                 )
 
         # 熔断检查
@@ -376,12 +408,14 @@ class MCPToolManager:
 
     def _get_cache(self, name: str, params: Dict, rerank_top_k: int = 0) -> Optional[Tuple[Any, bool]]:
         key = self._cache_key(name, params, rerank_top_k)
-        if key in self._cache:
-            data, expire_at, reranked = self._cache[key]
-            if time.monotonic() < expire_at:
-                return data, reranked
-            del self._cache[key]
-        return None
+        try:
+            cached = self._cache_store.get(self._cache_namespace, key)
+        except Exception as ex:
+            logger.warning(f"缓存读取失败，继续执行工具: {ex}")
+            return None
+        if not isinstance(cached, dict) or "data" not in cached:
+            return None
+        return cached["data"], bool(cached.get("reranked", False))
 
     def _set_cache(
         self,
@@ -392,11 +426,23 @@ class MCPToolManager:
         rerank_top_k: int = 0,
         reranked: bool = False,
     ) -> None:
-        if len(self._cache) >= 5000:
-            # 清掉最旧的 1/4
-            for k in list(self._cache)[:1250]:
-                del self._cache[k]
-        self._cache[self._cache_key(name, params, rerank_top_k)] = (data, time.monotonic() + ttl, reranked)
+        try:
+            self._cache_store.set(
+                self._cache_namespace,
+                self._cache_key(name, params, rerank_top_k),
+                {"data": data, "reranked": reranked},
+                ttl,
+            )
+        except Exception as ex:
+            logger.warning(f"缓存写入失败，忽略缓存: {ex}")
+
+    def invalidate_cache(self) -> int:
+        """Invalidate every cached knowledge result after a successful import."""
+        try:
+            return self._cache_store.invalidate_namespace(self._cache_namespace)
+        except Exception as ex:
+            logger.warning(f"缓存失效失败: {ex}")
+            return -1
 
     # ── 参数校验 ──────────────────────────────────────────────────────────────
 

@@ -21,6 +21,7 @@ from typing import Any, Dict, List, Optional
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
+from core.cache_store import CacheStore, InMemoryCacheStore
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,8 @@ class IntentRecognizer:
         base_url: Optional[str] = None,
         model: str = "claude-3-5-sonnet-20241022",
         confidence_threshold: float = 0.5,
+        cache_store: Optional[CacheStore] = None,
+        cache_ttl: float = 600.0,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -111,7 +114,8 @@ class IntentRecognizer:
         self._embedding_enabled = not bool(base_url)
 
         self._tpl_embeddings: Dict[IntentCategory, List[List[float]]] = {}
-        self._cache: Dict[str, IntentResult] = {}
+        self._cache_store = cache_store or InMemoryCacheStore(max_entries=1000)
+        self._cache_ttl = cache_ttl
         self.cache_hits   = 0
         self.cache_misses = 0
 
@@ -127,10 +131,11 @@ class IntentRecognizer:
 
         history 格式：[{"role": "user"/"assistant", "content": "..."}]
         """
-        key = self._cache_key(message)
-        if key in self._cache:
+        key = self._cache_key(message, history)
+        cached = self._cache_store.get("intent", key)
+        if cached is not None:
             self.cache_hits += 1
-            return self._cache[key]
+            return cached
         self.cache_misses += 1
 
         t0 = time.monotonic()
@@ -159,11 +164,7 @@ class IntentRecognizer:
             latency_ms=(time.monotonic() - t0) * 1000,
         )
 
-        # LRU 缓存
-        if len(self._cache) >= 1000:
-            for k in list(self._cache)[:500]:
-                del self._cache[k]
-        self._cache[key] = result
+        self._cache_store.set("intent", key, result, self._cache_ttl)
         return result
 
     def learn(self, message: str, correct: IntentCategory) -> None:
@@ -377,8 +378,21 @@ class IntentRecognizer:
             return UrgencyLevel.MEDIUM
         return UrgencyLevel.LOW
 
-    def _cache_key(self, message: str) -> str:
-        return self._clean_text(message)[:200]
+    def _cache_key(self, message: str, history: Optional[List[Dict[str, str]]] = None) -> str:
+        normalized_history = [
+            {
+                "role": self._clean_text(item.get("role", "")),
+                "content": self._clean_text(item.get("content", ""))[:500],
+            }
+            for item in (history or [])[-3:]
+        ]
+        payload = {
+            "message": " ".join(self._clean_text(message).casefold().split())[:1000],
+            "history": normalized_history,
+            "model": self.model,
+            "rules_version": "intent-v2",
+        }
+        return hashlib.sha256(json.dumps(payload, ensure_ascii=True, sort_keys=True).encode()).hexdigest()
 
     @staticmethod
     def _clean_text(value: Any) -> str:
@@ -393,7 +407,7 @@ class IntentRecognizer:
     def cache_stats(self) -> Dict[str, Any]:
         total = self.cache_hits + self.cache_misses
         return {
-            "size": len(self._cache),
+            "size": int(getattr(self._cache_store, "size", 0)),
             "hits": self.cache_hits,
             "misses": self.cache_misses,
             "hit_rate": self.cache_hits / total if total else 0.0,

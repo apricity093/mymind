@@ -27,6 +27,7 @@ from anthropic import AsyncAnthropic
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 from core.llm_utils import extract_text_content
+from core.prompt_cache import PromptCachePolicy
 
 logger = logging.getLogger(__name__)
 
@@ -103,11 +104,19 @@ class BaseAgent:
     agent_type: AgentType
     system_prompt: str
 
-    def __init__(self, client: AsyncAnthropic, model: str, skill_manager: Optional[Any] = None):
+    def __init__(
+        self,
+        client: AsyncAnthropic,
+        model: str,
+        skill_manager: Optional[Any] = None,
+        prompt_cache_policy: Optional[PromptCachePolicy] = None,
+    ):
         self._client = client
         self._model  = model
         self._skill_manager = skill_manager
         self.stats   = AgentStats()
+        self._prompt_cache_policy = prompt_cache_policy or PromptCachePolicy()
+        self.last_cache_metadata: Dict[str, Any] = {}
 
     async def handle(self, req: Request) -> AgentResponse:
         t0 = time.monotonic()
@@ -146,12 +155,25 @@ class BaseAgent:
             messages.append({"role": "assistant", "content": "好的，我已了解背景信息。"})
         messages.append({"role": "user", "content": _clean(req.message)})
 
+        dynamic_prompt = ""
+        if self._skill_manager is not None:
+            skill_prompt = self._skill_manager.prompt_for(req.message, self.agent_type.value)
+            if skill_prompt:
+                dynamic_prompt = f"[动态 Skills]\n{skill_prompt}"
+        system, cache_metadata = self._prompt_cache_policy.build_system(self.system_prompt, dynamic_prompt)
         resp = await self._client.messages.create(
             model=self._model,
             max_tokens=1024,
-            system=self._build_system_prompt(req),
+            system=system,
             messages=messages,
         )
+        usage = getattr(resp, "usage", None)
+        cache_metadata.update({
+            "cache_creation_input_tokens": int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
+            "cache_read_input_tokens": int(getattr(usage, "cache_read_input_tokens", 0) or 0),
+            "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
+        })
+        self.last_cache_metadata = cache_metadata
         return extract_text_content(resp.content)
 
     def _build_system_prompt(self, req: Request) -> str:
@@ -220,6 +242,8 @@ class AgentOrchestrator:
         base_url: Optional[str] = None,
         model:    str = "claude-3-5-sonnet-20241022",
         skill_manager: Optional[Any] = None,
+        prompt_cache_enabled: bool = False,
+        prompt_cache_min_chars: int = 4096,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -228,12 +252,13 @@ class AgentOrchestrator:
 
         self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model)
         self._skill_manager = skill_manager
+        cache_policy = PromptCachePolicy(prompt_cache_enabled, prompt_cache_min_chars)
 
         # Agent 池：每种类型可有多个实例（水平扩展）
         self._pool: Dict[AgentType, List[BaseAgent]] = {
-            AgentType.GENERAL:   [GeneralAgent(client, model, skill_manager)],
-            AgentType.TECHNICAL: [TechnicalAgent(client, model, skill_manager)],
-            AgentType.BILLING:   [BillingAgent(client, model, skill_manager)],
+            AgentType.GENERAL:   [GeneralAgent(client, model, skill_manager, cache_policy)],
+            AgentType.TECHNICAL: [TechnicalAgent(client, model, skill_manager, cache_policy)],
+            AgentType.BILLING:   [BillingAgent(client, model, skill_manager, cache_policy)],
         }
 
     def set_skill_manager(self, skill_manager: Optional[Any]) -> None:
@@ -400,6 +425,7 @@ class AgentOrchestrator:
                     "avg_ms":       round(agent.stats.avg_ms, 1),
                     "monitor_penalty": round(agent.stats.monitor_penalty, 3),
                     "routing_score": round(agent.stats.routing_score(), 3),
+                    "prompt_cache": dict(agent.last_cache_metadata),
                 }
         return result
 
