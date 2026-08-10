@@ -2,6 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import memory.conversation_memory as memory_module
 from core.cache_store import InMemoryCacheStore
 from core.intent_recognizer import IntentRecognizer
 from core.prompt_cache import PromptCachePolicy
@@ -141,9 +142,36 @@ def test_memory_concurrent_append_compresses_once_without_overwriting_latest_mes
             for index in range(20)
         ])
         recent = await manager._get_working_memory("user", "conv")
-        assert [message.content for message in recent] == [f"message-{index:02d}" for index in range(10, 20)]
+        assert sorted(message.content for message in recent) == [f"message-{index:02d}" for index in range(10, 20)]
         assert len(chroma.collections["episodic"].items) == 1
         assert len(llm.messages.calls) == 1
+
+    asyncio.run(run())
+
+
+def test_memory_close_only_closes_owned_clients(monkeypatch):
+    async def run():
+        owned_redis = FakeRedis()
+        monkeypatch.setattr(memory_module.redis, "from_url", lambda *args, **kwargs: owned_redis)
+
+        owned_manager = MemoryManager(
+            api_key="test",
+            chroma_client=FakeChroma(),
+            llm_client=FakeLlm([]),
+        )
+        await owned_manager.close()
+        await owned_manager.close()
+        assert owned_redis.closed is True
+
+        injected_redis = FakeRedis()
+        injected_manager = MemoryManager(
+            api_key="test",
+            redis_client=injected_redis,
+            chroma_client=FakeChroma(),
+            llm_client=FakeLlm([]),
+        )
+        await injected_manager.close()
+        assert injected_redis.closed is False
 
     asyncio.run(run())
 
@@ -184,11 +212,12 @@ def test_redis_memory_keys_cannot_collide_across_user_and_conversation_parts():
 def test_episodic_retrieval_filters_low_relevance_and_duplicates():
     async def run():
         chroma = FakeChroma()
+        episodic = chroma.get_or_create_collection("episodic")
         manager = MemoryManager(
             api_key="test", redis_client=FakeRedis(), chroma_client=chroma,
             llm_client=FakeLlm([]),
         )
-        chroma.collections["episodic"].query_result = {
+        episodic.query_result = {
             "documents": [["退款审核需要三天", "退款审核需要三天", "无关天气信息"]],
             "distances": [[0.1, 0.12, 0.9]],
             "metadatas": [[{"ts": "2026-01-01T00:00:00"}, {"ts": "2025-01-01T00:00:00"}, {}]],

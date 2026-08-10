@@ -29,6 +29,7 @@ from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer
+from core.knowledge_policy import KnowledgePolicy
 
 logger = logging.getLogger(__name__)
 
@@ -188,6 +189,8 @@ class IntentEvaluator:
                 "predicted": predicted,
                 "confidence": result.confidence,
                 "reasoning": result.reasoning,
+                "intent_group": result.intent_group,
+                "source_scores": result.source_scores,
             })
 
         # 纯 Python 计算指标
@@ -243,6 +246,7 @@ class EndToEndEvaluator:
         model:    str = "claude-3-5-sonnet-20241022",
         baseline_path: Optional[str] = None,
         gateway: Optional[LLMGateway] = None,
+        knowledge_policy: Optional[KnowledgePolicy] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -252,6 +256,7 @@ class EndToEndEvaluator:
         self._orchestrator     = orchestrator
         self._judge            = LLMJudge(client, model, gateway)
         self._intent_evaluator = IntentEvaluator(recognizer)
+        self._knowledge_policy = knowledge_policy or KnowledgePolicy()
         self._history:         List[EvalReport] = []
         self._baseline_path = pathlib.Path(baseline_path) if baseline_path else None
         self._baseline: Optional[EvalReport] = self._load_baseline()
@@ -271,7 +276,8 @@ class EndToEndEvaluator:
         """
         results: List[EvalResult] = []
         all_scores: Dict[str, List[float]] = {
-            "relevance": [], "accuracy": [], "completeness": [], "helpfulness": []
+            "relevance": [], "accuracy": [], "completeness": [], "helpfulness": [],
+            "intent_match": [], "routing_match": [], "knowledge_gate_match": [],
         }
 
         # 1. 意图识别评测
@@ -305,6 +311,10 @@ class EndToEndEvaluator:
         avg_scores = {
             k: round(statistics.mean(v), 4) for k, v in all_scores.items() if v
         }
+        if "routing_match" in avg_scores:
+            avg_scores["routing_accuracy"] = avg_scores.pop("routing_match")
+        if "knowledge_gate_match" in avg_scores:
+            avg_scores["knowledge_gate_accuracy"] = avg_scores.pop("knowledge_gate_match")
         if intent_metrics:
             avg_scores["intent_accuracy"] = intent_metrics["accuracy"]
 
@@ -346,18 +356,54 @@ class EndToEndEvaluator:
 
         for turn_idx, question in enumerate(questions):
             context = self._history_context(history)
+            intent_result = await self._orchestrator.recognize_intent(
+                question,
+                history=history[-6:] if history else None,
+            )
             orch_req = OrcReq(
                 message=question,
                 user_id=user_id,
                 conv_id=conv_id,
                 context=context,
                 history=history[-6:] if history else None,
+                intent=intent_result.intent,
+                intent_group=intent_result.intent_group,
+                urgency=intent_result.urgency,
+                intent_confidence=intent_result.confidence,
+                entities=intent_result.entities,
             )
             orch_result = await self._orchestrator.run(orch_req)
             actual_answer = orch_result.response
+            knowledge_decision = self._knowledge_policy.decide(question, intent_result.intent)
 
             scores = await self._judge.judge(question, actual_answer, context=context or None)
             passed = scores.overall >= self.PASS_THRESHOLD
+            score_values = {
+                "relevance": scores.relevance,
+                "accuracy": scores.accuracy,
+                "completeness": scores.completeness,
+                "helpfulness": scores.helpfulness,
+                "overall": scores.overall,
+            }
+
+            # Case-level expectations apply to the final turn of a multi-turn dialog.
+            if turn_idx == len(questions) - 1:
+                expected_intent = case.get("expected_intent")
+                expected_agent = case.get("expected_primary_agent")
+                expected_search = case.get("expect_knowledge_search")
+                if expected_intent is not None:
+                    matched = intent_result.intent.value == str(expected_intent)
+                    score_values["intent_match"] = float(matched)
+                    passed = passed and matched
+                if expected_agent is not None:
+                    actual_primary = orch_result.primary_agent or orch_result.agent_type
+                    matched = actual_primary.value == str(expected_agent)
+                    score_values["routing_match"] = float(matched)
+                    passed = passed and matched
+                if expected_search is not None:
+                    matched = knowledge_decision.should_search == bool(expected_search)
+                    score_values["knowledge_gate_match"] = float(matched)
+                    passed = passed and matched
 
             history.append({"role": "user", "content": question})
             history.append({"role": "assistant", "content": actual_answer})
@@ -366,19 +412,24 @@ class EndToEndEvaluator:
             results.append(EvalResult(
                 test_id=test_id,
                 passed=passed,
-                scores={
-                    "relevance": scores.relevance,
-                    "accuracy": scores.accuracy,
-                    "completeness": scores.completeness,
-                    "helpfulness": scores.helpfulness,
-                    "overall": scores.overall,
-                },
+                scores=score_values,
                 detail=f"Q: {question[:30]}... → 综合评分 {scores.overall:.3f}",
                 metadata={
                     "question": question,
                     "response": actual_answer,
                     "agent_type": orch_result.agent_type.value,
-                    "intent": orch_result.intent.value if orch_result.intent else None,
+                    "agent_types": [agent.value for agent in orch_result.agent_types],
+                    "primary_agent": (orch_result.primary_agent or orch_result.agent_type).value,
+                    "supporting_agents": [agent.value for agent in orch_result.supporting_agents],
+                    "routing_reason": orch_result.routing_reason,
+                    "routing_confidence": orch_result.routing_confidence,
+                    "intent": intent_result.intent.value,
+                    "intent_group": intent_result.intent_group,
+                    "intent_confidence": intent_result.confidence,
+                    "intent_source_scores": intent_result.source_scores,
+                    "entities": intent_result.entities,
+                    "knowledge_search": knowledge_decision.should_search,
+                    "knowledge_reason": knowledge_decision.reason,
                     "turn": turn_idx,
                     "conv_id": conv_id,
                     "judge_failed": scores.judge_failed,
@@ -433,6 +484,10 @@ class EndToEndEvaluator:
             recs.append("完整性偏低：Agent 可能过早结束回答，考虑在 prompt 中要求提供完整解决方案")
         if scores.get("helpfulness", 1.0) < 0.75:
             recs.append("有用性偏低：回答可能过于抽象，考虑要求 Agent 提供具体操作步骤")
+        if scores.get("routing_accuracy", 1.0) < 0.90:
+            recs.append("路由准确率 < 90%：检查意图分组、领域关键词和主辅助 Agent 阈值")
+        if scores.get("knowledge_gate_accuracy", 1.0) < 0.90:
+            recs.append("知识检索门控准确率 < 90%：调整意图白名单或业务关键词兜底规则")
         if not recs:
             recs.append("所有指标均达标，继续保持")
         return recs
@@ -490,20 +545,28 @@ class EndToEndEvaluator:
 # ── 内置测试用例（开箱即用）──────────────────────────────────────────────────
 
 DEFAULT_INTENT_CASES: List[IntentTestCase] = [
-    IntentTestCase("我的订单什么时候到？",       "query"),
+    IntentTestCase("我的订单现在是什么状态？",   "order_status"),
+    IntentTestCase("物流为什么一直不更新？",     "logistics"),
+    IntentTestCase("我要申请退款",               "refund"),
+    IntentTestCase("帮我开电子发票",             "invoice"),
+    IntentTestCase("为什么重复扣款？",           "payment_issue"),
+    IntentTestCase("发现账户异常登录",           "account_security"),
+    IntentTestCase("登录一直报 401",             "technical_login"),
+    IntentTestCase("应用一直闪退",               "technical_crash"),
+    IntentTestCase("请转人工客服",               "human_handoff"),
     IntentTestCase("帮我取消订单",               "request"),
     IntentTestCase("你们服务太差了！",            "complaint"),
-    IntentTestCase("应用一直报500错误",           "technical"),
-    IntentTestCase("为什么扣了两次款？",          "billing"),
-    IntentTestCase("我要投诉，转人工！",          "escalation"),
+    IntentTestCase("咨询一个技术问题",           "technical"),
+    IntentTestCase("我想了解账单规则",           "billing"),
+    IntentTestCase("我要投诉你们的服务",         "escalation"),
     IntentTestCase("你好",                        "greeting"),
     IntentTestCase("修改我的邮箱地址",            "account"),
 ]
 
 DEFAULT_DIALOG_CASES: List[Dict[str, Any]] = [
-    {"question": "我的订单 #12345 还没到，已经超时了"},
-    {"question": "应用登录一直报错 401"},
-    {"question": "为什么这个月多扣了 50 块钱？"},
+    {"question": "我的订单 #12345 还没到，已经超时了", "expected_intent": "logistics", "expected_primary_agent": "general", "expect_knowledge_search": True},
+    {"question": "应用登录一直报错 401", "expected_intent": "technical_login", "expected_primary_agent": "technical", "expect_knowledge_search": True},
+    {"question": "为什么这个月多扣了 50 块钱？", "expected_intent": "payment_issue", "expected_primary_agent": "billing", "expect_knowledge_search": True},
     {"question": "帮我把收货地址改成北京市朝阳区"},
     {"turns": ["你好，我想退款", "订单号是 #12345", "退款多久能到账？"]},
 ]

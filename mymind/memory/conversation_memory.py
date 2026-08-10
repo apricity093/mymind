@@ -24,7 +24,7 @@ from typing import Any, Callable, Dict, List, Optional
 from urllib.parse import quote
 
 import chromadb
-import redis
+import redis.asyncio as redis
 from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
@@ -110,37 +110,25 @@ class MemoryManager:
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
             kwargs["base_url"] = base_url
+        self._owns_llm_client = llm_client is None
         self._client = llm_client or AsyncAnthropic(**kwargs)
         self._gateway = gateway
         self._model  = model
         self._clock = clock
 
+        self._owns_redis = redis_client is None
         self._redis = redis_client or redis.from_url(redis_url, decode_responses=True)
+        self._closed = False
 
-        # ChromaDB：优先连接独立服务（docker compose 模式），连不上则降级为本地嵌入式
-        if chroma_client is not None:
-            chroma = chroma_client
-        else:
-            try:
-                # HttpClient 默认也会初始化 ChromaDB telemetry；显式关闭避免 posthog 兼容性错误日志。
-                chroma = chromadb.HttpClient(
-                    host=chroma_host,
-                    port=chroma_port,
-                    settings=chromadb.Settings(anonymized_telemetry=False),
-                )
-                chroma.heartbeat()  # 测试连接
-                logger.info(f"ChromaDB 已连接: {chroma_host}:{chroma_port}")
-            except Exception:
-                logger.info(f"ChromaDB 服务不可用，使用本地嵌入式模式: {chroma_path}")
-                chroma = chromadb.PersistentClient(
-                    path=chroma_path,
-                    settings=chromadb.Settings(anonymized_telemetry=False),
-                )
-
-        # 情景记忆：存储历史对话片段
-        self._episodic = chroma.get_or_create_collection(episodic_collection)
-        # 用户画像：存储提炼出的偏好和实体
-        self._profile  = chroma.get_or_create_collection(profile_collection)
+        self._chroma_client = chroma_client
+        self._chroma_host = chroma_host
+        self._chroma_port = chroma_port
+        self._chroma_path = chroma_path
+        self._episodic_collection = episodic_collection
+        self._profile_collection = profile_collection
+        self._episodic = None
+        self._profile = None
+        self._chroma_init_lock = asyncio.Lock()
 
     # ── 写入 ──────────────────────────────────────────────────────────────────
 
@@ -166,17 +154,17 @@ class MemoryManager:
         lock_token = await self._acquire_lock(lock_key)
         try:
             # Serialize append and compression so a slow summary cannot overwrite newer messages.
-            self._redis.lpush(key, json.dumps({
+            await self._redis.lpush(key, json.dumps({
                 "role":      msg.role.value,
                 "content":   msg.content,
                 "ts":        msg.timestamp.isoformat(),
                 "metadata":  msg.metadata,
             }))
-            self._redis.expire(key, 86400)
-            if self._redis.llen(key) >= self.COMPRESS_AT:
+            await self._redis.expire(key, 86400)
+            if await self._redis.llen(key) >= self.COMPRESS_AT:
                 await self._compress_locked(user_id, conv_id)
         finally:
-            self._release_lock(lock_key, lock_token)
+            await self._release_lock(lock_key, lock_token)
 
     async def update_profile(self, user_id: str, conv_id: str) -> None:
         lock_key = f"lock:profile:{self._key_part(user_id)}"
@@ -188,13 +176,14 @@ class MemoryManager:
         try:
             await self._update_profile_locked(user_id, conv_id)
         finally:
-            self._release_lock(lock_key, lock_token)
+            await self._release_lock(lock_key, lock_token)
 
     async def _update_profile_locked(self, user_id: str, conv_id: str) -> None:
         """
         从当前工作记忆中提炼用户偏好，更新用户画像。
         用 LLM 提炼偏好，然后存入 ChromaDB（ChromaDB 内置 embedding，不依赖外部 API）。
         """
+        await self._ensure_chroma()
         user_id = self._safe_text(user_id)
         conv_id = self._safe_text(conv_id)
         messages = await self._get_working_memory(user_id, conv_id)
@@ -208,9 +197,9 @@ class MemoryManager:
         fingerprint = hashlib.sha256(user_text.encode("utf-8")).hexdigest()
         fingerprint_key = f"profile:fingerprint:{self._key_part(user_id)}"
         updated_key = f"profile:updated_at:{self._key_part(user_id)}"
-        if self._redis.get(fingerprint_key) == fingerprint:
+        if await self._redis.get(fingerprint_key) == fingerprint:
             return
-        last_updated = float(self._redis.get(updated_key) or 0.0)
+        last_updated = float(await self._redis.get(updated_key) or 0.0)
         if self._clock() - last_updated < self.PROFILE_UPDATE_INTERVAL_S:
             return
         prompt = f"""从以下对话中提炼用户偏好和关键实体，返回 JSON。
@@ -229,12 +218,22 @@ class MemoryManager:
             doc_text = self._safe_text(json.dumps(profile_data, ensure_ascii=False))
             metadata = {"user_id": user_id, "conv_id": conv_id, "ts": datetime.now().isoformat()}
             if hasattr(self._profile, "upsert"):
-                self._profile.upsert(ids=[doc_id], documents=[doc_text], metadatas=[metadata])
+                await asyncio.to_thread(
+                    self._profile.upsert,
+                    ids=[doc_id],
+                    documents=[doc_text],
+                    metadatas=[metadata],
+                )
             else:
-                self._profile.delete(ids=[doc_id])
-                self._profile.add(ids=[doc_id], documents=[doc_text], metadatas=[metadata])
-            self._redis.set(fingerprint_key, fingerprint)
-            self._redis.set(updated_key, str(self._clock()))
+                await asyncio.to_thread(self._profile.delete, ids=[doc_id])
+                await asyncio.to_thread(
+                    self._profile.add,
+                    ids=[doc_id],
+                    documents=[doc_text],
+                    metadatas=[metadata],
+                )
+            await self._redis.set(fingerprint_key, fingerprint)
+            await self._redis.set(updated_key, str(self._clock()))
             logger.info(f"用户画像已更新: {user_id}")
         except Exception as ex:
             logger.warning(f"更新用户画像失败: {ex}")
@@ -261,7 +260,7 @@ class MemoryManager:
         profile = await self._get_profile(user_id)
 
         # 4. 会话摘要（如果已压缩过）
-        summary = self._redis.get(self._summary_key(user_id, conv_id)) or ""
+        summary = await self._redis.get(self._summary_key(user_id, conv_id)) or ""
 
         return MemoryContext(
             recent_messages=recent,
@@ -285,7 +284,7 @@ class MemoryManager:
         try:
             await self._compress_locked(user_id, conv_id)
         finally:
-            self._release_lock(lock_key, lock_token)
+            await self._release_lock(lock_key, lock_token)
 
     async def _compress_locked(self, user_id: str, conv_id: str) -> None:
         messages = await self._get_working_memory(user_id, conv_id)
@@ -305,22 +304,22 @@ class MemoryManager:
 
         # 存摘要到 Redis
         skey = self._summary_key(user_id, conv_id)
-        old_summary = self._redis.get(skey) or ""
+        old_summary = await self._redis.get(skey) or ""
         new_summary = await self._merge_summary(old_summary, summary)
-        self._redis.setex(skey, 86400, new_summary)
+        await self._redis.setex(skey, 86400, new_summary)
 
         # 旧消息存入情景记忆
         await self._store_episodic(user_id, conv_id, text, summary)
 
         # 重置工作记忆为最近 5 条
         key = self._wm_key(user_id, conv_id)
-        self._redis.delete(key)
+        await self._redis.delete(key)
         for m in keep:
-            self._redis.lpush(key, json.dumps({
+            await self._redis.lpush(key, json.dumps({
                 "role": m.role.value, "content": m.content,
                 "ts": m.timestamp.isoformat(), "metadata": m.metadata,
             }))
-        self._redis.expire(key, 86400)
+        await self._redis.expire(key, 86400)
         logger.info(f"工作记忆压缩完成: {user_id}/{conv_id}，摘要 {len(summary)} 字")
 
     async def _merge_summary(self, old_summary: str, summary: str) -> str:
@@ -334,19 +333,19 @@ class MemoryManager:
         except Exception:
             return combined[-self.SUMMARY_MAX_CHARS :]
 
-    def _release_lock(self, key: str, token: str) -> None:
+    async def _release_lock(self, key: str, token: str) -> None:
         script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end"
         try:
-            self._redis.eval(script, 1, key, token)
+            await self._redis.eval(script, 1, key, token)
         except Exception:
-            if self._redis.get(key) == token:
-                self._redis.delete(key)
+            if await self._redis.get(key) == token:
+                await self._redis.delete(key)
 
     async def _acquire_lock(self, key: str, timeout_s: float = 30.0) -> str:
         token = uuid.uuid4().hex
         deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
-            if self._redis.set(key, token, nx=True, px=120000):
+            if await self._redis.set(key, token, nx=True, px=120000):
                 return token
             await asyncio.sleep(0.05)
         raise TimeoutError(f"memory lock timeout: {key}")
@@ -355,7 +354,7 @@ class MemoryManager:
 
     async def _get_working_memory(self, user_id: str, conv_id: str) -> List[Message]:
         key  = self._wm_key(user_id, conv_id)
-        raws = self._redis.lrange(key, 0, self.WORKING_MAX - 1)
+        raws = await self._redis.lrange(key, 0, self.WORKING_MAX - 1)
         msgs = []
         for raw in reversed(raws):  # Redis lpush 最新在前，reversed 还原时序
             d = json.loads(raw)
@@ -373,8 +372,10 @@ class MemoryManager:
         if not query_text:
             return []
         try:
+            await self._ensure_chroma()
             # 直接传 query_texts，ChromaDB 内置模型自动生成向量做匹配
-            results = self._episodic.query(
+            results = await asyncio.to_thread(
+                self._episodic.query,
                 query_texts=[query_text],
                 n_results=self.HISTORY_TOP_K,
                 where={"user_id": self._safe_text(user_id)},
@@ -417,13 +418,15 @@ class MemoryManager:
     async def _store_episodic(self, user_id: str, conv_id: str, text: str, summary: str) -> None:
         """将压缩后的对话片段存入情景记忆。ChromaDB 内置 embedding，不依赖外部 API。"""
         try:
+            await self._ensure_chroma()
             user_id = self._safe_text(user_id)
             conv_id = self._safe_text(conv_id)
             text = self._safe_text(text)
             summary = self._safe_text(summary)
             doc_id = uuid.uuid4().hex
             # 直接传 documents，ChromaDB 内置模型自动生成 embedding
-            self._episodic.add(
+            await asyncio.to_thread(
+                self._episodic.add,
                 ids=[doc_id],
                 documents=[summary],
                 metadatas=[{"user_id": user_id, "conv_id": conv_id,
@@ -435,10 +438,11 @@ class MemoryManager:
     async def _get_profile(self, user_id: str) -> Dict[str, Any]:
         """获取用户画像（取最新一条）。"""
         try:
-            results = self._profile.get(ids=[f"{user_id}_profile"])
+            await self._ensure_chroma()
+            results = await asyncio.to_thread(self._profile.get, ids=[f"{user_id}_profile"])
             if results["documents"]:
                 return json.loads(results["documents"][0])
-            legacy = self._profile.get(where={"user_id": user_id})
+            legacy = await asyncio.to_thread(self._profile.get, where={"user_id": user_id})
             rows = list(zip(legacy.get("documents", []), legacy.get("metadatas", [])))
             if rows:
                 rows.sort(key=lambda row: str((row[1] or {}).get("ts", "")), reverse=True)
@@ -446,6 +450,48 @@ class MemoryManager:
         except Exception:
             pass
         return {}
+
+    async def _ensure_chroma(self) -> None:
+        if self._episodic is not None and self._profile is not None:
+            return
+        async with self._chroma_init_lock:
+            if self._episodic is not None and self._profile is not None:
+                return
+            chroma, episodic, profile = await asyncio.to_thread(self._initialize_chroma)
+            self._chroma_client = chroma
+            self._episodic = episodic
+            self._profile = profile
+
+    def _initialize_chroma(self):
+        chroma = self._chroma_client
+        if chroma is None:
+            try:
+                chroma = chromadb.HttpClient(
+                    host=self._chroma_host,
+                    port=self._chroma_port,
+                    settings=chromadb.Settings(anonymized_telemetry=False),
+                )
+                chroma.heartbeat()
+                logger.info(f"ChromaDB 已连接: {self._chroma_host}:{self._chroma_port}")
+            except Exception:
+                logger.info(f"ChromaDB 服务不可用，使用本地嵌入式模式: {self._chroma_path}")
+                chroma = chromadb.PersistentClient(
+                    path=self._chroma_path,
+                    settings=chromadb.Settings(anonymized_telemetry=False),
+                )
+        episodic = chroma.get_or_create_collection(self._episodic_collection)
+        profile = chroma.get_or_create_collection(self._profile_collection)
+        return chroma, episodic, profile
+
+    async def close(self) -> None:
+        """Close clients created by this manager without taking ownership of injected clients."""
+        if self._closed:
+            return
+        self._closed = True
+        if self._owns_redis:
+            await self._redis.aclose()
+        if self._owns_llm_client:
+            await self._client.close()
 
     @staticmethod
     def _wm_key(user_id: str, conv_id: str) -> str:

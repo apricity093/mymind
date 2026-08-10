@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 
 import chromadb
 import redis
+import redis.asyncio as async_redis
 
 from core.cache_store import RedisCacheStore
 from core.cache_metrics import RedisCacheMetricsCollector
@@ -36,6 +37,8 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
 
     redis_client = redis.from_url(redis_url, decode_responses=True)
     redis_client.ping()
+    memory_redis = async_redis.from_url(redis_url, decode_responses=True)
+    await memory_redis.ping()
     chroma_client = chromadb.HttpClient(host=chroma_host, port=chroma_port)
     chroma_client.heartbeat()
 
@@ -56,7 +59,7 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
     failures = []
     try:
         memory = MemoryManager(
-            api_key="experiment", redis_client=redis_client, chroma_client=chroma_client,
+            api_key="experiment", redis_client=memory_redis, chroma_client=chroma_client,
             llm_client=llm, episodic_collection=episodic_name, profile_collection=profile_name,
         )
         for round_index in range(config["rounds"]):
@@ -150,6 +153,8 @@ async def run_integration(redis_url: str, chroma_host: str, chroma_port: int, ou
             "lock:memory:experiment-user:experiment-conversation",
             metrics_key,
         )
+        await memory_redis.aclose()
+        redis_client.close()
 
     report = {
         "title": "Python Cache and Memory Docker Integration Experiment",

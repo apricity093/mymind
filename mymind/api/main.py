@@ -11,6 +11,7 @@ import pathlib
 import sys
 import uuid
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 
@@ -23,7 +24,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Response, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 load_dotenv()
 
@@ -42,6 +43,12 @@ BANNER = r"""
     ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ  ʕ•ᴥ•ʔ
 """
 
+
+def _print_banner() -> None:
+    encoding = sys.stdout.encoding or "utf-8"
+    safe_banner = BANNER.encode(encoding, errors="replace").decode(encoding)
+    print(safe_banner, flush=True)
+
 # ── 全局组件（lifespan 中初始化）─────────────────────────────────────────────
 _orchestrator = None
 _memory       = None
@@ -50,7 +57,35 @@ _monitor      = None
 _evaluator    = None
 _skill_manager = None
 _context_builder = None
+_knowledge_base = None
+_knowledge_policy = None
+_cache_redis = None
 _last_context_metadata: Dict[str, Any] = {}
+_background_tasks: set[asyncio.Task] = set()
+
+
+@dataclass(frozen=True)
+class KnowledgeContextResult:
+    text: str = ""
+    used: bool = False
+    status: str = "skipped"
+    reason: str = ""
+
+
+def _track_background(coro) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+
+    def done(completed: asyncio.Task) -> None:
+        _background_tasks.discard(completed)
+        try:
+            completed.result()
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            logger.exception("后台任务执行失败")
+
+    task.add_done_callback(done)
 
 def _anthropic_cfg() -> Dict[str, Any]:
     key = os.getenv("LLM_API_KEY", "") or os.getenv("ANTHROPIC_API_KEY", "")
@@ -71,9 +106,10 @@ def _anthropic_cfg() -> Dict[str, Any]:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator, _skill_manager, _context_builder
+    global _orchestrator, _memory, _tool_manager, _monitor, _evaluator
+    global _skill_manager, _context_builder, _knowledge_base, _knowledge_policy, _cache_redis
 
-    print(BANNER, flush=True)
+    _print_banner()
 
     from agents.agent_orchestrator import AgentOrchestrator, Request
     from core.intent_recognizer import IntentRecognizer
@@ -86,7 +122,9 @@ async def lifespan(app: FastAPI):
     from core.cache_store import RedisCacheStore
     from core.cache_metrics import ObservedCacheStore
     from core.llm_gateway import build_gateway
+    from core.knowledge_policy import KnowledgePolicy
     from memory.context_builder import ContextBuilder
+    import redis as sync_redis
 
     cfg = _anthropic_cfg()
     logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
@@ -139,22 +177,27 @@ async def lifespan(app: FastAPI):
     _context_builder = ContextBuilder(max_chars=int(os.getenv("CONTEXT_MAX_CHARS", "8000")))
 
     # MCP 工具管理器 + RAG 知识库（基于 ChromaDB 的真实检索）
+    _cache_redis = sync_redis.from_url(
+        os.getenv("REDIS_URL", "redis://redis:6379/0"),
+        decode_responses=True,
+    )
     _tool_manager = MCPToolManager(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         gateway=gateway,
         cache_store=ObservedCacheStore(
-            RedisCacheStore(_memory._redis, prefix=os.getenv("CACHE_PREFIX", "mymind:cache")),
+            RedisCacheStore(_cache_redis, prefix=os.getenv("CACHE_PREFIX", "mymind:cache")),
             _orchestrator.metrics,
         ),
     )
-    kb = KnowledgeBase(
+    _knowledge_base = KnowledgeBase(
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
         chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
     )
-    logger.info(f"知识库已加载: {kb.doc_count} 个文档片段")
+    _knowledge_policy = KnowledgePolicy()
+    logger.info(f"知识库已加载: {_knowledge_base.doc_count} 个文档片段")
 
     def knowledge_fallback(params: Dict[str, Any], context: Optional[Dict[str, Any]], error: str):
         query = params.get("query", "")
@@ -169,7 +212,7 @@ async def lifespan(app: FastAPI):
     _tool_manager.register(Tool(
         name="knowledge_search",
         description="搜索知识库（基于 ChromaDB 向量检索）",
-        handler=kb.search_handler,
+        handler=_knowledge_base.search_handler,
         schema={
             "type": "object",
             "properties": {
@@ -203,12 +246,19 @@ async def lifespan(app: FastAPI):
         model=cfg["model"],
         baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
         gateway=gateway,
+        knowledge_policy=_knowledge_policy,
     )
 
     logger.info("mymind 已就绪")
     yield
 
     await _monitor.stop()
+    if _background_tasks:
+        await asyncio.gather(*tuple(_background_tasks), return_exceptions=True)
+    if _memory is not None:
+        await _memory.close()
+    if _cache_redis is not None:
+        _cache_redis.close()
     logger.info("mymind 已关闭")
 
 
@@ -243,6 +293,17 @@ class ChatResponse(BaseModel):
     escalated:   bool
     latency_ms:  float
     knowledge_used: bool = False
+    intent_group: str = "other"
+    entities: Dict[str, List[str]] = Field(default_factory=dict)
+    intent_confidence: float = 0.0
+    intent_source_scores: Dict[str, float] = Field(default_factory=dict)
+    agent_types: List[str] = Field(default_factory=list)
+    primary_agent: str = ""
+    supporting_agents: List[str] = Field(default_factory=list)
+    routing_reason: str = ""
+    routing_confidence: float = 0.0
+    knowledge_status: str = "skipped"
+    knowledge_reason: str = ""
 
 
 # ── 路由 ──────────────────────────────────────────────────────────────────────
@@ -295,9 +356,10 @@ async def chat(req: ChatRequest):
         for m in mem_ctx.recent_messages[-5:]
     ] if mem_ctx.recent_messages else None
 
-    knowledge_text, knowledge_used = await _build_knowledge_context(req.message)
+    intent_result = await _orchestrator.recognize_intent(req.message, history=history)
+    knowledge = await _build_knowledge_context(req.message, intent_result.intent)
     global _last_context_metadata
-    built_context = _context_builder.build(mem_ctx, knowledge_text, req.message)
+    built_context = _context_builder.build(mem_ctx, knowledge.text, req.message)
     full_context = built_context.text
     _last_context_metadata = built_context.metadata
 
@@ -307,6 +369,11 @@ async def chat(req: ChatRequest):
         conv_id=conv_id,
         context=full_context,
         history=history,
+        entities=intent_result.entities,
+        intent=intent_result.intent,
+        intent_group=intent_result.intent_group,
+        urgency=intent_result.urgency,
+        intent_confidence=intent_result.confidence,
     )
 
     # 3. 执行
@@ -317,7 +384,7 @@ async def chat(req: ChatRequest):
     await _memory.add_message(req.user_id, conv_id, MsgRole.ASSISTANT, result.response)
 
     # 5. 异步更新用户画像（不阻塞响应）
-    asyncio.create_task(_memory.update_profile(req.user_id, conv_id))
+    _track_background(_memory.update_profile(req.user_id, conv_id))
 
     return ChatResponse(
         conv_id=conv_id,
@@ -326,24 +393,39 @@ async def chat(req: ChatRequest):
         agent_type=result.agent_type.value,
         escalated=result.escalated,
         latency_ms=round(result.latency_ms, 1),
-        knowledge_used=knowledge_used,
+        knowledge_used=knowledge.used,
+        intent_group=intent_result.intent_group,
+        entities=intent_result.entities,
+        intent_confidence=round(intent_result.confidence, 4),
+        intent_source_scores=intent_result.source_scores,
+        agent_types=[agent_type.value for agent_type in result.agent_types],
+        primary_agent=(result.primary_agent or result.agent_type).value,
+        supporting_agents=[agent_type.value for agent_type in result.supporting_agents],
+        routing_reason=result.routing_reason,
+        routing_confidence=result.routing_confidence,
+        knowledge_status=knowledge.status,
+        knowledge_reason=knowledge.reason,
     )
 
 
-async def _build_knowledge_context(message: str, top_k: int = 3) -> tuple[str, bool]:
+async def _build_knowledge_context(message: str, intent, top_k: int = 3) -> KnowledgeContextResult:
     """
     为 /chat 主链路构建 RAG 知识上下文。
 
     这里复用 MCPToolManager 的查询改写、并行召回、重排、fallback 能力。
     """
-    if _tool_manager is None:
-        return "", False
-    if not _should_use_knowledge(message):
-        return "", False
+    if _tool_manager is None or _knowledge_policy is None:
+        return KnowledgeContextResult(status="error", reason="knowledge_not_initialized")
+    decision = _knowledge_policy.decide(message, intent)
+    if not decision.should_search:
+        return KnowledgeContextResult(status="skipped", reason=decision.reason)
     try:
         result = await _tool_manager.search_with_rewrite("knowledge_search", message, top_k=top_k)
+        if result.degraded:
+            return KnowledgeContextResult(status="degraded", reason=result.error or "tool_fallback")
         if not result.success or not isinstance(result.data, list) or not result.data:
-            return "", False
+            status = "error" if result.error and result.error != "所有子查询均无结果" else "empty"
+            return KnowledgeContextResult(status=status, reason=result.error or "no_results")
 
         parts = ["[知识库检索结果]"]
         used = False
@@ -359,28 +441,12 @@ async def _build_knowledge_context(message: str, top_k: int = 3) -> tuple[str, b
             parts.append(f"{i}. 标题: {title}\n   相关度: {score}\n   内容: {content[:600]}")
 
         if not used:
-            return "", False
+            return KnowledgeContextResult(status="empty", reason="no_usable_results")
         parts.append("请优先依据以上知识库内容回答；如果知识库内容不足，再结合通用客服能力说明。")
-        return "\n".join(parts), True
+        return KnowledgeContextResult("\n".join(parts), True, "used", decision.reason)
     except Exception as ex:
         logger.warning(f"构建知识库上下文失败: {ex}")
-        return "", False
-
-
-def _should_use_knowledge(message: str) -> bool:
-    """跳过纯寒暄，业务类问题才检索知识库，避免无关 RAG 干扰回复。"""
-    msg = (message or "").strip().lower()
-    if not msg:
-        return False
-    greetings = {"你好", "您好", "嗨", "hi", "hello", "hey", "早上好", "晚上好"}
-    if msg in greetings:
-        return False
-    business_keywords = [
-        "退款", "订单", "物流", "配送", "发票", "扣款", "支付", "账单", "订阅",
-        "登录", "报错", "错误", "崩溃", "会员", "积分", "账户", "密码", "地址",
-        "refund", "order", "invoice", "payment", "error", "login",
-    ]
-    return len(msg) >= 4 or any(kw in msg for kw in business_keywords)
+        return KnowledgeContextResult(status="error", reason=type(ex).__name__)
 
 
 @app.get("/monitor")
@@ -435,6 +501,9 @@ class EvalDialogInput(BaseModel):
     turns: Optional[List[str]] = None
     user_id: Optional[str] = None
     conv_id: Optional[str] = None
+    expected_intent: Optional[str] = None
+    expected_primary_agent: Optional[str] = None
+    expect_knowledge_search: Optional[bool] = None
 
 
 class EvalRunInput(BaseModel):
@@ -460,13 +529,20 @@ async def add_knowledge(body: BatchDocInput):
     }
     ```
     """
-    tool = _tool_manager._tools.get("knowledge_search") if _tool_manager else None
-    if tool is None:
+    if _knowledge_base is None or _tool_manager is None:
         raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
-    count = kb.add_documents([{"title": d.title, "content": d.content} for d in body.documents])
+    count = await asyncio.to_thread(
+        _knowledge_base.add_documents,
+        [{"title": d.title, "content": d.content} for d in body.documents],
+    )
     _tool_manager.invalidate_cache()
-    return {"message": f"成功导入 {count} 个文档片段", "added_chunks": count, "total_chunks": kb.doc_count}
+    total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
+    return {
+        "message": f"成功处理 {count} 个文档片段",
+        "added_chunks": count,
+        "processed_chunks": count,
+        "total_chunks": total,
+    }
 
 
 @app.post("/knowledge/upload", tags=["知识库"])
@@ -480,10 +556,8 @@ async def upload_knowledge(file: UploadFile = File(...)):
 
     文件大小限制：10MB
     """
-    tool = _tool_manager._tools.get("knowledge_search") if _tool_manager else None
-    if tool is None:
+    if _knowledge_base is None or _tool_manager is None:
         raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
 
     content = await file.read()
     if len(content) > 10 * 1024 * 1024:
@@ -505,23 +579,23 @@ async def upload_knowledge(file: UploadFile = File(...)):
         title = filename.rsplit(".", 1)[0] if "." in filename else filename
         docs = [{"title": title, "content": text}]
 
-    count = kb.add_documents(docs)
+    count = await asyncio.to_thread(_knowledge_base.add_documents, docs)
     _tool_manager.invalidate_cache()
+    total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
     return {
-        "message": f"文件 {filename} 导入成功",
+        "message": f"文件 {filename} 处理成功",
         "added_chunks": count,
-        "total_chunks": kb.doc_count,
+        "processed_chunks": count,
+        "total_chunks": total,
     }
 
 
 @app.get("/knowledge/stats", tags=["知识库"])
 async def knowledge_stats():
     """查看知识库统计信息（文档片段总数）。"""
-    tool = _tool_manager._tools.get("knowledge_search") if _tool_manager else None
-    if tool is None:
+    if _knowledge_base is None:
         raise HTTPException(503, "知识库未初始化")
-    kb = tool.handler.__self__
-    return {"total_chunks": kb.doc_count}
+    return {"total_chunks": await asyncio.to_thread(lambda: _knowledge_base.doc_count)}
 
 
 @app.post("/eval/run")
@@ -638,6 +712,8 @@ async def _cli():
         await mem.add_message(user_id, conv_id, MsgRole.ASSISTANT, result.response)
 
         print(f"\nmymind [{result.agent_type.value}]: {result.response}\n")
+
+    await mem.close()
 
 
 if __name__ == "__main__":

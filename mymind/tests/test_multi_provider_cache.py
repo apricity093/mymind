@@ -6,6 +6,7 @@ from core.cache_metrics import CacheMetricsCollector, ObservedCacheStore
 from core.llm_gateway import (
     CacheUsage, DeepSeekAnthropicGateway, LLMResult, LLMRequest, OpenAIGateway,
 )
+from monitor.performance_monitor import PerformanceMonitor
 
 
 def test_provider_usage_formulas_are_normalized():
@@ -118,5 +119,68 @@ def test_deepseek_anthropic_adapter_uses_automatic_cache_and_parses_usage():
         assert result.usage.cache_read_tokens == 150
         assert result.usage.cache_miss_tokens == 50
         assert result.usage.status == "hit"
+
+    asyncio.run(run())
+
+
+def test_deepseek_anthropic_adapter_retries_truncated_text_with_more_tokens():
+    class Messages:
+        def __init__(self):
+            self.calls = []
+
+        async def create(self, **kwargs):
+            self.calls.append(kwargs)
+            if len(self.calls) == 1:
+                return SimpleNamespace(
+                    content=[{"type": "text", "text": "partial"}],
+                    stop_reason="max_tokens",
+                    usage={"input_tokens": 20},
+                )
+            return SimpleNamespace(
+                content=[{"type": "text", "text": "ok"}],
+                stop_reason="end_turn",
+                usage={"input_tokens": 20},
+            )
+
+    async def run():
+        gateway = DeepSeekAnthropicGateway("test", "deepseek", "https://api.deepseek.com/anthropic")
+        messages = Messages()
+        gateway.client = SimpleNamespace(messages=messages)
+        result = await gateway.complete(LLMRequest(
+            model="deepseek", stable_prompt="stable",
+            messages=[{"role": "user", "content": "q"}], max_tokens=256,
+        ))
+        assert result.text == "ok"
+        assert [call["max_tokens"] for call in messages.calls] == [256, 2048]
+        assert result.metadata["response_retry"] is True
+        assert result.metadata["empty_response_retry"] is False
+
+    asyncio.run(run())
+
+
+def test_monitor_ignores_orchestrator_metadata_entries():
+    class Orchestrator:
+        def __init__(self):
+            self.penalties = None
+
+        def get_stats(self):
+            return {
+                "general_0": {"success_rate": 1.0, "avg_ms": 10.0, "total": 0},
+                "cache_metrics": {"counters": {}, "providers": {}},
+            }
+
+        def update_routing_penalties(self, penalties):
+            self.penalties = penalties
+
+    class ToolManager:
+        @staticmethod
+        def get_stats():
+            return {}
+
+    async def run():
+        orchestrator = Orchestrator()
+        monitor = PerformanceMonitor(orchestrator, ToolManager())
+        await monitor._collect()
+        assert orchestrator.penalties == {"general_0": 0.0}
 
     asyncio.run(run())

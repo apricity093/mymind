@@ -48,6 +48,7 @@ class ToolResult:
     cached:         bool = False
     latency_ms:     float = 0.0
     reranked:       bool = False   # 是否经过重排
+    degraded:       bool = False   # 是否来自 fallback，而非真实工具结果
 
 
 @dataclass
@@ -287,6 +288,7 @@ class MCPToolManager:
                 data=data,
                 tool_name=tool.name,
                 error=error,
+                degraded=True,
             )
         except Exception as ex:
             logger.error(f"工具降级失败: {tool.name} — {ex}")
@@ -346,7 +348,12 @@ class MCPToolManager:
 
         # 3. 合并去重（按内容哈希去重）
         seen, merged = set(), []
+        degraded_errors = []
         for r in results:
+            if isinstance(r, ToolResult) and r.degraded:
+                if r.error:
+                    degraded_errors.append(r.error)
+                continue
             if isinstance(r, ToolResult) and r.success and isinstance(r.data, list):
                 for item in r.data:
                     key = hashlib.md5(str(item).encode()).hexdigest()
@@ -355,6 +362,14 @@ class MCPToolManager:
                         merged.append(item)
 
         if not merged:
+            if degraded_errors:
+                return ToolResult(
+                    success=False,
+                    data=[],
+                    tool_name=tool_name,
+                    error="; ".join(dict.fromkeys(degraded_errors)),
+                    degraded=True,
+                )
             return ToolResult(success=False, data=[], tool_name=tool_name, error="所有子查询均无结果")
 
         # 4. 重排：用 LLM 对合并结果按相关性打分，取 Top-K

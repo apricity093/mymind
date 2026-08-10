@@ -6,47 +6,51 @@ class FakeRedis:
     def __init__(self):
         self.values = {}
         self.lists = {}
+        self.closed = False
 
-    def get(self, key):
+    async def get(self, key):
         return self.values.get(key)
 
-    def set(self, key, value, ex=None, px=None, nx=False):
+    async def set(self, key, value, ex=None, px=None, nx=False):
         if nx and key in self.values:
             return False
         self.values[key] = str(value)
         return True
 
-    def setex(self, key, ttl, value):
+    async def setex(self, key, ttl, value):
         self.values[key] = str(value)
 
-    def incr(self, key):
+    async def incr(self, key):
         value = int(self.values.get(key, 0)) + 1
         self.values[key] = str(value)
         return value
 
-    def delete(self, key):
+    async def delete(self, key):
         self.values.pop(key, None)
         self.lists.pop(key, None)
         return 1
 
-    def eval(self, script, count, key, token):
+    async def eval(self, script, count, key, token):
         if self.values.get(key) == token:
-            return self.delete(key)
+            return await self.delete(key)
         return 0
 
-    def lpush(self, key, value):
+    async def lpush(self, key, value):
         self.lists.setdefault(key, []).insert(0, value)
         return len(self.lists[key])
 
-    def llen(self, key):
+    async def llen(self, key):
         return len(self.lists.get(key, []))
 
-    def lrange(self, key, start, end):
+    async def lrange(self, key, start, end):
         values = self.lists.get(key, [])
         return values[start:] if end == -1 else values[start : end + 1]
 
-    def expire(self, key, ttl):
+    async def expire(self, key, ttl):
         return True
+
+    async def aclose(self):
+        self.closed = True
 
 
 class FakeCollection:
@@ -61,6 +65,9 @@ class FakeCollection:
 
     def upsert(self, ids, documents, metadatas):
         self.add(ids, documents, metadatas)
+
+    def count(self):
+        return len(self.items)
 
     def delete(self, ids):
         for ident in ids:

@@ -2,12 +2,6 @@
 
 独立 Vue 前端项目，可同时连接 mymind Python 版本和 mymind Java 版本。
 
-项目目录：
-
-```text
-/Users/xiao_xiong/Desktop/code/mymindFrontend
-```
-
 ## 功能
 
 - 在页面中切换 Java / Python 后端。
@@ -15,6 +9,8 @@
   - Python：`conv_id`、`agent_type`、`latency_ms`
   - Java：`conversation_id`、`agent_type`、`latency_ms`
 - 支持聊天调试、健康检查、监控摘要、知识库检索、知识库文档导入、文件上传。
+- Python 回复可展开查看细粒度意图、实体、主/辅助 Agent、路由原因与 RAG 状态。
+- Java 缺少新增诊断字段时自动使用兼容默认值。
 - 支持 Docker + Nginx 部署。
 
 ## 默认后端地址
@@ -67,6 +63,12 @@ npm run dev
 
 ```bash
 npm run build
+```
+
+运行响应 adapter 测试：
+
+```bash
+npm run test
 ```
 
 再构建并启动容器：

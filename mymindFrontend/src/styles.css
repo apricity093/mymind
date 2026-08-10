@@ -413,6 +413,49 @@ pre {
   opacity: 0.82;
 }
 
+.diagnostics {
+  margin-top: 12px;
+  border-top: 1px solid #e4ebf3;
+  padding-top: 10px;
+}
+
+.diagnostics summary {
+  color: #1769e0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.diagnostics dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 16px;
+  margin: 12px 0;
+}
+
+.diagnostics dl div {
+  min-width: 0;
+}
+
+.diagnostics dd {
+  overflow-wrap: anywhere;
+}
+
+.diagnostic-block {
+  margin-top: 10px;
+}
+
+.diagnostic-block > p {
+  margin-top: 5px;
+  color: #465569;
+  font-size: 13px;
+}
+
+.diagnostic-block pre {
+  max-height: 170px;
+  margin-bottom: 0;
+}
+
 .empty-state {
   display: grid;
   place-items: center;
@@ -519,5 +562,9 @@ pre {
 
   .composer button {
     min-height: 42px;
+  }
+
+  .diagnostics dl {
+    grid-template-columns: 1fr;
   }
 }

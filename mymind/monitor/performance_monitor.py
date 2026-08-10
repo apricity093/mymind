@@ -189,10 +189,14 @@ class PerformanceMonitor:
         """
         agent_stats = self._orchestrator.get_stats()
         tool_stats  = self._tool_manager.get_stats()
+        agent_performance = {
+            key: value for key, value in agent_stats.items()
+            if "success_rate" in value and "avg_ms" in value
+        }
         routing_penalties: Dict[str, float] = {}
 
         # ── Agent 指标 ────────────────────────────────────────────────────────
-        for agent_key, s in agent_stats.items():
+        for agent_key, s in agent_performance.items():
             sr  = s["success_rate"]
             ms  = s["avg_ms"]
 
@@ -238,7 +242,7 @@ class PerformanceMonitor:
         updater = getattr(self._orchestrator, "update_routing_penalties", None)
         if updater:
             updater(routing_penalties)
-        self._generate_routing_suggestions(agent_stats)
+        self._generate_routing_suggestions(agent_performance)
 
     @staticmethod
     def _routing_penalty(success_rate: float, avg_ms: float) -> float:

@@ -11,6 +11,7 @@ ChromaDB 在这里的角色：
   - 这里用于存储知识库文档（RAG 检索）
   两者是不同的 collection，互不干扰。
 """
+import asyncio
 import hashlib
 import logging
 from typing import Any, Dict, List, Optional
@@ -91,8 +92,8 @@ class KnowledgeBase:
 
         if ids:
             # ChromaDB 会自动生成 Embedding
-            self._collection.add(ids=ids, documents=docs, metadatas=metas)
-            logger.info(f"知识库导入 {len(ids)} 个文档片段")
+            self._collection.upsert(ids=ids, documents=docs, metadatas=metas)
+            logger.info(f"知识库处理 {len(ids)} 个文档片段")
 
         return len(ids)
 
@@ -141,7 +142,7 @@ class KnowledgeBase:
         """
         query = params.get("query", "")
         top_k = params.get("top_k", 5)
-        return self.search(query, top_k=top_k)
+        return await asyncio.to_thread(self.search, query, top_k)
 
     # ── 内部方法 ──────────────────────────────────────────────────────────────
 

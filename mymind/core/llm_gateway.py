@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from hashlib import sha256
+import logging
 from typing import Any, Dict, List, Optional, Protocol
 
 from anthropic import AsyncAnthropic
@@ -14,6 +15,9 @@ except ImportError:  # pragma: no cover - dependency is optional for Anthropic-o
     AsyncOpenAI = None  # type: ignore[assignment]
 
 from core.llm_utils import extract_text_content
+
+
+logger = logging.getLogger(__name__)
 
 
 def _as_dict(value: Any) -> Dict[str, Any]:
@@ -159,6 +163,22 @@ class AnthropicGateway(ProviderGateway):
         if request.temperature is not None:
             kwargs["temperature"] = request.temperature
         response = await self.client.messages.create(**kwargs)
+        text = extract_text_content(response.content)
+        retried_response = False
+        initial_text_empty = not text.strip()
+        stop_reason = getattr(response, "stop_reason", None)
+        if initial_text_empty or stop_reason == "max_tokens":
+            retried_response = True
+            retry_tokens = max(2048, request.max_tokens * 2)
+            logger.warning(
+                "Provider response incomplete (text_empty=%s, stop_reason=%s); retrying with max_tokens=%s",
+                initial_text_empty,
+                stop_reason,
+                retry_tokens,
+            )
+            kwargs["max_tokens"] = retry_tokens
+            response = await self.client.messages.create(**kwargs)
+            text = extract_text_content(response.content)
         raw = _as_dict(getattr(response, "usage", None))
         read = _first_int(raw, "cache_read_input_tokens") or 0
         write = _first_int(raw, "cache_creation_input_tokens") or 0
@@ -168,8 +188,13 @@ class AnthropicGateway(ProviderGateway):
         ))
         usage = CacheUsage("anthropic", input_tokens, read, write, None,
                            True if eligible else (False if self.cache_enabled else None), status, raw)
-        return LLMResult(extract_text_content(response.content), usage,
-                         self._metadata(request, usage))
+        metadata = self._metadata(request, usage)
+        metadata.update({
+            "stop_reason": getattr(response, "stop_reason", None),
+            "response_retry": retried_response,
+            "empty_response_retry": retried_response and initial_text_empty,
+        })
+        return LLMResult(text, usage, metadata)
 
 
 class OpenAIGateway(ProviderGateway):

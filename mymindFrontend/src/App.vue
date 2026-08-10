@@ -92,6 +92,29 @@
               <small v-if="item.meta">{{ item.meta }}</small>
             </div>
             <p>{{ item.content }}</p>
+            <details v-if="item.diagnostics" class="diagnostics">
+              <summary>诊断详情</summary>
+              <dl>
+                <div><dt>意图分组</dt><dd>{{ item.diagnostics.intentGroup }}</dd></div>
+                <div><dt>主 Agent</dt><dd>{{ item.diagnostics.primaryAgent || '-' }}</dd></div>
+                <div><dt>辅助 Agent</dt><dd>{{ item.diagnostics.supportingAgents.join(', ') || '-' }}</dd></div>
+                <div><dt>意图置信度</dt><dd>{{ formatConfidence(item.diagnostics.intentConfidence) }}</dd></div>
+                <div><dt>路由置信度</dt><dd>{{ formatConfidence(item.diagnostics.routingConfidence) }}</dd></div>
+                <div><dt>知识检索</dt><dd>{{ item.diagnostics.knowledgeStatus }} · {{ item.diagnostics.knowledgeReason || '-' }}</dd></div>
+              </dl>
+              <div v-if="item.diagnostics.routingReason" class="diagnostic-block">
+                <strong>路由原因</strong>
+                <p>{{ item.diagnostics.routingReason }}</p>
+              </div>
+              <div v-if="hasValues(item.diagnostics.entities)" class="diagnostic-block">
+                <strong>实体</strong>
+                <pre>{{ formatJson(item.diagnostics.entities) }}</pre>
+              </div>
+              <div v-if="hasValues(item.diagnostics.intentSourceScores)" class="diagnostic-block">
+                <strong>意图来源分数</strong>
+                <pre>{{ formatJson(item.diagnostics.intentSourceScores) }}</pre>
+              </div>
+            </details>
           </article>
           <div v-if="messages.length === 0" class="empty-state">
             <h3>开始一次客服对话</h3>
@@ -223,15 +246,28 @@ async function sendMessage() {
     }
     const meta = [
       response.intent,
-      response.agentType,
-      response.knowledgeUsed ? 'RAG' : '',
+      response.primaryAgent || response.agentType,
+      response.supportingAgents.length ? `协作 ${response.supportingAgents.join(', ')}` : '',
+      response.knowledgeStatus === 'used' ? 'RAG' : response.knowledgeStatus,
       response.escalated ? '转人工' : ''
     ].filter(Boolean).join(' · ')
     messages.value.push({
       id: crypto.randomUUID(),
       role: 'assistant',
       content: response.response,
-      meta
+      meta,
+      diagnostics: settings.backend === 'python' ? {
+        intentGroup: response.intentGroup,
+        entities: response.entities,
+        intentConfidence: response.intentConfidence,
+        intentSourceScores: response.intentSourceScores,
+        primaryAgent: response.primaryAgent,
+        supportingAgents: response.supportingAgents,
+        routingReason: response.routingReason,
+        routingConfidence: response.routingConfidence,
+        knowledgeStatus: response.knowledgeStatus,
+        knowledgeReason: response.knowledgeReason
+      } : null
     })
   } catch (error) {
     messages.value.push({
@@ -245,6 +281,18 @@ async function sendMessage() {
     await nextTick()
     messageList.value?.scrollTo({ top: messageList.value.scrollHeight, behavior: 'smooth' })
   }
+}
+
+function formatConfidence(value) {
+  return Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '-'
+}
+
+function hasValues(value) {
+  return value && Object.values(value).some((item) => Array.isArray(item) ? item.length : item !== null && item !== '')
+}
+
+function formatJson(value) {
+  return JSON.stringify(value, null, 2)
 }
 
 async function checkHealth() {

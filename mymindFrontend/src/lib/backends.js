@@ -1,14 +1,16 @@
+const ENV = import.meta.env || {}
+
 const DEFAULT_BACKENDS = {
   python: {
     id: 'python',
     label: 'Python',
-    baseUrl: import.meta.env.VITE_PYTHON_API_URL || '/api/python',
+    baseUrl: ENV.VITE_PYTHON_API_URL || '/api/python',
     port: '8000'
   },
   java: {
     id: 'java',
     label: 'Java',
-    baseUrl: import.meta.env.VITE_JAVA_API_URL || '/api/java',
+    baseUrl: ENV.VITE_JAVA_API_URL || '/api/java',
     port: '8080'
   }
 }
@@ -98,16 +100,29 @@ function buildChatPayload(type, settings, message) {
   }
 }
 
-function normalizeChatResponse(type, raw) {
+export function normalizeChatResponse(type, raw) {
+  const agentType = raw.agent_type || raw.agentType || ''
+  const primaryAgent = raw.primary_agent || raw.primaryAgent || agentType
   return {
     backend: type,
     conversationId: raw.conversation_id || raw.conversationId || raw.conv_id || '',
     response: raw.response || '',
     intent: raw.intent || 'other',
-    agentType: raw.agent_type || raw.agentType || '',
+    agentType,
+    intentGroup: raw.intent_group || raw.intentGroup || raw.intent || 'other',
+    entities: raw.entities || {},
+    intentConfidence: Number(raw.intent_confidence ?? raw.intentConfidence ?? 0),
+    intentSourceScores: raw.intent_source_scores || raw.intentSourceScores || {},
+    agentTypes: raw.agent_types || raw.agentTypes || (agentType ? [agentType] : []),
+    primaryAgent,
+    supportingAgents: raw.supporting_agents || raw.supportingAgents || [],
+    routingReason: raw.routing_reason || raw.routingReason || '',
+    routingConfidence: Number(raw.routing_confidence ?? raw.routingConfidence ?? 0),
     escalated: Boolean(raw.escalated),
     latencyMs: Number(raw.latency_ms ?? raw.latencyMs ?? 0),
     knowledgeUsed: Boolean(raw.knowledge_used ?? raw.knowledgeUsed),
+    knowledgeStatus: raw.knowledge_status || raw.knowledgeStatus || ((raw.knowledge_used ?? raw.knowledgeUsed) ? 'used' : 'skipped'),
+    knowledgeReason: raw.knowledge_reason || raw.knowledgeReason || '',
     verified: raw.verified,
     grounded: raw.grounded,
     raw
