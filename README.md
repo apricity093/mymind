@@ -10,8 +10,6 @@ mymind 是一个面向客服场景的多 Agent 系统。本仓库包含 Python �
 | `mymindJava/` | Java 21 / Spring Boot 重构版，使用专用知识工具与本地 Hybrid RAG | 8080 |
 | `mymindFrontend/` | Vue / Vite 调试前端，可切换 Python 和 Java 后端 | 5173 |
 
-本轮 EchoMind 能力融合落在 Python 和 Vue。Java 仍使用原有粗粒度意图与响应契约，前端 adapter 会兼容缺失的诊断字段。
-
 ## Python 主链路
 
 ```text

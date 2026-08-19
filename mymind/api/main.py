@@ -470,11 +470,22 @@ async def search(query: str, top_k: int = 5):
     """
     演示检索优化链路：查询改写 → 并行召回 → 重排 → Top-K。
     展示 MCP 工具调用的核心亮点。
+
+    契约保持：{query, results, reranked}；新增字段仅为可选增量字段。
+    Python 后端使用 top_k 参数；前端适配层负责按后端类型发送。
     """
-    if _tool_manager is None:
+    if _tool_manager is None or _knowledge_base is None:
         raise HTTPException(503, "服务未就绪")
     result = await _tool_manager.search_with_rewrite("knowledge_search", query, top_k=top_k)
-    return {"query": query, "results": result.data, "reranked": result.reranked}
+    return {
+        "query": query,
+        "results": result.data,
+        "reranked": result.reranked,
+        "requested_top_k": top_k,
+        "returned": len(result.data) if isinstance(result.data, list) else 0,
+        "index_version": _knowledge_base.index_version,
+        "chunk_config": _knowledge_base.chunk_config,
+    }
 
 
 class DocInput(BaseModel):
@@ -592,10 +603,14 @@ async def upload_knowledge(file: UploadFile = File(...)):
 
 @app.get("/knowledge/stats", tags=["知识库"])
 async def knowledge_stats():
-    """查看知识库统计信息（文档片段总数）。"""
+    """查看知识库统计信息（文档片段总数）。total_chunks 保持数值型。"""
     if _knowledge_base is None:
         raise HTTPException(503, "知识库未初始化")
-    return {"total_chunks": await asyncio.to_thread(lambda: _knowledge_base.doc_count)}
+    return {
+        "total_chunks": await asyncio.to_thread(lambda: _knowledge_base.doc_count),
+        "index_version": _knowledge_base.index_version,
+        "chunk_config": _knowledge_base.chunk_config,
+    }
 
 
 @app.post("/eval/run")

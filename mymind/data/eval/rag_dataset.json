@@ -1,0 +1,2658 @@
+[
+  {
+    "id": "refund-01-1",
+    "partition": "refund-01",
+    "query": "购买后多少天内可以无理由退款？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/七天无理由退款"
+    ],
+    "must_recall_facts": [
+      "购买后 7 天内",
+      "无理由退款"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-01-2",
+    "partition": "refund-01",
+    "query": "无理由退款的期限是几天？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/七天无理由退款"
+    ],
+    "must_recall_facts": [
+      "购买后 7 天内",
+      "无理由退款"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-01-3",
+    "partition": "refund-01",
+    "query": "我想知道七天无理由退款从什么时候开始算？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/七天无理由退款"
+    ],
+    "must_recall_facts": [
+      "购买后 7 天内",
+      "无理由退款"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-01-4",
+    "partition": "refund-01",
+    "query": "刚买的商品，无理由退款的窗口期是多久？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/七天无理由退款"
+    ],
+    "must_recall_facts": [
+      "购买后 7 天内",
+      "无理由退款"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-02-1",
+    "partition": "refund-02",
+    "query": "退款审核一般需要多长时间？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/退款审核时效"
+    ],
+    "must_recall_facts": [
+      "1-3 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-02-2",
+    "partition": "refund-02",
+    "query": "提交退款申请后多久审核完？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/退款审核时效"
+    ],
+    "must_recall_facts": [
+      "1-3 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-02-3",
+    "partition": "refund-02",
+    "query": "退款审核要等几个工作日？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/退款审核时效"
+    ],
+    "must_recall_facts": [
+      "1-3 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-02-4",
+    "partition": "refund-02",
+    "query": "我申请退款了，审核周期是多久？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/退款审核时效"
+    ],
+    "must_recall_facts": [
+      "1-3 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-03-1",
+    "partition": "refund-03",
+    "query": "退款审核通过后钱多久到账？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/款项到账时效"
+    ],
+    "must_recall_facts": [
+      "5-7 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-03-2",
+    "partition": "refund-03",
+    "query": "退款金额几个工作日能退回银行卡？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/款项到账时效"
+    ],
+    "must_recall_facts": [
+      "5-7 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-03-3",
+    "partition": "refund-03",
+    "query": "显示退款成功，款项什么时候到原支付账户？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/款项到账时效"
+    ],
+    "must_recall_facts": [
+      "5-7 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-03-4",
+    "partition": "refund-03",
+    "query": "退款到账一般要等几天？",
+    "category": "refund",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/款项到账时效"
+    ],
+    "must_recall_facts": [
+      "5-7 个工作日"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-04-1",
+    "partition": "refund-04",
+    "query": "商品已经发货了，想退款要怎么操作？",
+    "category": "refund",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/已发货订单的退货流程",
+      "退款与售后政策/退货运费规则"
+    ],
+    "must_recall_facts": [
+      "先完成退货流程",
+      "48 小时内提供照片证据"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-04-2",
+    "partition": "refund-04",
+    "query": "已发货订单申请退款需要先做什么？",
+    "category": "refund",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/已发货订单的退货流程",
+      "退款与售后政策/退货运费规则"
+    ],
+    "must_recall_facts": [
+      "先完成退货流程",
+      "48 小时内提供照片证据"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-04-3",
+    "partition": "refund-04",
+    "query": "东西在路上了，退款流程是什么？",
+    "category": "refund",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/已发货订单的退货流程",
+      "退款与售后政策/退货运费规则"
+    ],
+    "must_recall_facts": [
+      "先完成退货流程",
+      "48 小时内提供照片证据"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "refund-04-4",
+    "partition": "refund-04",
+    "query": "发货后还能退款吗？具体步骤是什么？",
+    "category": "refund",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-a9fc7c86ab352ae056cd"
+    ],
+    "relevant_sections": [
+      "退款与售后政策/已发货订单的退货流程",
+      "退款与售后政策/退货运费规则"
+    ],
+    "must_recall_facts": [
+      "先完成退货流程",
+      "48 小时内提供照片证据"
+    ],
+    "relevance": {
+      "src-a9fc7c86ab352ae056cd": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-01-1",
+    "partition": "logistics-01",
+    "query": "标准配送几天能送到？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/标准配送"
+    ],
+    "must_recall_facts": [
+      "3-5 个工作日",
+      "满 99 元免运费"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-01-2",
+    "partition": "logistics-01",
+    "query": "普通快递的配送时效是多久？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/标准配送"
+    ],
+    "must_recall_facts": [
+      "3-5 个工作日",
+      "满 99 元免运费"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-01-3",
+    "partition": "logistics-01",
+    "query": "不选加急的话，几天能收到货？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/标准配送"
+    ],
+    "must_recall_facts": [
+      "3-5 个工作日",
+      "满 99 元免运费"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-01-4",
+    "partition": "logistics-01",
+    "query": "标准配送要等几个工作日？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/标准配送"
+    ],
+    "must_recall_facts": [
+      "3-5 个工作日",
+      "满 99 元免运费"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-02-1",
+    "partition": "logistics-02",
+    "query": "发货后多久能看到物流信息？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/物流信息更新"
+    ],
+    "must_recall_facts": [
+      "发货后 24 小时内更新"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-02-2",
+    "partition": "logistics-02",
+    "query": "物流信息一般什么时候更新？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/物流信息更新"
+    ],
+    "must_recall_facts": [
+      "发货后 24 小时内更新"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-02-3",
+    "partition": "logistics-02",
+    "query": "订单发货了，为什么还查不到物流记录？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/物流信息更新"
+    ],
+    "must_recall_facts": [
+      "发货后 24 小时内更新"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-02-4",
+    "partition": "logistics-02",
+    "query": "物流轨迹要等多久才会更新？",
+    "category": "logistics",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/物流信息更新"
+    ],
+    "must_recall_facts": [
+      "发货后 24 小时内更新"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-03-1",
+    "partition": "logistics-03",
+    "query": "订单显示已发货，超过 7 天还没收到怎么办？",
+    "category": "logistics",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/超时查件"
+    ],
+    "must_recall_facts": [
+      "超过 7 天未收到",
+      "申请查件"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-03-2",
+    "partition": "logistics-03",
+    "query": "快递一周了还没到，可以申请什么？",
+    "category": "logistics",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/超时查件"
+    ],
+    "must_recall_facts": [
+      "超过 7 天未收到",
+      "申请查件"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-03-3",
+    "partition": "logistics-03",
+    "query": "物流显示已发货但迟迟收不到货，怎么处理？",
+    "category": "logistics",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/超时查件"
+    ],
+    "must_recall_facts": [
+      "超过 7 天未收到",
+      "申请查件"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-03-4",
+    "partition": "logistics-03",
+    "query": "包裹超过 7 天没送到，能查件吗？",
+    "category": "logistics",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/超时查件"
+    ],
+    "must_recall_facts": [
+      "超过 7 天未收到",
+      "申请查件"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-04-1",
+    "partition": "logistics-04",
+    "query": "下单后发现地址写错了，怎么改收货地址？",
+    "category": "logistics",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/修改收货地址"
+    ],
+    "must_recall_facts": [
+      "发货前联系客服",
+      "发货后地址不可修改"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-04-2",
+    "partition": "logistics-04",
+    "query": "发货后还能修改收货地址吗？",
+    "category": "logistics",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/修改收货地址"
+    ],
+    "must_recall_facts": [
+      "发货前联系客服",
+      "发货后地址不可修改"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-04-3",
+    "partition": "logistics-04",
+    "query": "我想改一下配送地址，找谁处理？",
+    "category": "logistics",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/修改收货地址"
+    ],
+    "must_recall_facts": [
+      "发货前联系客服",
+      "发货后地址不可修改"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "logistics-04-4",
+    "partition": "logistics-04",
+    "query": "地址填错了，什么时候之前能改？",
+    "category": "logistics",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-1624b52f80c2069b66ee"
+    ],
+    "relevant_sections": [
+      "物流与配送说明/修改收货地址"
+    ],
+    "must_recall_facts": [
+      "发货前联系客服",
+      "发货后地址不可修改"
+    ],
+    "relevance": {
+      "src-1624b52f80c2069b66ee": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-01-1",
+    "partition": "payment-01",
+    "query": "平台支持哪些支付方式？",
+    "category": "payment",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支持的支付方式"
+    ],
+    "must_recall_facts": [
+      "银行卡、微信支付和支付宝",
+      "50000 元"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-01-2",
+    "partition": "payment-01",
+    "query": "可以用支付宝付款吗？还有哪些支付渠道？",
+    "category": "payment",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支持的支付方式"
+    ],
+    "must_recall_facts": [
+      "银行卡、微信支付和支付宝",
+      "50000 元"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-01-3",
+    "partition": "payment-01",
+    "query": "下单付款支持微信和银行卡吗？",
+    "category": "payment",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支持的支付方式"
+    ],
+    "must_recall_facts": [
+      "银行卡、微信支付和支付宝",
+      "50000 元"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-01-4",
+    "partition": "payment-01",
+    "query": "这个平台能用的支付方式有哪些？",
+    "category": "payment",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支持的支付方式"
+    ],
+    "must_recall_facts": [
+      "银行卡、微信支付和支付宝",
+      "50000 元"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-02-1",
+    "partition": "payment-02",
+    "query": "同一订单被重复扣款了怎么办？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/重复扣款处理"
+    ],
+    "must_recall_facts": [
+      "1 个工作日内自动原路退回"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-02-2",
+    "partition": "payment-02",
+    "query": "银行卡被扣了两次钱，会自动退吗？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/重复扣款处理"
+    ],
+    "must_recall_facts": [
+      "1 个工作日内自动原路退回"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-02-3",
+    "partition": "payment-02",
+    "query": "重复扣款需要我主动申请退款吗？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/重复扣款处理"
+    ],
+    "must_recall_facts": [
+      "1 个工作日内自动原路退回"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-02-4",
+    "partition": "payment-02",
+    "query": "一笔订单扣了两次款，多久能退回来？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/重复扣款处理"
+    ],
+    "must_recall_facts": [
+      "1 个工作日内自动原路退回"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-03-1",
+    "partition": "payment-03",
+    "query": "支付一直失败，可能是什么原因？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支付失败原因"
+    ],
+    "must_recall_facts": [
+      "银行卡余额充足",
+      "开通网上支付功能"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-03-2",
+    "partition": "payment-03",
+    "query": "下单付款提示失败，要检查什么？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支付失败原因"
+    ],
+    "must_recall_facts": [
+      "银行卡余额充足",
+      "开通网上支付功能"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-03-3",
+    "partition": "payment-03",
+    "query": "银行卡支付失败该怎么排查？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支付失败原因"
+    ],
+    "must_recall_facts": [
+      "银行卡余额充足",
+      "开通网上支付功能"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-03-4",
+    "partition": "payment-03",
+    "query": "为什么我的订单总是支付不成功？",
+    "category": "payment",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/支付失败原因"
+    ],
+    "must_recall_facts": [
+      "银行卡余额充足",
+      "开通网上支付功能"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-04-1",
+    "partition": "payment-04",
+    "query": "电子发票怎么申请？",
+    "category": "payment",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/电子发票"
+    ],
+    "must_recall_facts": [
+      "支付成功后 24 小时内申请",
+      "不支持修改"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-04-2",
+    "partition": "payment-04",
+    "query": "付款后多久可以开发票？",
+    "category": "payment",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/电子发票"
+    ],
+    "must_recall_facts": [
+      "支付成功后 24 小时内申请",
+      "不支持修改"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-04-3",
+    "partition": "payment-04",
+    "query": "开票信息提交后还能改吗？",
+    "category": "payment",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/电子发票"
+    ],
+    "must_recall_facts": [
+      "支付成功后 24 小时内申请",
+      "不支持修改"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "payment-04-4",
+    "partition": "payment-04",
+    "query": "我想要电子发票，具体怎么操作？",
+    "category": "payment",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-7c1201a0b5435ca422c7"
+    ],
+    "relevant_sections": [
+      "支付与账单说明/电子发票"
+    ],
+    "must_recall_facts": [
+      "支付成功后 24 小时内申请",
+      "不支持修改"
+    ],
+    "relevance": {
+      "src-7c1201a0b5435ca422c7": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-01-1",
+    "partition": "account-01",
+    "query": "忘记密码了怎么找回？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/忘记密码"
+    ],
+    "must_recall_facts": [
+      "手机号或邮箱重置",
+      "30 分钟"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-01-2",
+    "partition": "account-01",
+    "query": "登录密码忘了，如何重置？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/忘记密码"
+    ],
+    "must_recall_facts": [
+      "手机号或邮箱重置",
+      "30 分钟"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-01-3",
+    "partition": "account-01",
+    "query": "没有密码登不进去，怎么重置账户密码？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/忘记密码"
+    ],
+    "must_recall_facts": [
+      "手机号或邮箱重置",
+      "30 分钟"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-01-4",
+    "partition": "account-01",
+    "query": "忘记登录密码应该怎么办？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/忘记密码"
+    ],
+    "must_recall_facts": [
+      "手机号或邮箱重置",
+      "30 分钟"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-02-1",
+    "partition": "account-02",
+    "query": "设置密码有什么要求？",
+    "category": "account",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/密码安全"
+    ],
+    "must_recall_facts": [
+      "至少 8 位",
+      "字母和数字"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-02-2",
+    "partition": "account-02",
+    "query": "账户密码需要多长，要包含什么字符？",
+    "category": "account",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/密码安全"
+    ],
+    "must_recall_facts": [
+      "至少 8 位",
+      "字母和数字"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-02-3",
+    "partition": "account-02",
+    "query": "平台对密码长度和格式有要求吗？",
+    "category": "account",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/密码安全"
+    ],
+    "must_recall_facts": [
+      "至少 8 位",
+      "字母和数字"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-02-4",
+    "partition": "account-02",
+    "query": "改密码的时候要满足什么规则？",
+    "category": "account",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/密码安全"
+    ],
+    "must_recall_facts": [
+      "至少 8 位",
+      "字母和数字"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-03-1",
+    "partition": "account-03",
+    "query": "怎么开启两步验证？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/两步验证"
+    ],
+    "must_recall_facts": [
+      "6 位动态验证码"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-03-2",
+    "partition": "account-03",
+    "query": "账户想加一层安全验证，在哪里设置？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/两步验证"
+    ],
+    "must_recall_facts": [
+      "6 位动态验证码"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-03-3",
+    "partition": "account-03",
+    "query": "两步验证开启后每次登录要做什么？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/两步验证"
+    ],
+    "must_recall_facts": [
+      "6 位动态验证码"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-03-4",
+    "partition": "account-03",
+    "query": "如何给账户开启二次验证保护？",
+    "category": "account",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/两步验证"
+    ],
+    "must_recall_facts": [
+      "6 位动态验证码"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-04-1",
+    "partition": "account-04",
+    "query": "提示账户有异常登录，账号被锁了怎么办？",
+    "category": "account",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/异常登录保护"
+    ],
+    "must_recall_facts": [
+      "自动锁定账户",
+      "绑定手机号申请解除锁定"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-04-2",
+    "partition": "account-04",
+    "query": "系统检测到异常登录自动锁定了账户，如何解锁？",
+    "category": "account",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/异常登录保护"
+    ],
+    "must_recall_facts": [
+      "自动锁定账户",
+      "绑定手机号申请解除锁定"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-04-3",
+    "partition": "account-04",
+    "query": "账户被自动锁定，能自己解除吗？",
+    "category": "account",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/异常登录保护"
+    ],
+    "must_recall_facts": [
+      "自动锁定账户",
+      "绑定手机号申请解除锁定"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "account-04-4",
+    "partition": "account-04",
+    "query": "收到异常登录通知，账户被锁定怎么处理？",
+    "category": "account",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6dbcd8e780ad7b60f35d"
+    ],
+    "relevant_sections": [
+      "账户与安全说明/异常登录保护"
+    ],
+    "must_recall_facts": [
+      "自动锁定账户",
+      "绑定手机号申请解除锁定"
+    ],
+    "relevance": {
+      "src-6dbcd8e780ad7b60f35d": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-01-1",
+    "partition": "subscription-01",
+    "query": "怎么取消连续包月的自动续费？",
+    "category": "subscription",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/取消订阅"
+    ],
+    "must_recall_facts": [
+      "订阅管理页面",
+      "已扣费周期内权益继续有效"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-01-2",
+    "partition": "subscription-01",
+    "query": "不想续订了，在哪里关闭订阅？",
+    "category": "subscription",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/取消订阅"
+    ],
+    "must_recall_facts": [
+      "订阅管理页面",
+      "已扣费周期内权益继续有效"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-01-3",
+    "partition": "subscription-01",
+    "query": "如何停止会员自动扣费？",
+    "category": "subscription",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/取消订阅"
+    ],
+    "must_recall_facts": [
+      "订阅管理页面",
+      "已扣费周期内权益继续有效"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-01-4",
+    "partition": "subscription-01",
+    "query": "取消订阅的具体入口在哪里？",
+    "category": "subscription",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/取消订阅"
+    ],
+    "must_recall_facts": [
+      "订阅管理页面",
+      "已扣费周期内权益继续有效"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-02-1",
+    "partition": "subscription-02",
+    "query": "自动续费会在什么时候扣款？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/自动续费规则"
+    ],
+    "must_recall_facts": [
+      "到期前 24 小时",
+      "原支付渠道扣款"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-02-2",
+    "partition": "subscription-02",
+    "query": "连续包月订阅什么时候自动扣下一次费用？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/自动续费规则"
+    ],
+    "must_recall_facts": [
+      "到期前 24 小时",
+      "原支付渠道扣款"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-02-3",
+    "partition": "subscription-02",
+    "query": "自动续费提前多久从支付渠道扣钱？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/自动续费规则"
+    ],
+    "must_recall_facts": [
+      "到期前 24 小时",
+      "原支付渠道扣款"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-02-4",
+    "partition": "subscription-02",
+    "query": "会员到期前什么时候会自动续费？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/自动续费规则"
+    ],
+    "must_recall_facts": [
+      "到期前 24 小时",
+      "原支付渠道扣款"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-03-1",
+    "partition": "subscription-03",
+    "query": "会员等级怎么划分的？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/会员等级"
+    ],
+    "must_recall_facts": [
+      "1000 元升级银卡",
+      "5000 元升级金卡"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-03-2",
+    "partition": "subscription-03",
+    "query": "消费多少能升级银卡或金卡会员？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/会员等级"
+    ],
+    "must_recall_facts": [
+      "1000 元升级银卡",
+      "5000 元升级金卡"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-03-3",
+    "partition": "subscription-03",
+    "query": "银卡和金卡的升级门槛是多少？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/会员等级"
+    ],
+    "must_recall_facts": [
+      "1000 元升级银卡",
+      "5000 元升级金卡"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-03-4",
+    "partition": "subscription-03",
+    "query": "会员等级有哪些，分别要消费多少钱？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/会员等级"
+    ],
+    "must_recall_facts": [
+      "1000 元升级银卡",
+      "5000 元升级金卡"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-04-1",
+    "partition": "subscription-04",
+    "query": "积分会过期吗？有效期多久？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/积分有效期"
+    ],
+    "must_recall_facts": [
+      "1 年",
+      "100 积分等于 1 元"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-04-2",
+    "partition": "subscription-04",
+    "query": "账户里的积分能保留多长时间？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/积分有效期"
+    ],
+    "must_recall_facts": [
+      "1 年",
+      "100 积分等于 1 元"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-04-3",
+    "partition": "subscription-04",
+    "query": "积分什么时候会被清零？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/积分有效期"
+    ],
+    "must_recall_facts": [
+      "1 年",
+      "100 积分等于 1 元"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "subscription-04-4",
+    "partition": "subscription-04",
+    "query": "积分有效期是多久，过期后还能用吗？",
+    "category": "subscription",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-ccab69fa4e34d3c51423"
+    ],
+    "relevant_sections": [
+      "订阅与会员说明/积分有效期"
+    ],
+    "must_recall_facts": [
+      "1 年",
+      "100 积分等于 1 元"
+    ],
+    "relevance": {
+      "src-ccab69fa4e34d3c51423": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-01-1",
+    "partition": "api-01",
+    "query": "调用 API 要怎么带认证信息？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/认证方式"
+    ],
+    "must_recall_facts": [
+      "Authorization: Bearer",
+      "7200 秒"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-01-2",
+    "partition": "api-01",
+    "query": "接口请求头里 access_token 怎么传？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/认证方式"
+    ],
+    "must_recall_facts": [
+      "Authorization: Bearer",
+      "7200 秒"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-01-3",
+    "partition": "api-01",
+    "query": "接入开放平台接口，认证头应该怎么写？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/认证方式"
+    ],
+    "must_recall_facts": [
+      "Authorization: Bearer",
+      "7200 秒"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-01-4",
+    "partition": "api-01",
+    "query": "API 调用的 token 有效期是多久？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/认证方式"
+    ],
+    "must_recall_facts": [
+      "Authorization: Bearer",
+      "7200 秒"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-02-1",
+    "partition": "api-02",
+    "query": "API 的调用频率限制是多少？",
+    "category": "api",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/速率限制"
+    ],
+    "must_recall_facts": [
+      "每分钟最多调用 120 次",
+      "429"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-02-2",
+    "partition": "api-02",
+    "query": "每分钟最多能请求多少次接口？",
+    "category": "api",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/速率限制"
+    ],
+    "must_recall_facts": [
+      "每分钟最多调用 120 次",
+      "429"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-02-3",
+    "partition": "api-02",
+    "query": "开放平台接口限流是多少 QPS？",
+    "category": "api",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/速率限制"
+    ],
+    "must_recall_facts": [
+      "每分钟最多调用 120 次",
+      "429"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-02-4",
+    "partition": "api-02",
+    "query": "API 调用超过次数限制会怎样？",
+    "category": "api",
+    "query_type": "factoid",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/速率限制"
+    ],
+    "must_recall_facts": [
+      "每分钟最多调用 120 次",
+      "429"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-03-1",
+    "partition": "api-03",
+    "query": "Webhook 回调怎么验证签名？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/回调验签"
+    ],
+    "must_recall_facts": [
+      "HMAC-SHA256",
+      "最多 3 次"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-03-2",
+    "partition": "api-03",
+    "query": "收到回调通知后要验签吗？用什么算法？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/回调验签"
+    ],
+    "must_recall_facts": [
+      "HMAC-SHA256",
+      "最多 3 次"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-03-3",
+    "partition": "api-03",
+    "query": "回调验签失败该怎么处理？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/回调验签"
+    ],
+    "must_recall_facts": [
+      "HMAC-SHA256",
+      "最多 3 次"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-03-4",
+    "partition": "api-03",
+    "query": "Webhook 通知的重试策略是什么？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/回调验签"
+    ],
+    "must_recall_facts": [
+      "HMAC-SHA256",
+      "最多 3 次"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-04-1",
+    "partition": "api-04",
+    "query": "列表接口怎么分页拉取数据？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/分页规范"
+    ],
+    "must_recall_facts": [
+      "page 和 page_size",
+      "page_size 最大为 100"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-04-2",
+    "partition": "api-04",
+    "query": "API 返回列表分页参数怎么传？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/分页规范"
+    ],
+    "must_recall_facts": [
+      "page 和 page_size",
+      "page_size 最大为 100"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-04-3",
+    "partition": "api-04",
+    "query": "接口分页每页最多返回多少条？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/分页规范"
+    ],
+    "must_recall_facts": [
+      "page 和 page_size",
+      "page_size 最大为 100"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "api-04-4",
+    "partition": "api-04",
+    "query": "拉取全量列表数据应该用什么方式？",
+    "category": "api",
+    "query_type": "procedural",
+    "relevant_source_ids": [
+      "src-e5ba33c3615789ee41f4"
+    ],
+    "relevant_sections": [
+      "开放平台 API 接入文档/分页规范"
+    ],
+    "must_recall_facts": [
+      "page 和 page_size",
+      "page_size 最大为 100"
+    ],
+    "relevance": {
+      "src-e5ba33c3615789ee41f4": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-01-1",
+    "partition": "error-01",
+    "query": "接口返回 401 是什么问题？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/401 未认证"
+    ],
+    "must_recall_facts": [
+      "401 表示认证失败",
+      "重新获取 token"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-01-2",
+    "partition": "error-01",
+    "query": "调用接口遇到 401 错误该怎么处理？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/401 未认证"
+    ],
+    "must_recall_facts": [
+      "401 表示认证失败",
+      "重新获取 token"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-01-3",
+    "partition": "error-01",
+    "query": "401 状态码代表什么，如何解决？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/401 未认证"
+    ],
+    "must_recall_facts": [
+      "401 表示认证失败",
+      "重新获取 token"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-01-4",
+    "partition": "error-01",
+    "query": "请求 API 报 401，应该检查什么？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/401 未认证"
+    ],
+    "must_recall_facts": [
+      "401 表示认证失败",
+      "重新获取 token"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-02-1",
+    "partition": "error-02",
+    "query": "接口返回 403 权限不足怎么办？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/403 无权限"
+    ],
+    "must_recall_facts": [
+      "403 表示当前应用没有访问该资源的权限",
+      "申请对应权限点"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-02-2",
+    "partition": "error-02",
+    "query": "调用 API 报 403 错误，如何申请权限？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/403 无权限"
+    ],
+    "must_recall_facts": [
+      "403 表示当前应用没有访问该资源的权限",
+      "申请对应权限点"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-02-3",
+    "partition": "error-02",
+    "query": "403 错误是什么原因？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/403 无权限"
+    ],
+    "must_recall_facts": [
+      "403 表示当前应用没有访问该资源的权限",
+      "申请对应权限点"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-02-4",
+    "partition": "error-02",
+    "query": "遇到 403 状态码应该怎么处理？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/403 无权限"
+    ],
+    "must_recall_facts": [
+      "403 表示当前应用没有访问该资源的权限",
+      "申请对应权限点"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-03-1",
+    "partition": "error-03",
+    "query": "接口返回 500 错误怎么办？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/500 服务器错误"
+    ],
+    "must_recall_facts": [
+      "服务端内部错误",
+      "记录 request_id"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-03-2",
+    "partition": "error-03",
+    "query": "调用 API 出现 500，是服务端问题吗？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/500 服务器错误"
+    ],
+    "must_recall_facts": [
+      "服务端内部错误",
+      "记录 request_id"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-03-3",
+    "partition": "error-03",
+    "query": "连续报 500 错误应该提供什么信息？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/500 服务器错误"
+    ],
+    "must_recall_facts": [
+      "服务端内部错误",
+      "记录 request_id"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-03-4",
+    "partition": "error-03",
+    "query": "500 状态码要怎么排查？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/500 服务器错误"
+    ],
+    "must_recall_facts": [
+      "服务端内部错误",
+      "记录 request_id"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-04-1",
+    "partition": "error-04",
+    "query": "接口返回 429 限流了怎么办？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/429 限流"
+    ],
+    "must_recall_facts": [
+      "Retry-After",
+      "熔断 5 分钟"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-04-2",
+    "partition": "error-04",
+    "query": "遇到 429 错误要如何重试？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/429 限流"
+    ],
+    "must_recall_facts": [
+      "Retry-After",
+      "熔断 5 分钟"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-04-3",
+    "partition": "error-04",
+    "query": "API 触发限流后要等多久再试？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/429 限流"
+    ],
+    "must_recall_facts": [
+      "Retry-After",
+      "熔断 5 分钟"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "error-04-4",
+    "partition": "error-04",
+    "query": "429 状态码应该怎么退避重试？",
+    "category": "error_codes",
+    "query_type": "troubleshooting",
+    "relevant_source_ids": [
+      "src-6e105d71263f9fa16028"
+    ],
+    "relevant_sections": [
+      "错误码与故障排查/429 限流"
+    ],
+    "must_recall_facts": [
+      "Retry-After",
+      "熔断 5 分钟"
+    ],
+    "relevance": {
+      "src-6e105d71263f9fa16028": 2
+    },
+    "no_answer": false,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-01-1",
+    "partition": "noanswer-01",
+    "query": "今天北京会下雨吗？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-01-2",
+    "partition": "noanswer-01",
+    "query": "明天上海的天气怎么样？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-01-3",
+    "partition": "noanswer-01",
+    "query": "帮我查一下深圳现在的气温",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-01-4",
+    "partition": "noanswer-01",
+    "query": "杭州这周有台风吗？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-02-1",
+    "partition": "noanswer-02",
+    "query": "推荐一部最近好看的科幻电影",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-02-2",
+    "partition": "noanswer-02",
+    "query": "有什么适合周末看的电影？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-02-3",
+    "partition": "noanswer-02",
+    "query": "最近有什么热门电视剧推荐？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-02-4",
+    "partition": "noanswer-02",
+    "query": "想看喜剧片，有什么推荐吗？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "calibration"
+  },
+  {
+    "id": "noanswer-03-1",
+    "partition": "noanswer-03",
+    "query": "附近哪家川菜馆最好吃？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-03-2",
+    "partition": "noanswer-03",
+    "query": "帮我推荐一家本帮菜餐厅",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-03-3",
+    "partition": "noanswer-03",
+    "query": "这个城市有什么特色小吃？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-03-4",
+    "partition": "noanswer-03",
+    "query": "晚上去哪家烧烤店比较合适？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-04-1",
+    "partition": "noanswer-04",
+    "query": "感冒了吃什么药好得快？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-04-2",
+    "partition": "noanswer-04",
+    "query": "嗓子疼应该吃什么药？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-04-3",
+    "partition": "noanswer-04",
+    "query": "失眠有什么非处方药推荐？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  },
+  {
+    "id": "noanswer-04-4",
+    "partition": "noanswer-04",
+    "query": "皮肤过敏抹什么药膏合适？",
+    "category": "no_answer",
+    "query_type": "no_answer",
+    "relevant_source_ids": [],
+    "relevant_sections": [],
+    "must_recall_facts": [],
+    "relevance": {},
+    "no_answer": true,
+    "role": "test"
+  }
+]

@@ -43,6 +43,7 @@
 
 - 本文件作为团队协作的基础规范，所有成员应共同遵守。
 - 如有调整需求，请提出修改建议并同步更新本文档。
+- git commit在HISTORY.md（若不存在则新建）文档中按照格式（标题 = commit 内容 + 时间，随后简要描述功能）然后推送到远程仓库：   https://github.com/apricity093/mymind.git；仅HISTORY.md发生变动不必再单独commit、push
 
 ---
 

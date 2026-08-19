@@ -23,11 +23,16 @@ def metadata(config: Dict[str, Any], model: str) -> Dict[str, Any]:
         dirty = None
     source_hasher = hashlib.sha256()
     root = Path.cwd()
+    skipped_parts = {"__pycache__", "artifacts", ".venv", ".git", "node_modules", "target", "dist"}
     for path in sorted(root.rglob("*.py")):
-        if "__pycache__" in path.parts or "artifacts" in path.parts:
+        if skipped_parts.intersection(path.parts):
+            continue
+        try:
+            content = path.read_bytes()
+        except OSError:
             continue
         source_hasher.update(path.relative_to(root).as_posix().encode("utf-8"))
-        source_hasher.update(path.read_bytes())
+        source_hasher.update(content)
     encoded = json.dumps(config, ensure_ascii=True, sort_keys=True).encode("utf-8")
     return {
         "captured_at": datetime.now(timezone.utc).isoformat(),

@@ -27,6 +27,7 @@ from anthropic import AsyncAnthropic
 from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
 from core.cache_store import CacheStore, InMemoryCacheStore
+from core.retrieval import dedupe_items, deterministic_rank
 
 logger = logging.getLogger(__name__)
 
@@ -346,8 +347,8 @@ class MCPToolManager:
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # 3. 合并去重（按内容哈希去重）
-        seen, merged = set(), []
+        # 3. 合并去重：优先稳定 chunk_id，其次规范化内容哈希（修复旧 repr 去重误判）。
+        merged = []
         degraded_errors = []
         for r in results:
             if isinstance(r, ToolResult) and r.degraded:
@@ -355,11 +356,8 @@ class MCPToolManager:
                     degraded_errors.append(r.error)
                 continue
             if isinstance(r, ToolResult) and r.success and isinstance(r.data, list):
-                for item in r.data:
-                    key = hashlib.md5(str(item).encode()).hexdigest()
-                    if key not in seen:
-                        seen.add(key)
-                        merged.append(item)
+                merged.extend(r.data)
+        merged = dedupe_items(merged, mode="chunk_id")
 
         if not merged:
             if degraded_errors:
@@ -407,8 +405,8 @@ class MCPToolManager:
             reranked = [items[i] for i in order if 0 <= i < len(items)]
             return reranked[:top_k]
         except Exception as ex:
-            logger.warning(f"重排失败，返回原始顺序: {ex}")
-            return items[:top_k]
+            logger.warning(f"重排失败，使用确定性回退: {ex}")
+            return deterministic_rank(items, top_k)
 
     # ── 缓存 ──────────────────────────────────────────────────────────────────
 

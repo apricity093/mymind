@@ -136,12 +136,23 @@
           </div>
           <div class="inline-form">
             <input v-model="searchQuery" placeholder="退款多久能到账" />
+            <label class="topk-control">
+              <span>Top-K</span>
+              <input v-model.number="searchTopK" type="number" min="1" max="20" step="1" />
+            </label>
             <button @click="searchKnowledge" :disabled="busy || !searchQuery.trim()">检索</button>
           </div>
           <div class="result-list">
-            <article v-for="item in searchResults" :key="item.id || item.title" class="result-item">
-              <strong>{{ item.title || '未命名结果' }}</strong>
-              <span>score {{ item.score ?? '-' }}</span>
+            <article v-for="item in searchResults" :key="item.id" class="result-item">
+              <div class="result-heading">
+                <strong>{{ item.title || '未命名结果' }}</strong>
+                <span>score {{ item.score ?? '-' }}</span>
+              </div>
+              <div v-if="item.sectionPath || item.fusionScore !== null || item.retrievalSources.length" class="result-meta">
+                <span v-if="item.sectionPath" class="pill soft">章节 {{ item.sectionPath }}</span>
+                <span v-if="item.fusionScore !== null" class="pill soft">fusion {{ item.fusionScore }}</span>
+                <span v-if="item.retrievalSources.length" class="pill soft">来源 {{ item.retrievalSources.join(' + ') }}</span>
+              </div>
               <p>{{ item.content }}</p>
             </article>
           </div>
@@ -197,6 +208,7 @@ const healthLabel = ref('未检查')
 const statusText = ref('')
 const knowledgeCount = ref('-')
 const searchQuery = ref('退款多久能到账')
+const searchTopK = ref(5)
 const searchResults = ref([])
 const docTitle = ref('退款补充政策')
 const docContent = ref('大促期间退款审核时间可能延长到 3-5 个工作日。')
@@ -328,8 +340,15 @@ async function loadStats() {
 async function searchKnowledge() {
   busy.value = true
   try {
-    const data = await requestSearch(settings.backend, settings, searchQuery.value, 5)
+    const topK = Number.isInteger(searchTopK.value) ? Math.min(20, Math.max(1, searchTopK.value)) : 5
+    const data = await requestSearch(settings.backend, settings, searchQuery.value, topK)
     searchResults.value = data.results || []
+    statusText.value = JSON.stringify({
+      backend: data.backend,
+      requestedTopK: data.requestedTopK ?? topK,
+      returned: data.returned,
+      reranked: data.reranked
+    }, null, 2)
   } catch (error) {
     statusText.value = error.message
   } finally {

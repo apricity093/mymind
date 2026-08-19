@@ -265,6 +265,29 @@ label {
   margin-top: 14px;
 }
 
+.inline-form {
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.inline-form > input {
+  flex: 1 1 180px;
+  min-width: 160px;
+}
+
+.topk-control {
+  display: grid;
+  grid-template-columns: auto 74px;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.topk-control input {
+  width: 74px;
+  padding: 9px 8px;
+}
+
 .actions button:nth-child(2),
 .inline-form button,
 .file-button {
@@ -515,6 +538,27 @@ pre {
 .result-item span {
   color: #637386;
   font-size: 12px;
+}
+
+.result-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.result-meta .pill {
+  min-height: 21px;
+  font-size: 11px;
+  max-width: 100%;
+  overflow-wrap: anywhere;
 }
 
 .result-item p {

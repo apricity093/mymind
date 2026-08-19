@@ -6,3 +6,10 @@ Thumbs.db
 __pycache__/
 *.py[cod]
 .pytest_cache/
+.jspace/
+.edge-e2e/
+desktop.png
+mobile.png
+
+report.md
+AGENTS.md

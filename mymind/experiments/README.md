@@ -1,9 +1,28 @@
-# Cache and Memory Experiments
+# Cache, Memory and RAG Experiments
 
 Run commands from the `mymind/` directory with the project on `PYTHONPATH`.
 
 ```powershell
 D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer offline
+```
+
+## RAG retrieval experiment (check.md R0-R4)
+
+```powershell
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer rag
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer rag --variants r1 r4 --top-k 10
+```
+
+The RAG layer rebuilds every variant from `data/eval/rag_corpus.json` into an
+independent, versioned collection, evaluates `data/eval/rag_dataset.json`
+(128 queries: 8 no-answer calibration + 120 test) with the result cache
+disabled, and reports recall/ranking/fact-coverage/no-answer/duplicate metrics
+plus paired bootstrap CIs, cold/hot latency percentiles and call counters.
+
+真实 Chroma 默认 all-MiniLM-L6-v2 层（rewrite/rerank 仍为确定性代理）：
+
+```powershell
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.rag_chroma --variants r1 r4 --top-k 10
 ```
 
 Docker integration uses an isolated Redis database and temporary Chroma collections:

@@ -53,8 +53,46 @@ export async function requestKnowledgeStats(type, settings) {
 }
 
 export async function requestSearch(type, settings, query, topK = 5) {
-  const params = new URLSearchParams({ query, topK: String(topK) })
-  return requestJson(backendMeta(type, settings).baseUrl, `/search?${params}`, { method: 'POST' })
+  // Python /search 使用 top_k，Java 使用 topK。前端必须按后端类型发送正确参数。
+  const paramName = type === 'python' ? 'top_k' : 'topK'
+  const params = new URLSearchParams({ query, [paramName]: String(topK) })
+  const raw = await requestJson(backendMeta(type, settings).baseUrl, `/search?${params}`, { method: 'POST' })
+  return normalizeSearchResponse(type, raw)
+}
+
+export function normalizeSearchResponse(type, raw) {
+  return {
+    backend: type,
+    query: raw.query ?? '',
+    results: normalizeSearchResults(raw.results),
+    reranked: Boolean(raw.reranked),
+    requestedTopK: raw.requested_top_k ?? raw.requestedTopK ?? null,
+    returned: raw.returned ?? (Array.isArray(raw.results) ? raw.results.length : 0),
+    indexVersion: raw.index_version ?? raw.indexVersion ?? '',
+    chunkConfig: raw.chunk_config ?? raw.chunkConfig ?? null,
+    raw
+  }
+}
+
+export function normalizeSearchResults(items) {
+  return (Array.isArray(items) ? items : []).map((item, index) => {
+    const id = item.chunk_id ?? item.chunkId ?? item.id ?? `search-result-${index}`
+    return {
+      id,
+      chunkId: id,
+      title: item.title ?? '',
+      content: item.content ?? '',
+      score: toNumber(item.score),
+      chunk: toNumber(item.chunk ?? item.chunkIndex ?? item.chunk_index),
+      sourceId: item.source_id ?? item.sourceId ?? '',
+      sectionPath: item.section_path ?? item.sectionPath ?? '',
+      fusionScore: toNullableNumber(item.fusion_score ?? item.fusionScore),
+      retrievalSources: item.retrieval_sources ?? item.retrievalSources ?? [],
+      indexVersion: item.index_version ?? item.indexVersion ?? '',
+      chunkConfig: item.chunk_config ?? item.chunkConfig ?? null,
+      raw: item
+    }
+  })
 }
 
 export async function requestChat(type, settings, message) {
@@ -148,6 +186,18 @@ async function requestJson(baseUrl, path, options = {}) {
 
 function normalizeBaseUrl(value) {
   return String(value || '').replace(/\/+$/, '')
+}
+
+function toNumber(value) {
+  if (value === null || value === undefined || value === '') return 0
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function toNullableNumber(value) {
+  if (value === null || value === undefined || value === '') return null
+  const number = Number(value)
+  return Number.isFinite(number) ? number : null
 }
 
 function readSettings() {
