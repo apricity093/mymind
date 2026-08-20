@@ -1,5 +1,12 @@
 # 项目改动记录
 
+## 2026-08-20
+
+- 改动文件：`mymind/README.md`、`report.md`、`HISTORY.md`。
+- 改动摘要：新增 `mymind/README.md`，以目录树和职责速览表记录 Python 主版本的目录架构及各模块职责；按协作规范同步更新 `report.md` 与 `HISTORY.md`。
+- 验证结果：已确认 README 目录树与 `mymind/` 实际目录结构一致，Markdown 编码为 UTF-8。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
 ## 2026-08-08
 
 - 改动文件：`mymind/agents/agent_orchestrator.py`、`mymind/api/main.py`、`mymind/core/intent_recognizer.py`、`mymind/core/llm_utils.py`、`mymind/core/cache_metrics.py`、`mymind/core/llm_gateway.py`、`mymind/evaluation/evaluator.py`、`mymind/experiments/`、`mymind/mcp/tool_manager.py`、`mymind/memory/conversation_memory.py`、`mymind/requirements.txt`、`mymind/tests/test_multi_provider_cache.py`、`mymind/.gitignore`、`AGENTS.md`。
@@ -20,3 +27,5 @@
 - 改动摘要：按 `check.md` 完成 RAG 优化实验与前后端契约改造。Python 侧新增 R0-R4 及四个消融变体配置、Markdown/段落感知 `500+80` 切块、稳定 `chunk_id/source_id/section_path`、内容去重、纯 Python BM25、加权 RRF、确定性重排回退、检索统计；`KnowledgeBase` 支持独立版本化 cosine collection 与真实 all-MiniLM-L6-v2；`/search`、`/knowledge/stats` 仅新增可选字段，旧字段全部保留；`/search` 继续使用 `top_k`。构建 22 篇 Markdown 语料与 128 条标注查询（8 大类别、每分区 4 改写、8 条无答案校准查询），实现 Recall@5/10、MRR@10、nDCG@10、P@3、关键事实覆盖率、无答案误召回、Top-3 重复率、冷/热 p50/p95 延迟、调用次数与 rerank fallback 率，以及按 partition 聚类 bootstrap 95% CI。前端搜索结果统一为稳定 `id` 作为 Vue key，按后端类型分别发送 `top_k`/`topK`，展示章节/融合分/来源，导入后自动刷新统计。
 - 验证结果：`learn_claude` Python 全量测试 `45 passed`；前端 `npm test` `6 passed`；`npm run build` 生产构建成功；前端契约 E2E（真实 FastAPI 路由处理器 + 内存组件 + Edge headless）完成 Python 健康检查、Markdown 多章节导入、统计 12→16、非默认 Top-K=2 返回 2 个不同 chunk、聊天 `knowledge_status=used`、切回 Java 无回归、桌面 1440 与移动 390 无横向溢出、控制台 0 错误 0 异常。离线字符代理实验产物 `rag-retrieval-20260819-075528.json`：R1 Recall@5 已饱和至 1.0，R4 无法满足“相对 R1 +5pp”门槛（0.9833 vs 1.0），`overall_passed=false`。真实 Chroma all-MiniLM-L6-v2 层产物 `rag-retrieval-chroma-20260819-075549.json`：R4 Recall@5 0.9833 vs R1 0.9083（+7.5pp，cluster bootstrap 95% CI 0.025~0.142），MRR/nDCG 不下降、无答案误召回 0、Top-3 重复 0、p95 延迟 310.7ms vs R1 280.7ms（<1.2 倍），`overall_passed=true`；但该层 rewrite/rerank 仍为确定性代理，真实 LLM 层需另行确认。独立审查报告 `review_rag_experiment.md` 总体结论“不通过”，指出离线代理不可作为生产结论、source 级标注饱和、R1 +5pp 门槛结构矛盾、无答案指标被门控短路、缺少最终回答质量评测等问题；其中前端 E2E 缺失一项已在本轮补做并记录于 `artifacts/experiments/frontend-e2e-contract.json`，其余问题列为后续修订项。
 - 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+
