@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from hashlib import sha256
+import json
 import logging
 from typing import Any, Dict, List, Optional, Protocol
 
@@ -61,6 +62,7 @@ class CacheUsage:
     eligible: Optional[bool] = None
     status: str = "unknown"
     raw: Dict[str, Any] = field(default_factory=dict)
+    output_tokens: Optional[int] = None
 
     @property
     def total_input_tokens(self) -> Optional[int]:
@@ -85,10 +87,20 @@ class LLMRequest:
     cache_mode: str = "automatic"
     max_tokens: int = 1024
     temperature: Optional[float] = None
+    retry_incomplete: bool = True
 
     @property
     def stable_hash(self) -> str:
         return sha256(self.stable_prompt.encode("utf-8")).hexdigest()[:16]
+
+
+@dataclass(frozen=True)
+class ToolCall:
+    """Provider-neutral tool request emitted by a model."""
+
+    id: str
+    name: str
+    arguments: Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -96,6 +108,8 @@ class LLMResult:
     text: str
     usage: CacheUsage
     metadata: Dict[str, Any] = field(default_factory=dict)
+    tool_calls: List[ToolCall] = field(default_factory=list)
+    assistant_message: Optional[Dict[str, Any]] = None
 
 
 class LLMGateway(Protocol):
@@ -104,6 +118,7 @@ class LLMGateway(Protocol):
 
 class ProviderGateway:
     provider = "unknown"
+    tool_protocol = "unknown"
 
     def __init__(self, api_key: str, model: str, base_url: Optional[str] = None):
         self.api_key = api_key
@@ -125,12 +140,14 @@ class ProviderGateway:
             "cache_write_tokens": usage.cache_write_tokens,
             "cache_miss_tokens": usage.cache_miss_tokens,
             "input_tokens": usage.input_tokens,
+            "output_tokens": usage.output_tokens,
             "total_input_tokens": usage.total_input_tokens,
         }
 
 
 class AnthropicGateway(ProviderGateway):
     provider = "anthropic"
+    tool_protocol = "anthropic"
 
     def __init__(self, api_key: str, model: str, base_url: Optional[str] = None,
                  cache_enabled: bool = True, min_stable_chars: int = 4096):
@@ -162,12 +179,22 @@ class AnthropicGateway(ProviderGateway):
         }
         if request.temperature is not None:
             kwargs["temperature"] = request.temperature
+        if request.tools:
+            kwargs["tools"] = [
+                {
+                    "name": item["name"],
+                    "description": item.get("description", ""),
+                    "input_schema": item.get("input_schema", {"type": "object", "properties": {}}),
+                }
+                for item in request.tools
+            ]
         response = await self.client.messages.create(**kwargs)
         text = extract_text_content(response.content)
+        tool_calls = self._tool_calls(response.content)
         retried_response = False
         initial_text_empty = not text.strip()
         stop_reason = getattr(response, "stop_reason", None)
-        if initial_text_empty or stop_reason == "max_tokens":
+        if request.retry_incomplete and not tool_calls and (initial_text_empty or stop_reason == "max_tokens"):
             retried_response = True
             retry_tokens = max(2048, request.max_tokens * 2)
             logger.warning(
@@ -179,26 +206,52 @@ class AnthropicGateway(ProviderGateway):
             kwargs["max_tokens"] = retry_tokens
             response = await self.client.messages.create(**kwargs)
             text = extract_text_content(response.content)
+            tool_calls = self._tool_calls(response.content)
         raw = _as_dict(getattr(response, "usage", None))
         read = _first_int(raw, "cache_read_input_tokens") or 0
         write = _first_int(raw, "cache_creation_input_tokens") or 0
         input_tokens = _first_int(raw, "input_tokens")
+        output_tokens = _first_int(raw, "output_tokens")
         status = "hit" if read > 0 else ("miss" if write > 0 else (
             "ineligible" if self.cache_enabled and not eligible else "unknown"
         ))
         usage = CacheUsage("anthropic", input_tokens, read, write, None,
-                           True if eligible else (False if self.cache_enabled else None), status, raw)
+                           True if eligible else (False if self.cache_enabled else None), status, raw,
+                           output_tokens)
         metadata = self._metadata(request, usage)
         metadata.update({
             "stop_reason": getattr(response, "stop_reason", None),
             "response_retry": retried_response,
             "empty_response_retry": retried_response and initial_text_empty,
         })
-        return LLMResult(text, usage, metadata)
+        return LLMResult(
+            text,
+            usage,
+            metadata,
+            tool_calls=tool_calls,
+            assistant_message={"role": "assistant", "content": response.content},
+        )
+
+    @staticmethod
+    def _tool_calls(content: Any) -> List[ToolCall]:
+        calls: List[ToolCall] = []
+        for block in content or []:
+            data = _as_dict(block)
+            block_type = data.get("type") or getattr(block, "type", None)
+            if block_type != "tool_use":
+                continue
+            name = data.get("name") or getattr(block, "name", "")
+            call_id = data.get("id") or getattr(block, "id", "")
+            arguments = data.get("input")
+            if arguments is None:
+                arguments = getattr(block, "input", {})
+            calls.append(ToolCall(str(call_id), str(name), dict(arguments or {})))
+        return calls
 
 
 class OpenAIGateway(ProviderGateway):
     provider = "openai"
+    tool_protocol = "openai"
 
     def __init__(self, api_key: str, model: str, base_url: Optional[str] = None, cache_enabled: bool = True):
         if AsyncOpenAI is None:
@@ -229,7 +282,7 @@ class OpenAIGateway(ProviderGateway):
         if request.temperature is not None:
             kwargs["temperature"] = request.temperature
         if request.tools:
-            kwargs["tools"] = request.tools
+            kwargs["tools"] = [self._openai_tool(item) for item in request.tools]
         if request.cache_identity and self.cache_enabled and self.provider == "openai":
             kwargs["prompt_cache_key"] = request.cache_identity
         if request.cache_mode == "explicit" and self.provider == "openai":
@@ -241,16 +294,70 @@ class OpenAIGateway(ProviderGateway):
         read = _first_int(details, "cached_tokens") or _first_int(raw, "cached_tokens") or 0
         write = _first_int(details, "cache_write_tokens") or _first_int(raw, "cache_write_tokens") or 0
         total = _first_int(raw, "prompt_tokens", "input_tokens")
+        output_tokens = _first_int(raw, "completion_tokens", "output_tokens")
         eligible = ((total >= 1024) if total is not None else None) if self.provider == "openai" else None
         status = "hit" if read > 0 else ("ineligible" if eligible is False else (
             "miss" if total else "unknown"
         ))
         usage = CacheUsage("openai", total, read, write, max(0, (total or 0) - read) if total is not None else None,
-                           eligible, status, raw)
+                           eligible, status, raw, output_tokens)
         message = getattr(response.choices[0], "message", {})
         content = message.get("content", "") if isinstance(message, dict) else getattr(message, "content", "")
         text = extract_text_content(content)
-        return LLMResult(text, usage, self._metadata(request, usage))
+        tool_calls = self._tool_calls(message)
+        assistant_message: Dict[str, Any] = {"role": "assistant", "content": content or ""}
+        if tool_calls:
+            assistant_message["tool_calls"] = [
+                {
+                    "id": call.id,
+                    "type": "function",
+                    "function": {
+                        "name": call.name,
+                        "arguments": json.dumps(call.arguments, ensure_ascii=False),
+                    },
+                }
+                for call in tool_calls
+            ]
+        return LLMResult(
+            text,
+            usage,
+            self._metadata(request, usage),
+            tool_calls=tool_calls,
+            assistant_message=assistant_message,
+        )
+
+    @staticmethod
+    def _openai_tool(item: Dict[str, Any]) -> Dict[str, Any]:
+        if item.get("type") == "function":
+            return item
+        return {
+            "type": "function",
+            "function": {
+                "name": item["name"],
+                "description": item.get("description", ""),
+                "parameters": item.get("input_schema", {"type": "object", "properties": {}}),
+            },
+        }
+
+    @staticmethod
+    def _tool_calls(message: Any) -> List[ToolCall]:
+        raw_calls = message.get("tool_calls", []) if isinstance(message, dict) else getattr(message, "tool_calls", [])
+        calls: List[ToolCall] = []
+        for raw_call in raw_calls or []:
+            data = _as_dict(raw_call)
+            function = _as_dict(data.get("function") or getattr(raw_call, "function", None))
+            arguments = function.get("arguments", {})
+            if isinstance(arguments, str):
+                try:
+                    arguments = json.loads(arguments)
+                except json.JSONDecodeError:
+                    arguments = {"_invalid_json": arguments}
+            calls.append(ToolCall(
+                str(data.get("id") or getattr(raw_call, "id", "")),
+                str(function.get("name", "")),
+                dict(arguments or {}),
+            ))
+        return calls
 
 
 class DeepSeekGateway(OpenAIGateway):

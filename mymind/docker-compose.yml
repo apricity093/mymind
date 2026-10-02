@@ -86,6 +86,17 @@ services:
       - CHROMA_PERSIST_DIRECTORY=/app/data/chroma
       - EVAL_BASELINE_PATH=/app/data/eval/baseline.json
       - mymind_SKILLS_DIR=/app/skills
+      - AGENT_PROFILE_ENABLED=${AGENT_PROFILE_ENABLED:-0}
+      - AGENT_TOOL_USE_ENABLED=${AGENT_TOOL_USE_ENABLED:-0}
+      - AGENT_ESCALATION_ENABLED=${AGENT_ESCALATION_ENABLED:-0}
+      - AGENT_COMPOSER_ENABLED=${AGENT_COMPOSER_ENABLED:-0}
+      - AGENT_TRACE_ENABLED=${AGENT_TRACE_ENABLED:-0}
+      - TRACE_API_ENABLED=${TRACE_API_ENABLED:-0}
+      - KNOWLEDGE_TOOL_MODE=${KNOWLEDGE_TOOL_MODE:-disabled}
+      - AGENT_MAX_TOOL_ROUNDS=${AGENT_MAX_TOOL_ROUNDS:-3}
+      - TRACE_KEY_PREFIX=${TRACE_KEY_PREFIX:-mymind:trace}
+      - TRACE_TTL_SECONDS=${TRACE_TTL_SECONDS:-86400}
+      - TRACE_MAX_ENTRIES=${TRACE_MAX_ENTRIES:-200}
     volumes:
       - ./data/chroma:/app/data/chroma
       - ./data/eval:/app/data/eval

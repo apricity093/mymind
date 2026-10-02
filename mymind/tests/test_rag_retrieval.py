@@ -322,9 +322,9 @@ def test_chat_endpoint_keeps_legacy_and_diagnostic_fields():
         api._build_knowledge_context = old_build
     assert response.status_code == 200
     payload = response.json()
-    for field in ("conv_id", "response", "intent", "agent_type", "escalated", "latency_ms",
+    for field in ("conv_id", "request_id", "response", "intent", "agent_type", "escalated", "latency_ms",
                   "knowledge_used", "knowledge_status", "knowledge_reason",
-                  "intent_group", "entities", "agent_types", "primary_agent", "supporting_agents"):
+                  "intent_group", "entities", "agent_types", "primary_agent", "supporting_agents", "tools_used"):
         assert field in payload, field
     assert payload["knowledge_used"] is True
     assert payload["knowledge_status"] == "used"

@@ -1,7 +1,7 @@
 import asyncio
 from types import SimpleNamespace
 
-from agents.agent_orchestrator import AgentOrchestrator, AgentType, Request
+from agents.agent_orchestrator import AgentFeatureConfig, AgentOrchestrator, AgentType, Request
 from core.intent_recognizer import IntentCategory, IntentRecognizer, UrgencyLevel
 
 
@@ -135,7 +135,10 @@ def test_human_handoff_reports_executing_agent_and_marks_escalation():
             return SimpleNamespace(text="已记录人工请求", usage=None, metadata={})
 
     async def run():
-        orchestrator = AgentOrchestrator(api_key="test", model="test-model", gateway=ReplyGateway())
+        orchestrator = AgentOrchestrator(
+            api_key="test", model="test-model", gateway=ReplyGateway(),
+            features=AgentFeatureConfig.for_variant("E5"),
+        )
         result = await orchestrator.run(Request(
             message="我要转人工客服",
             user_id="user",
@@ -146,10 +149,10 @@ def test_human_handoff_reports_executing_agent_and_marks_escalation():
             intent_confidence=0.95,
         ))
 
-        assert result.agent_type == AgentType.GENERAL
-        assert result.agent_types == [AgentType.GENERAL]
-        assert result.primary_agent == AgentType.GENERAL
+        assert result.agent_type == AgentType.ESCALATION
+        assert result.agent_types == [AgentType.ESCALATION]
+        assert result.primary_agent == AgentType.ESCALATION
         assert result.escalated is True
-        assert "标记人工升级" in result.routing_reason
+        assert "人工升级节点" in result.routing_reason
 
     asyncio.run(run())

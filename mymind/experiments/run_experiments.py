@@ -8,7 +8,7 @@ from experiments.offline import run_offline
 
 def main():
     parser = argparse.ArgumentParser(description="Run Python cache/memory experiments")
-    parser.add_argument("--layer", choices=("offline", "integration", "real", "rag"), default="offline")
+    parser.add_argument("--layer", choices=("offline", "integration", "real", "rag", "agent-migration", "agent-migration-real"), default="offline")
     parser.add_argument("--output-dir", type=Path, default=Path("artifacts/experiments"))
     parser.add_argument("--redis-url", default="redis://:mymind123@localhost:6379/15")
     parser.add_argument("--chroma-host", default="localhost")
@@ -32,6 +32,23 @@ def main():
             rewrite_failure_rate=args.rewrite_failure_rate,
             rerank_failure_rate=args.rerank_failure_rate,
             top_k=args.top_k,
+        )
+    elif args.layer == "agent-migration":
+        from experiments.agent_migration import run_agent_migration
+        report = run_agent_migration(
+            args.output_dir,
+            Path("data/eval/agent_migration_dataset.json"),
+            variants=args.variants or None,
+        )
+    elif args.layer == "agent-migration-real":
+        from experiments.agent_migration_real import run_real_agent_migration
+        report = run_real_agent_migration(
+            args.output_dir,
+            Path("data/eval/agent_migration_dataset.json"),
+            args.confirm_cost,
+            provider=args.provider or "deepseek",
+            repeat=3,
+            per_category=10,
         )
     elif args.layer == "integration":
         import asyncio

@@ -1,5 +1,12 @@
 # HISTORY
 
+## feat(agent): 迁移 Profile、工具调用、升级、Composer 与 Trace — 2026-10-02
+
+- 在 Python 主版本中新增结构化 Agent Profile、角色级工具白名单、统一多 Provider 工具协议、独立人工升级节点、多 Agent Composer 和请求级 Trace。
+- 扩展 `/chat` 增量契约和 Trace 查询接口，增加 Redis Trace、工具参数校验、脱敏、请求级 RAG 去重及 Token 遥测。
+- 新增 240 条正式迁移评测集、EchoMind Smoke 数据、E0–E5 离线/DeepSeek 实验和完整测试；生产默认保持新能力关闭，待真实门禁通过后分阶段启用。
+- 验证：`learn_claude` 全量测试 `64 passed`；E0–E5 离线门禁通过；真实 DeepSeek 实验严格限制为 600 次调用但质量、Judge 完整性和 Token 成本门禁未通过。
+
 ## docs(mymind): 新增 Python 主版本 README 目录架构文档 — 2026-08-20
 
 - 新增 `mymind/README.md`，以目录树和职责速览表描述 `agents/`、`api/`、`core/`、`mcp/`、`memory/`、`experiments/` 等目录及关键模块职责。

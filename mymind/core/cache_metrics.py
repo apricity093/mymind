@@ -49,6 +49,9 @@ class CacheMetricsCollector:
             total = getattr(usage, "total_input_tokens", None)
             if total is not None:
                 self._counters[f"{prefix}.input_tokens"] += int(total)
+            output = getattr(usage, "output_tokens", None)
+            if output is not None:
+                self._counters[f"{prefix}.output_tokens"] += int(output)
             if latency_ms is not None:
                 self._latency[prefix].append(float(latency_ms))
         if CACHE_REQUESTS is not None:
@@ -111,6 +114,9 @@ class RedisCacheMetricsCollector(CacheMetricsCollector):
         total = getattr(usage, "total_input_tokens", None)
         if total is not None:
             self._increment(f"{prefix}.input_tokens", int(total))
+        output = getattr(usage, "output_tokens", None)
+        if output is not None:
+            self._increment(f"{prefix}.output_tokens", int(output))
         if latency_ms is not None:
             with self._lock:
                 self._latency[prefix].append(float(latency_ms))

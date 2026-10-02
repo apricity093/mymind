@@ -1,0 +1,25 @@
+{
+  "purpose": "smoke_only",
+  "source": "EchoMind evaluation/evaluator.py DEFAULT_INTENT_CASES and DEFAULT_DIALOG_CASES",
+  "formal_gate": false,
+  "intent_cases": [
+    {"question": "我的订单什么时候到？", "expected_intent": "logistics"},
+    {"question": "帮我取消订单", "expected_intent": "request"},
+    {"question": "你们服务太差了！", "expected_intent": "complaint"},
+    {"question": "应用一直报500错误", "expected_intent": "technical_crash"},
+    {"question": "为什么扣了两次款？", "expected_intent": "payment_issue"},
+    {"question": "我要投诉，转人工！", "expected_intent": "human_handoff"},
+    {"question": "你好", "expected_intent": "greeting"},
+    {"question": "修改我的邮箱地址", "expected_intent": "account"},
+    {"question": "帮我开发票", "expected_intent": "invoice"},
+    {"question": "退款多久到账？", "expected_intent": "refund"},
+    {"question": "登录一直报401", "expected_intent": "technical_login"}
+  ],
+  "dialog_cases": [
+    {"turns": ["我的订单 #12345 还没到，已经超时了"]},
+    {"turns": ["应用登录一直报错 401"]},
+    {"turns": ["为什么这个月多扣了 50 块钱？"]},
+    {"turns": ["帮我把收货地址改成北京市朝阳区"]},
+    {"turns": ["你好，我想退款", "订单号是 #12345", "退款多久能到账？"]}
+  ]
+}

@@ -124,6 +124,7 @@ async def lifespan(app: FastAPI):
     from core.llm_gateway import build_gateway
     from core.knowledge_policy import KnowledgePolicy
     from memory.context_builder import ContextBuilder
+    from agents.trace_store import RedisTraceStore
     import redis as sync_redis
 
     cfg = _anthropic_cfg()
@@ -197,6 +198,13 @@ async def lifespan(app: FastAPI):
         chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
     )
     _knowledge_policy = KnowledgePolicy()
+    if _orchestrator.features.trace_enabled:
+        _orchestrator.set_trace_store(RedisTraceStore(
+            _cache_redis,
+            prefix=os.getenv("TRACE_KEY_PREFIX", "mymind:trace"),
+            ttl_s=int(os.getenv("TRACE_TTL_SECONDS", "86400")),
+            max_entries=int(os.getenv("TRACE_MAX_ENTRIES", "200")),
+        ))
     logger.info(f"知识库已加载: {_knowledge_base.doc_count} 个文档片段")
 
     def knowledge_fallback(params: Dict[str, Any], context: Optional[Dict[str, Any]], error: str):
@@ -225,6 +233,7 @@ async def lifespan(app: FastAPI):
         supports_rerank=True,
         fallback=knowledge_fallback,
     ))
+    _orchestrator.set_rag_tool_manager(_tool_manager)
 
     # 性能监控（可选启动 Prometheus）
     prom_port = int(os.getenv("PROMETHEUS_PORT", "0")) or None
@@ -287,6 +296,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     conv_id:     str
+    request_id:  str = ""
     response:    str
     intent:      str
     agent_type:  str
@@ -304,6 +314,17 @@ class ChatResponse(BaseModel):
     routing_confidence: float = 0.0
     knowledge_status: str = "skipped"
     knowledge_reason: str = ""
+    tools_used: List[str] = Field(default_factory=list)
+
+
+class ToolTraceResponse(BaseModel):
+    request_id: str
+    found: bool
+    trace: Dict[str, Any] = Field(default_factory=dict)
+
+
+class RecentToolTracesResponse(BaseModel):
+    items: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 # ── 路由 ──────────────────────────────────────────────────────────────────────
@@ -357,7 +378,11 @@ async def chat(req: ChatRequest):
     ] if mem_ctx.recent_messages else None
 
     intent_result = await _orchestrator.recognize_intent(req.message, history=history)
-    knowledge = await _build_knowledge_context(req.message, intent_result.intent)
+    knowledge_mode = getattr(getattr(_orchestrator, "features", None), "knowledge_tool_mode", "disabled")
+    if knowledge_mode == "tool_only":
+        knowledge = KnowledgeContextResult(status="skipped", reason="knowledge_tool_only")
+    else:
+        knowledge = await _build_knowledge_context(req.message, intent_result.intent)
     global _last_context_metadata
     built_context = _context_builder.build(mem_ctx, knowledge.text, req.message)
     full_context = built_context.text
@@ -374,6 +399,7 @@ async def chat(req: ChatRequest):
         intent_group=intent_result.intent_group,
         urgency=intent_result.urgency,
         intent_confidence=intent_result.confidence,
+        knowledge_already_loaded=knowledge.used,
     )
 
     # 3. 执行
@@ -388,6 +414,7 @@ async def chat(req: ChatRequest):
 
     return ChatResponse(
         conv_id=conv_id,
+        request_id=getattr(result, "request_id", orch_req.request_id),
         response=result.response,
         intent=result.intent.value if result.intent else "other",
         agent_type=result.agent_type.value,
@@ -405,6 +432,7 @@ async def chat(req: ChatRequest):
         routing_confidence=result.routing_confidence,
         knowledge_status=knowledge.status,
         knowledge_reason=knowledge.reason,
+        tools_used=list(getattr(result, "tools_used", []) or []),
     )
 
 
@@ -457,6 +485,31 @@ async def monitor_summary():
     summary = _monitor.summary()
     summary["context"] = dict(_last_context_metadata)
     return summary
+
+
+def _require_trace_api() -> None:
+    enabled = bool(
+        _orchestrator is not None
+        and getattr(getattr(_orchestrator, "features", None), "trace_api_enabled", False)
+    )
+    if not enabled:
+        raise HTTPException(404, "Trace API 未启用")
+
+
+@app.get("/trace/tool/{request_id}", response_model=ToolTraceResponse, tags=["Trace"])
+async def get_tool_trace(request_id: str):
+    """查询已脱敏的请求工具轨迹；记录默认保留 24 小时。"""
+    _require_trace_api()
+    trace = _orchestrator.get_tool_trace(request_id)
+    return ToolTraceResponse(request_id=request_id, found=trace is not None, trace=trace or {})
+
+
+@app.get("/trace/tools", response_model=RecentToolTracesResponse, tags=["Trace"])
+async def list_recent_tool_traces(limit: int = 20):
+    """查询最近的已脱敏工具轨迹；limit 被限制为 1 到 100。"""
+    _require_trace_api()
+    safe_limit = max(1, min(int(limit or 20), 100))
+    return RecentToolTracesResponse(items=_orchestrator.get_recent_tool_traces(safe_limit))
 
 
 @app.get("/metrics")

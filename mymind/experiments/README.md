@@ -43,3 +43,21 @@ cache scenario can be `identical`, `stable-prefix`, or `invalidation`. Existing
 `LLM_PROVIDER`, `LLM_API_KEY`, `LLM_MODEL`, and `LLM_BASE_URL`.
 
 Every layer writes timestamped JSON and Markdown reports under `artifacts/experiments/`.
+
+## Agent tool migration experiment (E0–E5)
+
+The deterministic migration experiment executes the same orchestrator code for all six feature variants against `data/eval/agent_migration_dataset.json`:
+
+```powershell
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer agent-migration
+```
+
+The dataset contains 240 cases (40 each for general, technical, billing, composite, escalation, and unauthorized/schema safety). Gold fields cover primary/supporting routes, required/allowed/forbidden tools, escalation, knowledge access, required facts, and forbidden claims. The report includes route/support accuracy, tool precision/recall/F1, unauthorized executions, forbidden claims, and latency percentiles.
+
+The paid DeepSeek E0/E5 paired experiment is deliberately opt-in. It samples 10 cases from each category, repeats each variant three times (360 top-level requests), judges the first repeat with one paired E0/E5 call per case, and calculates a paired bootstrap 95% confidence interval. Agent calls, tool continuations, Composer calls, and 60 paired Judge calls share a hard 600-call budget; incomplete-response auto-retry is disabled for this experiment.
+
+```powershell
+D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer agent-migration-real --confirm-cost --provider deepseek
+```
+
+Keep the model, dataset order, temperatures, and judge prompt fixed when comparing reports. A deterministic pass proves contracts and policy wiring; it is not a substitute for the paid quality/latency/cost gate. RAG remains on the existing R0 pre-retrieval path unless the separate `tool_only`/`supplemental` comparison improves quality within the latency and cost limits.

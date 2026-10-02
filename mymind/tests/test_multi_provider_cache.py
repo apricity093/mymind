@@ -22,10 +22,13 @@ def test_metrics_separate_application_and_provider_rates():
     metrics = CacheMetricsCollector()
     metrics.record_application("knowledge", "hit")
     metrics.record_application("knowledge", "miss")
-    metrics.record_provider("deepseek", "model", CacheUsage("deepseek", 100, 70, 0, 30, True, "hit"))
+    metrics.record_provider("deepseek", "model", CacheUsage(
+        "deepseek", 100, 70, 0, 30, True, "hit", output_tokens=25,
+    ))
     snapshot = metrics.snapshot()
     assert snapshot["counters"]["application.knowledge.hit"] == 1
     assert snapshot["counters"]["provider.deepseek.model.read_tokens"] == 70
+    assert snapshot["counters"]["provider.deepseek.model.output_tokens"] == 25
 
 
 def test_observed_cache_records_failures_without_changing_store_contract():
