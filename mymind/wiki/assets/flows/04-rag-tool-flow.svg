@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2940" viewBox="0 0 1800 2940">
+<rect width="1800" height="100%" fill="white"/>
+<text x="70" y="35" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="48" font-weight="700" fill="#203148">04  Agent 自主调用 RAG</text>
+<text x="70" y="107" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="27" font-weight="400" fill="#64748b">知识工具由模型选择；内部改写、缓存、熔断与重排链路复用 MCPToolManager</text>
+<rect x="610" y="180" width="720" height="150" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="194" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">模型选择 search_knowledge_base</text>
+<text x="632" y="244" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">默认工具启用；query + top_k（默认 5）</text>
+<rect x="610" y="400" width="720" height="150" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="414" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">角色白名单 + Schema 检查</text>
+<text x="632" y="464" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">通过后进入 handler；工具 top_k 约束为 1–20</text>
+<polyline points="970.0,330 970.0,400" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,400 962.6055859201091,384.6923992600045 977.3944140798909,384.6923992600045" fill="#65758a"/>
+<rect x="70" y="400" width="460" height="170" rx="18" fill="#fff0ec" stroke="#d8a08c" stroke-width="3"/>
+<text x="92" y="414" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">检查未通过</text>
+<text x="92" y="464" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">不执行 handler；返回错误并保留失</text>
+<text x="92" y="501" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">败轨迹。</text>
+<polyline points="610,475.0 530,485.0" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="530,485.0 544.2722293720213,475.7640123022813 546.1065577477053,490.4386393077529" fill="#65758a"/>
+<rect x="540.0" y="458.0" width="71.0" height="36" fill="white"/>
+<text x="545.0" y="460.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">失败</text>
+<rect x="610" y="620" width="720" height="130" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="632" y="634" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">当次相同查询与 Top-K 已有结果？</text>
+<polyline points="970.0,550 970.0,620" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,620 962.6055859201091,604.6923992600045 977.3944140798909,604.6923992600045" fill="#65758a"/>
+<rect x="977.0" y="563.0" width="71.0" height="36" fill="white"/>
+<text x="982.0" y="565.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">通过</text>
+<rect x="1410" y="620" width="315" height="220" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="1432" y="634" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">请求缓存返回</text>
+<text x="1432" y="684" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">复用已完成结果，标记 </text>
+<text x="1432" y="721" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">request_cached。</text>
+<polyline points="1330,685.0 1410,730.0" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1410,730.0 1393.0330750497865,728.9400671088118 1400.283464276114,716.0504862620073" fill="#65758a"/>
+<rect x="1352.5" y="685.5" width="46.0" height="36" fill="white"/>
+<text x="1357.5" y="687.5" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="610" y="830" width="720" height="150" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="844" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">LLM 查询改写 + 保留原查询</text>
+<text x="632" y="894" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">改写失败仅使用原查询。</text>
+<polyline points="970.0,750 970.0,830" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,830 962.6055859201091,814.6923992600045 977.3944140798909,814.6923992600045" fill="#65758a"/>
+<rect x="977.0" y="768.0" width="46.0" height="36" fill="white"/>
+<text x="982.0" y="770.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="610" y="1050" width="720" height="210" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="1064" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">子查询并行召回</text>
+<text x="632" y="1114" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">每路至少 5 条；结果缓存 → 熔断 →</text>
+<text x="632" y="1151" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">参数检查 → handler 超时控制。</text>
+<polyline points="970.0,980 970.0,1050" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,1050 962.6055859201091,1034.6923992600045 977.3944140798909,1034.6923992600045" fill="#65758a"/>
+<rect x="610" y="1330" width="720" height="170" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="1344" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">合并健康片段并去重</text>
+<text x="632" y="1394" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">降级片段不混入正常知识依据。</text>
+<polyline points="970.0,1260 970.0,1330" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,1330 962.6055859201091,1314.6923992600045 977.3944140798909,1314.6923992600045" fill="#65758a"/>
+<rect x="610" y="1570" width="720" height="130" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="632" y="1584" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">是否有正常知识片段？</text>
+<polyline points="970.0,1500 970.0,1570" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,1570 962.6055859201091,1554.6923992600045 977.3944140798909,1554.6923992600045" fill="#65758a"/>
+<rect x="70" y="1740" width="460" height="250" rx="18" fill="#fff0ec" stroke="#d8a08c" stroke-width="3"/>
+<text x="92" y="1754" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">返回无正常结果</text>
+<text x="92" y="1804" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">有降级 → degraded；</text>
+<text x="92" y="1841" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">否则无召回 → empty。</text>
+<polyline points="610,1635.0 500,1635 300,1635 300.0,1740" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="300.0,1740 292.6055859201091,1724.6923992600045 307.3944140798909,1724.6923992600045" fill="#65758a"/>
+<rect x="382.5" y="1613.0" width="46.0" height="36" fill="white"/>
+<text x="387.5" y="1615.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="610" y="1770" width="720" height="180" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="1784" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">重排并取 Top-K</text>
+<text x="632" y="1834" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">数量足够时尝试 LLM；失败用确定性排序，</text>
+<text x="632" y="1871" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">已不足 Top-K 时直接返回。</text>
+<polyline points="970.0,1700 970.0,1770" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,1770 962.6055859201091,1754.6923992600045 977.3944140798909,1754.6923992600045" fill="#65758a"/>
+<rect x="977.0" y="1713.0" width="46.0" height="36" fill="white"/>
+<text x="982.0" y="1715.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="610" y="2020" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="2034" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">形成结果状态与工具轨迹</text>
+<text x="632" y="2084" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">used / empty / degraded / error</text>
+<polyline points="970.0,1950 970.0,2020" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,2020 962.6055859201091,2004.6923992600045 977.3944140798909,2004.6923992600045" fill="#65758a"/>
+<polyline points="300.0,1990 300,2095 610,2092.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="610,2092.5 594.7525274440727,2100.017618017447 594.6332665789355,2085.2292707404317" fill="#65758a"/>
+<polyline points="1567.5,840 1568,2090 1330,2092.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1330,2092.5 1345.2290881708732,2084.945208574436 1345.3844244349548,2099.733220914998" fill="#65758a"/>
+<polyline points="70,485.0 35,485 35,2135 610,2092.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="610,2092.5 595.2790992951108,2101.0026514944925 594.1889856610981,2086.254055269614" fill="#65758a"/>
+<rect x="610" y="2240" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="632" y="2254" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">按 Provider 协议回送工具结果</text>
+<text x="632" y="2304" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">模型继续生成回复；默认最多三个模型轮次。</text>
+<polyline points="970.0,2165 970.0,2240" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,2240 962.6055859201091,2224.6923992600045 977.3944140798909,2224.6923992600045" fill="#65758a"/>
+<rect x="610" y="2460" width="720" height="115" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="632" y="2474" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">还有模型轮次？（默认最多 3 轮）</text>
+<polyline points="970.0,2385 970.0,2460" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="970.0,2460 962.6055859201091,2444.6923992600045 977.3944140798909,2444.6923992600045" fill="#65758a"/>
+<rect x="100" y="2670" width="700" height="150" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="122" y="2684" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">继续模型生成</text>
+<text x="122" y="2734" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">可返回普通文本，或发起下一次工具调用。</text>
+<rect x="1040" y="2670" width="700" height="150" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="1062" y="2684" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">达到上限时返回明确说明</text>
+<text x="1062" y="2734" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">保留已发生的工具记录，不自动增加第 4 轮。</text>
+<polyline points="610,2517.5 450,2518 450.0,2670" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="450.0,2670 442.6055859201091,2654.6923992600045 457.3944140798909,2654.6923992600045" fill="#65758a"/>
+<rect x="512.5" y="2495.75" width="46.0" height="36" fill="white"/>
+<text x="517.5" y="2497.75" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<polyline points="1330,2517.5 1390,2518 1390.0,2670" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1390.0,2670 1382.605585920109,2654.6923992600045 1397.394414079891,2654.6923992600045" fill="#65758a"/>
+<rect x="1342.5" y="2495.75" width="46.0" height="36" fill="white"/>
+<text x="1347.5" y="2497.75" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="70" y="1040" width="460" height="250" rx="18" fill="#f2f4f8" stroke="#b6c0cf" stroke-width="3"/>
+<text x="92" y="1054" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">可观测性边界</text>
+<text x="92" y="1104" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">reranked 不证明本次调用 LLM 重</text>
+<text x="92" y="1141" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">排；请求缓存与子查询缓存分开。</text>
+<text x="70" y="2875" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="400" fill="#64748b">mymind Python  ·  2026-10-07  ·  蓝：执行步骤  黄：条件判断  绿：结果  灰：配置与说明</text>
+</svg>

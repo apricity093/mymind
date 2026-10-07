@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2510" viewBox="0 0 1800 2510">
+<rect width="1800" height="100%" fill="white"/>
+<text x="70" y="35" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="48" font-weight="700" fill="#203148">05  15 条消息触发记忆压缩</text>
+<text x="70" y="107" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="27" font-weight="400" fill="#64748b">写入与压缩持有会话锁；15 条是消息数，空会话第八轮用户消息可触发</text>
+<rect x="620" y="180" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="194" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">获取用户 + 会话 Redis 锁</text>
+<text x="642" y="244" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">序列化消息追加与压缩，防止覆盖较新消息。</text>
+<rect x="620" y="395" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="409" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">LPUSH 一条消息并刷新 TTL</text>
+<text x="642" y="459" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">工作记忆 TTL = 24 小时</text>
+<polyline points="980.0,325 980.0,395" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,395 972.6055859201091,379.6923992600045 987.3944140798909,379.6923992600045" fill="#65758a"/>
+<rect x="620" y="610" width="720" height="140" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="642" y="624" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">消息数达到 COMPRESS_AT=15？</text>
+<polyline points="980.0,540 980.0,610" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,610 972.6055859201091,594.6923992600045 987.3944140798909,594.6923992600045" fill="#65758a"/>
+<rect x="70" y="795" width="450" height="170" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="92" y="809" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">未到阈值</text>
+<text x="92" y="859" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">保留本次工作记忆，不生成摘要。</text>
+<polyline points="620,680.0 500,680 295,680 295.0,795" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="295.0,795 287.6055859201091,779.6923992600045 302.3944140798909,779.6923992600045" fill="#65758a"/>
+<rect x="380.0" y="658.0" width="46.0" height="36" fill="white"/>
+<text x="385.0" y="660.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="620" y="825" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="839" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">读取消息：旧消息 / 最近 5 条</text>
+<text x="642" y="889" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">只压缩最近五条之前的内容。</text>
+<polyline points="980.0,750 980.0,825" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,825 972.6055859201091,809.6923992600045 987.3944140798909,809.6923992600045" fill="#65758a"/>
+<rect x="987.0" y="765.5" width="46.0" height="36" fill="white"/>
+<text x="992.0" y="767.5" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="620" y="1040" width="720" height="160" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="1054" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">用 LLM 生成旧消息摘要</text>
+<text x="642" y="1104" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">失败时使用摘要失败的占位内容。</text>
+<polyline points="980.0,970 980.0,1040" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,1040 972.6055859201091,1024.6923992600045 987.3944140798909,1024.6923992600045" fill="#65758a"/>
+<rect x="620" y="1270" width="720" height="165" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="1284" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">与 Redis 旧摘要合并</text>
+<text x="642" y="1334" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">累计超过 1500 字时尝试重新归并。</text>
+<polyline points="980.0,1200 980.0,1270" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,1270 972.6055859201091,1254.6923992600045 987.3944140798909,1254.6923992600045" fill="#65758a"/>
+<rect x="620" y="1505" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="1519" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">写入 Redis 累计摘要</text>
+<text x="642" y="1569" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">summary:&lt;user&gt;:&lt;conv&gt;；TTL = 24 小时</text>
+<polyline points="980.0,1435 980.0,1505" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,1505 972.6055859201091,1489.6923992600045 987.3944140798909,1489.6923992600045" fill="#65758a"/>
+<rect x="620" y="1720" width="720" height="180" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="1734" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">写入 Chroma episodic</text>
+<text x="642" y="1784" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">document 为本次摘要；metadata 旧正文前 500 字。</text>
+<text x="642" y="1821" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">写入失败记录日志，继续整理工作记忆。</text>
+<polyline points="980.0,1650 980.0,1720" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,1720 972.6055859201091,1704.6923992600045 987.3944140798909,1704.6923992600045" fill="#65758a"/>
+<rect x="620" y="1970" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="642" y="1984" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">重置工作记忆为最近 5 条</text>
+<text x="642" y="2034" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">保留原消息时序，刷新 TTL。</text>
+<polyline points="980.0,1900 980.0,1970" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,1970 972.6055859201091,1954.6923992600045 987.3944140798909,1954.6923992600045" fill="#65758a"/>
+<rect x="620" y="2225" width="720" height="150" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="642" y="2239" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">释放会话锁，返回本次写入</text>
+<text x="642" y="2289" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">/chat 随后写下一条消息；画像另由后台任务更新。</text>
+<polyline points="980.0,2115 980.0,2225" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="980.0,2225 972.6055859201091,2209.6923992600045 987.3944140798909,2209.6923992600045" fill="#65758a"/>
+<polyline points="70,880.0 35,880 35,2300 620,2300.0" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="620,2300.0 604.6923992600045,2307.394414079891 604.6923992600045,2292.605585920109" fill="#65758a"/>
+<rect x="1440" y="1130" width="285" height="290" rx="18" fill="#f2f4f8" stroke="#b6c0cf" stroke-width="3"/>
+<text x="1462" y="1144" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">背景组装</text>
+<text x="1462" y="1194" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">ContextBuilder 默</text>
+<text x="1462" y="1231" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">认 8000 字符；当前</text>
+<text x="1462" y="1268" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">问题单独保留。</text>
+<rect x="70" y="1550" width="450" height="205" rx="18" fill="#f2f4f8" stroke="#b6c0cf" stroke-width="3"/>
+<text x="92" y="1564" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">读取上限与压缩阈值</text>
+<text x="92" y="1614" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">WORKING_MAX=20 是读取上限</text>
+<text x="92" y="1651" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">；COMPRESS_AT=15 才是触发值</text>
+<text x="92" y="1688" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">。</text>
+<text x="70" y="2445" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="400" fill="#64748b">mymind Python  ·  2026-10-07  ·  蓝：执行步骤  黄：条件判断  绿：结果  灰：配置与说明</text>
+</svg>

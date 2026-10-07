@@ -16,16 +16,20 @@ mymind 是一个面向客服场景的多 Agent 系统。本仓库包含 Python �
 POST /chat
   -> Redis 工作记忆 + ChromaDB 情景记忆/用户画像
   -> LLM / 字符 n-gram / 关键词三路意图识别
-  -> KnowledgePolicy 按意图和业务信号决定是否执行 RAG
-  -> 查询改写、并行召回、去重、LLM 重排
   -> ContextBuilder 控制上下文预算
   -> RoutingDecision 选择主 Agent 和辅助 Agent
-  -> General / Technical / Billing Agent 执行
+  -> General / Technical / Billing Agent 工具循环
+       -> Agent 按需调用 search_knowledge_base
+       -> 查询改写、并行召回、去重、重排后返回工具结果
   -> 写回记忆并异步更新用户画像
   -> 监控与评测记录结构化诊断信息
 ```
 
 Python 支持 Anthropic、OpenAI、DeepSeek 原生接口和 DeepSeek Anthropic 兼容接口。具体缓存与实验说明见 [`mymind/experiments/README.md`](mymind/experiments/README.md)。
+
+工具调用和工具式 RAG 默认开启；Profile、独立人工升级节点、Composer、Trace 采集与 Trace 查询默认关闭。专业 Agent 的全部实例降权达到默认阈值 `0.5` 时，该类型退出当次路由；阈值由 `MYMIND_MONITOR_FALLBACK_PENALTY` 配置。
+
+详细说明见 [完整使用指南](mymind/wiki/完整使用指南.md)、[业务流程说明](mymind/wiki/业务流程说明.md)、[技术亮点](mymind/wiki/技术亮点.md)、[重点代码](mymind/wiki/重点代码.md) 和 [学习文档](mymind/wiki/EchoMind学习文档.md)。
 
 ## 快速启动
 
@@ -91,6 +95,7 @@ Python 响应保留原字段，并增量返回诊断信息：
 ```json
 {
   "conv_id": "...",
+  "request_id": "...",
   "response": "...",
   "intent": "payment_issue",
   "intent_group": "billing",
@@ -105,19 +110,22 @@ Python 响应保留原字段，并增量返回诊断信息：
   "intent_source_scores": {"llm": 0.9, "embedding": 0.5, "pattern": 0.75},
   "knowledge_used": true,
   "knowledge_status": "used",
-  "knowledge_reason": "intent:payment_issue",
+  "knowledge_reason": "agent_tool:used",
+  "tools_used": ["search_knowledge_base"],
   "escalated": false,
   "latency_ms": 320.5
 }
 ```
 
-`knowledge_status` 取值：
+`knowledge_used=true` 表示实际进入检索工具处理；即使检索为空或失败，该字段仍可为 true。`knowledge_status` 从工具轨迹汇总，取值如下：
 
-- `used`: 成功取得并注入知识内容
-- `skipped`: 策略判断无需检索
+- `used`: 检索工具返回知识片段
+- `skipped`: Agent 未发起检索工具调用
 - `empty`: 已检索但没有可用结果
 - `degraded`: 工具进入 fallback，fallback 不作为真实知识依据
 - `error`: 检索链路异常
+
+同一请求多次检索按 `used → degraded → error → empty` 汇总。有检索轨迹时 `knowledge_reason=agent_tool:<状态>`，否则为 `agent_did_not_search`。完整脱敏轨迹通过 `/trace/tool/{request_id}` 或 `/trace/tools` 查询，需要同时开启 `AGENT_TRACE_ENABLED` 和 `TRACE_API_ENABLED` 才能采集并读取。
 
 ### 导入知识
 
@@ -156,6 +164,8 @@ Content-Type: application/json
 ```
 
 报告包含 Accuracy、Macro-F1、LLM Judge 四维质量分、`routing_accuracy`、`knowledge_gate_accuracy`、baseline 回归项和优化建议。多轮用例的期望值应用于最后一轮。
+
+`knowledge_gate_accuracy` 比较实际 `search_knowledge_base` 工具调用与用例预期；不再用意图策略代替实际执行结果。评测接口会调用所配置的模型与 Judge，可能产生 API 费用。
 
 ## 细粒度意图
 
@@ -213,7 +223,7 @@ D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer
 
 ### 评测报告出现回归
 
-评测会把当前指标与上一份 baseline 比较；相对下降超过 5% 会记录在 `regressions`。先检查具体失败用例，再决定调整模板、路由阈值或 RAG 门控，不要只追求单一总分。
+评测会把当前指标与上一份 baseline 比较；相对下降超过 5% 会记录在 `regressions`。先检查具体失败用例，再决定调整意图模板、路由阈值或 Agent 的检索工具使用规则。
 
 ## 部署安全
 

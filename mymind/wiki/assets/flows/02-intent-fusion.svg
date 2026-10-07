@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2410" viewBox="0 0 1800 2410">
+<rect width="1800" height="100%" fill="white"/>
+<text x="70" y="35" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="48" font-weight="700" fill="#203148">02  三路意图融合</text>
+<text x="70" y="107" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="27" font-weight="400" fill="#64748b">先累计领域总分，再选择该领域内的具体意图</text>
+<rect x="590" y="180" width="620" height="110" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="612" y="194" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">消息 + 最近历史</text>
+<rect x="70" y="355" width="500" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="92" y="369" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">LLM</text>
+<text x="92" y="419" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">上下文语义 → 意图 / 置信度</text>
+<rect x="650" y="355" width="500" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="672" y="369" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">Embedding（可用时）</text>
+<text x="672" y="419" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">模板匹配 → 意图 / 相似度</text>
+<rect x="1230" y="355" width="500" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="1252" y="369" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">Pattern</text>
+<text x="1252" y="419" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">细意图优先 → 命中置信度</text>
+<polyline points="900.0,290 900,325 320.0,325 320.0,355" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="320.0,355 312.6055859201091,339.6923992600045 327.3944140798909,339.6923992600045" fill="#65758a"/>
+<polyline points="900.0,290 900,325 900.0,325 900.0,355" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="900.0,355 892.6055859201091,339.6923992600045 907.3944140798909,339.6923992600045" fill="#65758a"/>
+<polyline points="900.0,290 900,325 1480.0,325 1480.0,355" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1480.0,355 1472.605585920109,339.6923992600045 1487.394414079891,339.6923992600045" fill="#65758a"/>
+<rect x="640" y="565" width="720" height="130" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="662" y="579" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">LLM 是否失败？</text>
+<polyline points="320.0,500 320.0,530 1000,530 1000.0,565" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,565 992.6055859201091,549.6923992600045 1007.3944140798909,549.6923992600045" fill="#65758a"/>
+<polyline points="900.0,500 900.0,530 1000,530 1000.0,565" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,565 992.6055859201091,549.6923992600045 1007.3944140798909,549.6923992600045" fill="#65758a"/>
+<polyline points="1480.0,500 1480.0,530 1000,530 1000.0,565" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,565 992.6055859201091,549.6923992600045 1007.3944140798909,549.6923992600045" fill="#65758a"/>
+<rect x="65" y="765" width="455" height="230" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="87" y="779" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">独立兜底</text>
+<text x="87" y="829" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">优先正分 Embedding，次选 </text>
+<text x="87" y="866" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">Pattern，否则 other / 0。</text>
+<polyline points="640,630.0 520,630 290,630 292.5,765" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="292.5,765 284.8234280041363,749.8319334655889 299.609721008648,749.5581132247646" fill="#65758a"/>
+<rect x="387.5" y="608.0" width="46.0" height="36" fill="white"/>
+<text x="392.5" y="610.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="640" y="765" width="720" height="185" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="662" y="779" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">分别累计类别分与领域分</text>
+<text x="662" y="829" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">三路 0.70 / 0.20 / 0.10</text>
+<text x="662" y="866" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">禁用 Embedding：0.85 / 0.15</text>
+<polyline points="1000.0,695 1000.0,765" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,765 992.6055859201091,749.6923992600045 1007.3944140798909,749.6923992600045" fill="#65758a"/>
+<rect x="1007.0" y="708.0" width="46.0" height="36" fill="white"/>
+<text x="1012.0" y="710.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="640" y="1020" width="720" height="150" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="662" y="1034" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">选最高总分领域</text>
+<text x="662" y="1084" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">technical + technical_login 合在技术组</text>
+<polyline points="1000.0,950 1000.0,1020" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1020 992.6055859201091,1004.6923992600045 1007.3944140798909,1004.6923992600045" fill="#65758a"/>
+<rect x="640" y="1240" width="720" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="662" y="1254" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">选领域内分数最高的意图</text>
+<text x="662" y="1304" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">保留胜出领域总分作为 best_score</text>
+<polyline points="1000.0,1170 1000.0,1240" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1240 992.6055859201091,1224.6923992600045 1007.3944140798909,1224.6923992600045" fill="#65758a"/>
+<rect x="600" y="1460" width="800" height="190" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="622" y="1474" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">满足同组 Pattern 细化条件？</text>
+<text x="622" y="1524" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">胜出为粗意图；Pattern 为同组细意图；</text>
+<text x="622" y="1561" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">Pattern ≥ 0.5 且领域分 &lt; 0.8</text>
+<polyline points="1000.0,1385 1000.0,1460" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1460 992.6055859201091,1444.6923992600045 1007.3944140798909,1444.6923992600045" fill="#65758a"/>
+<rect x="1420" y="1710" width="315" height="260" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="1442" y="1724" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">细化返回</text>
+<text x="1442" y="1774" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">具体意图；置信度取领</text>
+<text x="1442" y="1811" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">域分与 Pattern 分最大</text>
+<text x="1442" y="1848" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">值。</text>
+<polyline points="1400,1555.0 1578,1555 1577.5,1710" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1577.5,1710 1570.1550034926179,1694.6686260789666 1584.9437547080047,1694.7163317280483" fill="#65758a"/>
+<rect x="1471.5" y="1533.0" width="46.0" height="36" fill="white"/>
+<text x="1476.5" y="1535.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="640" y="1730" width="720" height="145" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="662" y="1744" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">领域分达到置信度阈值？</text>
+<text x="662" y="1794" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">默认 threshold = 0.5</text>
+<polyline points="1000.0,1650 1000.0,1730" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1730 992.6055859201091,1714.6923992600045 1007.3944140798909,1714.6923992600045" fill="#65758a"/>
+<rect x="1007.0" y="1668.0" width="46.0" height="36" fill="white"/>
+<text x="1012.0" y="1670.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="70" y="1960" width="440" height="165" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="92" y="1974" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">返回 other</text>
+<text x="92" y="2024" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">置信度仍为胜出领域分。</text>
+<rect x="640" y="1960" width="720" height="165" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="662" y="1974" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">返回组内获胜意图</text>
+<text x="662" y="2024" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">置信度为胜出领域总分。</text>
+<polyline points="640,1802.5 530,1800 290,1800 290.0,1960" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="290.0,1960 282.6055859201091,1944.6923992600045 297.3944140798909,1944.6923992600045" fill="#65758a"/>
+<rect x="392.5" y="1778.0" width="46.0" height="36" fill="white"/>
+<text x="397.5" y="1780.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<polyline points="1000.0,1875 1000.0,1960" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1960 992.6055859201091,1944.6923992600045 1007.3944140798909,1944.6923992600045" fill="#65758a"/>
+<rect x="1007.0" y="1895.5" width="46.0" height="36" fill="white"/>
+<text x="1012.0" y="1897.5" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="640" y="2200" width="720" height="115" rx="18" fill="#f2f4f8" stroke="#b6c0cf" stroke-width="3"/>
+<text x="662" y="2214" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">source_scores 保留三路原始置信度</text>
+<polyline points="1000.0,2125 1000.0,2200" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,2200 992.6055859201091,2184.6923992600045 1007.3944140798909,2184.6923992600045" fill="#65758a"/>
+<polyline points="1577.5,1970 1578,2260 1360,2257.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1360,2257.5 1375.3913870199883,2250.281606439038 1375.2218015177198,2265.0694622368533" fill="#65758a"/>
+<polyline points="290.0,2125 290,2258 640,2257.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="640,2257.5 624.7029783178879,2264.916274513325 624.6818514420748,2250.127461444161" fill="#65758a"/>
+<polyline points="65,880.0 35,880 35,2300 620,2300 640,2257.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="640,2257.5 640.1726731228925,2274.4991230359874 626.7914648202852,2268.2020838347603" fill="#65758a"/>
+<text x="70" y="2345" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="400" fill="#64748b">mymind Python  ·  2026-10-07  ·  蓝：执行步骤  黄：条件判断  绿：结果  灰：配置与说明</text>
+</svg>

@@ -60,4 +60,14 @@ The paid DeepSeek E0/E5 paired experiment is deliberately opt-in. It samples 10 
 D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer agent-migration-real --confirm-cost --provider deepseek
 ```
 
-Keep the model, dataset order, temperatures, and judge prompt fixed when comparing reports. A deterministic pass proves contracts and policy wiring; it is not a substitute for the paid quality/latency/cost gate. RAG remains on the existing R0 pre-retrieval path unless the separate `tool_only`/`supplemental` comparison improves quality within the latency and cost limits.
+Keep the model, dataset order, temperatures, and judge prompt fixed when comparing reports. A deterministic pass proves contracts and policy wiring; it is not a substitute for the paid quality/latency/cost gate.
+
+## Runtime RAG and evaluation semantics
+
+The HTTP chat runtime enables tool use and `KNOWLEDGE_TOOL_MODE=tool_only` by default. Agents decide whether to call `search_knowledge_base`; the API does not pre-retrieve from intent labels. `disabled` removes the knowledge tool. Profile, escalation, Composer, internal Trace and Trace API remain disabled by default; this runtime configuration is not the full E5 variant.
+
+R0–R4 retrieval experiments retain `KnowledgePolicy` as a deterministic benchmark gate and use their own retrieval variants. E0–E5 explicitly select their feature configurations. Runtime defaults do not silently enable RAG inside those Agent ablations, whose `knowledge_tool_mode` stays `disabled`.
+
+The end-to-end evaluator keeps the `knowledge_gate_accuracy` field name but compares actual `search_knowledge_base` calls in `tools_used` with `expect_knowledge_search`. It measures tool selection, independently of retrieval quality or answer grounding. Interpret no-answer and quality metrics together with the dataset, embedding, rewrite/rerank implementation and executed variant.
+
+The 2026-10-07 regression run passed 83 tests, including the deterministic E0–E5 gate. API contract and Compose checks also passed. The earlier paid DeepSeek E0/E5 experiment failed quality, judge-completeness and token-cost gates; no new paid result supersedes it.

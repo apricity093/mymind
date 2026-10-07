@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="2520" viewBox="0 0 1800 2520">
+<rect width="1800" height="100%" fill="white"/>
+<text x="70" y="35" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="48" font-weight="700" fill="#203148">03  主辅 Agent 路由</text>
+<text x="70" y="107" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="27" font-weight="400" fill="#64748b">先澄清，再处理升级；主领域与辅助领域共享监控可用性筛选</text>
+<rect x="590" y="180" width="820" height="180" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="612" y="194" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">低置信度 other 且消息长度 &gt; 2？</text>
+<text x="612" y="244" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">intent=other，confidence &lt; 0.5</text>
+<rect x="70" y="190" width="440" height="150" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="92" y="204" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">直接返回澄清</text>
+<text x="92" y="254" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">跳过 Agent 模型执行。</text>
+<polyline points="590,270.0 510,265.0" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="510,265.0 525.7390412663644,258.5748478605034 524.8165395115137,273.334875938114" fill="#65758a"/>
+<rect x="532.5" y="245.5" width="46.0" height="36" fill="white"/>
+<text x="537.5" y="247.5" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="590" y="440" width="820" height="150" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="612" y="454" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">CRITICAL 或人工升级意图？</text>
+<polyline points="1000.0,360 1000.0,440" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,440 992.6055859201091,424.6923992600045 1007.3944140798909,424.6923992600045" fill="#65758a"/>
+<rect x="1007.0" y="378.0" width="46.0" height="36" fill="white"/>
+<text x="1012.0" y="380.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="1470" y="400" width="280" height="315" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="1492" y="414" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">升级路由</text>
+<text x="1492" y="464" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">默认 General + 升</text>
+<text x="1492" y="501" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">级标记；开启独立节</text>
+<text x="1492" y="538" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">点后交给 Escalation</text>
+<text x="1492" y="575" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">。</text>
+<polyline points="1410,515.0 1470,557.5" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1470,557.5 1453.2345234861466,554.6859642391344 1461.782722612321,542.6179184139469" fill="#65758a"/>
+<rect x="1422.5" y="514.25" width="46.0" height="36" fill="white"/>
+<text x="1427.5" y="516.25" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="590" y="675" width="820" height="150" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="612" y="689" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">计算通用 / 技术 / 账单领域分</text>
+<text x="612" y="739" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">意图 + 关键词 + 错误码 / 金额 / 订单号</text>
+<polyline points="1000.0,590 1000.0,675" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,675 992.6055859201091,659.6923992600045 1007.3944140798909,659.6923992600045" fill="#65758a"/>
+<rect x="1007.0" y="610.5" width="46.0" height="36" fill="white"/>
+<text x="1012.0" y="612.5" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<rect x="590" y="895" width="820" height="185" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="612" y="909" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">过滤全部高降权的专业类型</text>
+<text x="612" y="959" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">Technical / Billing 全实例 penalty ≥ 阈值；</text>
+<text x="612" y="996" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">默认 0.5，记录 monitor_fallback。</text>
+<polyline points="1000.0,825 1000.0,895" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,895 992.6055859201091,879.6923992600045 1007.3944140798909,879.6923992600045" fill="#65758a"/>
+<rect x="70" y="900" width="440" height="230" rx="18" fill="#f2f4f8" stroke="#b6c0cf" stroke-width="3"/>
+<text x="92" y="914" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">多实例选择</text>
+<text x="92" y="964" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">类型有健康实例即保留；执行时仅</text>
+<text x="92" y="1001" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">从低于阈值的实例中选。</text>
+<rect x="590" y="1150" width="820" height="145" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="612" y="1164" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">最高分可用领域成为主 Agent</text>
+<polyline points="1000.0,1080 1000.0,1150" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1150 992.6055859201091,1134.6923992600045 1007.3944140798909,1134.6923992600045" fill="#65758a"/>
+<rect x="590" y="1365" width="820" height="185" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="612" y="1379" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">选取可用的专业辅助 Agent</text>
+<text x="612" y="1429" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">其他专业分 ≥ 0.45 或明确协作信号；</text>
+<text x="612" y="1466" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">已过滤类型不能重新加入。</text>
+<polyline points="1000.0,1295 1000.0,1365" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1365 992.6055859201091,1349.6923992600045 1007.3944140798909,1349.6923992600045" fill="#65758a"/>
+<rect x="590" y="1620" width="820" height="125" rx="18" fill="#fff4d7" stroke="#d9b35b" stroke-width="3"/>
+<text x="612" y="1634" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">是否有辅助 Agent？</text>
+<polyline points="1000.0,1550 1000.0,1620" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,1620 992.6055859201091,1604.6923992600045 1007.3944140798909,1604.6923992600045" fill="#65758a"/>
+<rect x="110" y="1830" width="700" height="155" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="132" y="1844" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">单 Agent 执行</text>
+<text x="132" y="1894" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">专业失败 → General；保留原工具记录。</text>
+<rect x="1010" y="1830" width="700" height="155" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="1032" y="1844" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">主辅 Agent 并行执行</text>
+<text x="1032" y="1894" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">各自局部工具状态，成功结果进入合并。</text>
+<polyline points="590,1682.5 460,1682 460.0,1830" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="460.0,1830 452.6055859201091,1814.6923992600045 467.3944140798909,1814.6923992600045" fill="#65758a"/>
+<rect x="507.5" y="1660.25" width="46.0" height="36" fill="white"/>
+<text x="512.5" y="1662.25" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">否</text>
+<polyline points="1410,1682.5 1460,1682 1460,1770 1360,1770 1360.0,1830" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1360.0,1830 1352.605585920109,1814.6923992600045 1367.394414079891,1814.6923992600045" fill="#65758a"/>
+<rect x="1467.0" y="1704.0" width="46.0" height="36" fill="white"/>
+<text x="1472.0" y="1706.0" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="25" font-weight="700" fill="#203148">是</text>
+<rect x="1010" y="2050" width="700" height="170" rx="18" fill="#edf4ff" stroke="#9fbde8" stroke-width="3"/>
+<text x="1032" y="2064" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">合并主辅结果</text>
+<text x="1032" y="2114" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="26" font-weight="400" fill="#203148">默认带标签拼接；Composer 开启时尝试合成。</text>
+<polyline points="1360.0,1985 1360.0,2050" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1360.0,2050 1352.605585920109,2034.6923992600045 1367.394414079891,2034.6923992600045" fill="#65758a"/>
+<rect x="590" y="2290" width="820" height="125" rx="18" fill="#e9f6ee" stroke="#91bca0" stroke-width="3"/>
+<text x="612" y="2304" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="32" font-weight="700" fill="#203148">返回路由 / 执行类型与合并后的工具记录</text>
+<polyline points="460.0,1985 460,2215 1000,2215 1000.0,2290" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,2290 992.6055859201091,2274.6923992600045 1007.3944140798909,2274.6923992600045" fill="#65758a"/>
+<polyline points="1360.0,2220 1360,2230 1000,2230 1000.0,2290" fill="none" stroke="#65758a" stroke-width="4"/>
+<polygon points="1000.0,2290 992.6055859201091,2274.6923992600045 1007.3944140798909,2274.6923992600045" fill="#65758a"/>
+<text x="70" y="2455" dominant-baseline="text-before-edge" font-family="Microsoft YaHei, Noto Sans CJK SC, sans-serif" font-size="24" font-weight="400" fill="#64748b">mymind Python  ·  2026-10-07  ·  蓝：执行步骤  黄：条件判断  绿：结果  灰：配置与说明</text>
+</svg>
