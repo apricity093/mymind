@@ -1,5 +1,40 @@
 # 项目改动记录
 
+## 2026-10-07（维护完成与提交记录）
+
+- 改动文件：`HISTORY.md`、`report.md`。
+- 改动摘要：记录扩容重试用量、检索评测提示及过时文档修正，准备按协作规范提交和推送。运行配置、示例模板及既有未跟踪 `analysis.md` 保持现状。
+- 验证结果：相关回归 18 项通过，全量 86 项通过；52 个本地链接和 14 组源码节选一致，两处下载文档与项目一致；EchoMind README 的链接和启动/RAG 文案检查通过；`git diff --check` 通过。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（维护文档与下载版 README 覆盖）
+
+- 改动文件：下载目录 `EchoMind/wiki` 与 `详细文档+简历` 中五份 Markdown、`EchoMind/README.md`、`report.md`。
+- 改动摘要：两处详细文档同步当前维护结果；下载版 README 改为编辑随附 `.env`，修正主流程为 Agent 自主检索，并区分 EchoMind 原程序与 mymind 详细文档的适用范围。未改下载目录程序与配置文件。
+- 验证结果：待内容一致性、链接与过时文案检查。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（维护回归与完成清单）
+
+- 改动文件：`mymind/README.md`、`mymind/experiments/README.md`、`mymind/wiki/` 五份 Markdown、`待更新文档清单.md`、`report.md`。
+- 改动摘要：当前文档的测试记录更新为 86 项；完成清单补充 Token 与评测提示维护和 EchoMind README 修订，运行配置及示例模板保持现状。
+- 验证结果：`learn_claude` 全量回归 `86 passed in 16.72s`，包含已有工具、缓存、API 与离线实验回归。未执行付费模型实验。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（评测与重试修正的文档同步）
+
+- 改动文件：`mymind/README.md`、`mymind/wiki/业务流程说明.md`、`完整使用指南.md`、`技术亮点.md`、`重点代码.md`、`EchoMind学习文档.md`、`report.md`。
+- 改动摘要：说明扩容重试与工具续轮分别累计用量、DeepSeek 兼容 metadata 的统一口径，以及与 Agent 自主检索一致的评测建议。
+- 验证结果：相关假模型回归 `18 passed`；待全量回归后更新当前验证记录并同步下载目录。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（评测提示与重试用量修正）
+
+- 改动文件：`mymind/core/llm_gateway.py`、`mymind/evaluation/evaluator.py`、`mymind/tests/test_multi_provider_cache.py`、`report.md`。
+- 改动摘要：知识调用评测建议改为核对用例预期、Agent 工具使用规则和工具配置；Anthropic 协议扩容重试聚合首轮与重试响应的输入、输出和缓存用量，DeepSeek 兼容适配同步规范化 metadata。按用户要求保留 `.env` 及示例模板。
+- 验证结果：新增空响应重试的 Anthropic 与两种 DeepSeek 缓存用量格式回归，并加强截断重试及指标断言，待 `learn_claude` 验证。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
 ## 2026-10-07（文档更新提交记录）
 
 - 改动文件：`HISTORY.md`、`report.md`。

@@ -70,4 +70,4 @@ R0–R4 retrieval experiments retain `KnowledgePolicy` as a deterministic benchm
 
 The end-to-end evaluator keeps the `knowledge_gate_accuracy` field name but compares actual `search_knowledge_base` calls in `tools_used` with `expect_knowledge_search`. It measures tool selection, independently of retrieval quality or answer grounding. Interpret no-answer and quality metrics together with the dataset, embedding, rewrite/rerank implementation and executed variant.
 
-The 2026-10-07 regression run passed 83 tests, including the deterministic E0–E5 gate. API contract and Compose checks also passed. The earlier paid DeepSeek E0/E5 experiment failed quality, judge-completeness and token-cost gates; no new paid result supersedes it.
+The 2026-10-07 regression run passed 86 tests, including the deterministic E0–E5 gate. API contract and Compose checks also passed. The earlier paid DeepSeek E0/E5 experiment failed quality, judge-completeness and token-cost gates; no new paid result supersedes it.

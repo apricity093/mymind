@@ -189,6 +189,7 @@ class AnthropicGateway(ProviderGateway):
                 for item in request.tools
             ]
         response = await self.client.messages.create(**kwargs)
+        initial_usage = _as_dict(getattr(response, "usage", None))
         text = extract_text_content(response.content)
         tool_calls = self._tool_calls(response.content)
         retried_response = False
@@ -208,6 +209,14 @@ class AnthropicGateway(ProviderGateway):
             text = extract_text_content(response.content)
             tool_calls = self._tool_calls(response.content)
         raw = _as_dict(getattr(response, "usage", None))
+        if retried_response:
+            for name in (
+                "input_tokens", "output_tokens", "cache_read_input_tokens",
+                "cache_creation_input_tokens", "prompt_cache_hit_tokens", "prompt_cache_miss_tokens",
+            ):
+                values = [_first_int(initial_usage, name), _first_int(raw, name)]
+                if any(value is not None for value in values):
+                    raw[name] = sum(value for value in values if value is not None)
         read = _first_int(raw, "cache_read_input_tokens") or 0
         write = _first_int(raw, "cache_creation_input_tokens") or 0
         input_tokens = _first_int(raw, "input_tokens")
@@ -411,8 +420,16 @@ class DeepSeekAnthropicGateway(AnthropicGateway):
             result.usage.status = "hit" if result.usage.cache_read_tokens > 0 else (
                 "miss" if result.usage.input_tokens is not None else "unknown"
             )
-        result.metadata.update({"provider": "deepseek", "cache_read_tokens": result.usage.cache_read_tokens,
-                                "cache_miss_tokens": result.usage.cache_miss_tokens})
+        result.metadata.update({
+            "provider": "deepseek",
+            "input_tokens": result.usage.input_tokens,
+            "output_tokens": result.usage.output_tokens,
+            "total_input_tokens": result.usage.total_input_tokens,
+            "cache_read_tokens": result.usage.cache_read_tokens,
+            "cache_write_tokens": result.usage.cache_write_tokens,
+            "cache_miss_tokens": result.usage.cache_miss_tokens,
+            "cache_status": result.usage.status,
+        })
         return result
 
 

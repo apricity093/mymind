@@ -134,6 +134,8 @@ TRACE_MAX_ENTRIES=200
 
 `knowledge_used` 表示实际进入检索工具处理。`knowledge_status` 区分 `used/empty/degraded/error/skipped`，多次检索按 `used → degraded → error → empty` 汇总；`knowledge_reason` 为 `agent_tool:<状态>` 或 `agent_did_not_search`。`knowledge_gate_accuracy` 评测实际工具调用。
 
+检索调用评测偏低时，建议核对用例预期、Agent 工具使用规则与工具配置。Anthropic 协议扩容重试成功后，用量包含首轮与重试响应返回的 Token；工具续轮用量在 Agent 层进一步聚合。
+
 - `GET /trace/tool/{request_id}`：返回单请求脱敏 Trace；过期或不存在时 `found=false`。
 - `GET /trace/tools?limit=20`：按时间倒序返回最近 Trace，`limit` 会限制到 1–100。
 - `TRACE_API_ENABLED=false` 时两个接口均返回 404。
@@ -150,7 +152,7 @@ D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer
 
 迁移正式评测集位于 `data/eval/agent_migration_dataset.json`：共 240 条，六类各 40 条，其中 60 条多轮、60 条对抗或缺失信息场景。原 EchoMind 的 11 条意图和 5 组对话保存在 `data/eval/echomind_smoke.json`，明确标记为 `formal_gate=false`，只用于 Smoke Test。
 
-2026-10-07 的程序同步回归为 `83 passed`，包含 E0–E5 离线门禁；API 契约和 Compose 配置检查通过。该结果基于假模型与内存组件，不替代真实服务或付费模型实验。
+2026-10-07 的程序同步回归为 `86 passed`，包含 E0–E5 离线门禁；API 契约和 Compose 配置检查通过。该结果基于假模型与内存组件，不替代真实服务或付费模型实验。
 
 ## 文档入口
 

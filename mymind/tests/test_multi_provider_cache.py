@@ -1,10 +1,12 @@
 import asyncio
 from types import SimpleNamespace
 
+import pytest
+
 from agents.agent_orchestrator import GeneralAgent, Request
 from core.cache_metrics import CacheMetricsCollector, ObservedCacheStore
 from core.llm_gateway import (
-    CacheUsage, DeepSeekAnthropicGateway, LLMResult, LLMRequest, OpenAIGateway,
+    AnthropicGateway, CacheUsage, DeepSeekAnthropicGateway, LLMResult, LLMRequest, OpenAIGateway,
 )
 from monitor.performance_monitor import PerformanceMonitor
 
@@ -137,12 +139,12 @@ def test_deepseek_anthropic_adapter_retries_truncated_text_with_more_tokens():
                 return SimpleNamespace(
                     content=[{"type": "text", "text": "partial"}],
                     stop_reason="max_tokens",
-                    usage={"input_tokens": 20},
+                    usage={"input_tokens": 100, "output_tokens": 20},
                 )
             return SimpleNamespace(
                 content=[{"type": "text", "text": "ok"}],
                 stop_reason="end_turn",
-                usage={"input_tokens": 20},
+                usage={"input_tokens": 200, "output_tokens": 30},
             )
 
     async def run():
@@ -157,6 +159,68 @@ def test_deepseek_anthropic_adapter_retries_truncated_text_with_more_tokens():
         assert [call["max_tokens"] for call in messages.calls] == [256, 2048]
         assert result.metadata["response_retry"] is True
         assert result.metadata["empty_response_retry"] is False
+        assert result.usage.total_input_tokens == 300
+        assert result.usage.output_tokens == 50
+        assert result.metadata["total_input_tokens"] == 300
+        assert result.metadata["output_tokens"] == 50
+
+        metrics = CacheMetricsCollector()
+        metrics.record_provider("deepseek", "model", result.usage)
+        counters = metrics.snapshot()["counters"]
+        assert counters["provider.deepseek.model.input_tokens"] == 300
+        assert counters["provider.deepseek.model.output_tokens"] == 50
+
+    asyncio.run(run())
+
+
+@pytest.mark.parametrize("gateway_type,first_usage,second_usage,total,read,write,miss", [
+    (AnthropicGateway,
+     {"input_tokens": 100, "output_tokens": 20, "cache_read_input_tokens": 50, "cache_creation_input_tokens": 10},
+     {"input_tokens": 200, "output_tokens": 30, "cache_read_input_tokens": 70, "cache_creation_input_tokens": 20},
+     450, 120, 30, None),
+    (DeepSeekAnthropicGateway,
+     {"input_tokens": 100, "output_tokens": 20, "prompt_cache_hit_tokens": 60, "prompt_cache_miss_tokens": 40},
+     {"input_tokens": 200, "output_tokens": 30, "prompt_cache_hit_tokens": 120, "prompt_cache_miss_tokens": 80},
+     300, 180, 0, 120),
+    (DeepSeekAnthropicGateway,
+     {"input_tokens": 10, "output_tokens": 20, "cache_read_input_tokens": 50, "cache_creation_input_tokens": 5},
+     {"input_tokens": 20, "output_tokens": 30, "cache_read_input_tokens": 70, "cache_creation_input_tokens": 10},
+     165, 120, 0, 45),
+])
+def test_retry_usage_aggregates_provider_cache_fields(
+    gateway_type, first_usage, second_usage, total, read, write, miss,
+):
+    class Messages:
+        def __init__(self):
+            self.calls = 0
+
+        async def create(self, **kwargs):
+            self.calls += 1
+            return SimpleNamespace(
+                content=[{"type": "text", "text": "" if self.calls == 1 else "ok"}],
+                stop_reason="end_turn",
+                usage=first_usage if self.calls == 1 else second_usage,
+            )
+
+    async def run():
+        gateway = gateway_type("test", "model")
+        messages = Messages()
+        gateway.client = SimpleNamespace(messages=messages)
+        result = await gateway.complete(LLMRequest(model="model", stable_prompt="stable"))
+        assert messages.calls == 2
+        assert result.text == "ok"
+        assert result.metadata["empty_response_retry"] is True
+        assert result.usage.total_input_tokens == total
+        assert result.usage.output_tokens == 50
+        assert result.usage.cache_read_tokens == read
+        assert result.usage.cache_write_tokens == write
+        assert result.usage.cache_miss_tokens == miss
+        assert result.metadata["total_input_tokens"] == total
+        assert result.metadata["input_tokens"] == result.usage.input_tokens
+        assert result.metadata["cache_read_tokens"] == read
+        assert result.metadata["cache_write_tokens"] == write
+        assert result.metadata["cache_miss_tokens"] == miss
+        assert result.metadata["cache_status"] == "hit"
 
     asyncio.run(run())
 

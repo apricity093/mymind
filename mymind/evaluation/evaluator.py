@@ -484,7 +484,7 @@ class EndToEndEvaluator:
         if scores.get("routing_accuracy", 1.0) < 0.90:
             recs.append("路由准确率 < 90%：检查意图分组、领域关键词和主辅助 Agent 阈值")
         if scores.get("knowledge_gate_accuracy", 1.0) < 0.90:
-            recs.append("知识检索门控准确率 < 90%：调整意图白名单或业务关键词兜底规则")
+            recs.append("知识检索工具调用匹配率 < 90%：核对用例检索预期、Agent 检索工具使用规则和工具配置")
         if not recs:
             recs.append("所有指标均达标，继续保持")
         return recs
