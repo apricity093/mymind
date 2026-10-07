@@ -11,7 +11,6 @@ import pathlib
 import sys
 import uuid
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 
@@ -58,18 +57,9 @@ _evaluator    = None
 _skill_manager = None
 _context_builder = None
 _knowledge_base = None
-_knowledge_policy = None
 _cache_redis = None
 _last_context_metadata: Dict[str, Any] = {}
 _background_tasks: set[asyncio.Task] = set()
-
-
-@dataclass(frozen=True)
-class KnowledgeContextResult:
-    text: str = ""
-    used: bool = False
-    status: str = "skipped"
-    reason: str = ""
 
 
 def _track_background(coro) -> None:
@@ -107,7 +97,7 @@ def _anthropic_cfg() -> Dict[str, Any]:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _orchestrator, _memory, _tool_manager, _monitor, _evaluator
-    global _skill_manager, _context_builder, _knowledge_base, _knowledge_policy, _cache_redis
+    global _skill_manager, _context_builder, _knowledge_base, _cache_redis
 
     _print_banner()
 
@@ -122,7 +112,6 @@ async def lifespan(app: FastAPI):
     from core.cache_store import RedisCacheStore
     from core.cache_metrics import ObservedCacheStore
     from core.llm_gateway import build_gateway
-    from core.knowledge_policy import KnowledgePolicy
     from memory.context_builder import ContextBuilder
     from agents.trace_store import RedisTraceStore
     import redis as sync_redis
@@ -197,7 +186,6 @@ async def lifespan(app: FastAPI):
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
         chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
     )
-    _knowledge_policy = KnowledgePolicy()
     if _orchestrator.features.trace_enabled:
         _orchestrator.set_trace_store(RedisTraceStore(
             _cache_redis,
@@ -255,7 +243,6 @@ async def lifespan(app: FastAPI):
         model=cfg["model"],
         baseline_path=os.getenv("EVAL_BASELINE_PATH", "/app/data/eval/baseline.json"),
         gateway=gateway,
-        knowledge_policy=_knowledge_policy,
     )
 
     logger.info("mymind 已就绪")
@@ -378,13 +365,8 @@ async def chat(req: ChatRequest):
     ] if mem_ctx.recent_messages else None
 
     intent_result = await _orchestrator.recognize_intent(req.message, history=history)
-    knowledge_mode = getattr(getattr(_orchestrator, "features", None), "knowledge_tool_mode", "disabled")
-    if knowledge_mode == "tool_only":
-        knowledge = KnowledgeContextResult(status="skipped", reason="knowledge_tool_only")
-    else:
-        knowledge = await _build_knowledge_context(req.message, intent_result.intent)
     global _last_context_metadata
-    built_context = _context_builder.build(mem_ctx, knowledge.text, req.message)
+    built_context = _context_builder.build(mem_ctx, "", req.message)
     full_context = built_context.text
     _last_context_metadata = built_context.metadata
 
@@ -399,11 +381,22 @@ async def chat(req: ChatRequest):
         intent_group=intent_result.intent_group,
         urgency=intent_result.urgency,
         intent_confidence=intent_result.confidence,
-        knowledge_already_loaded=knowledge.used,
     )
 
     # 3. 执行
     result = await _orchestrator.run(orch_req)
+    tools_used = list(getattr(result, "tools_used", []) or [])
+    knowledge_traces = [
+        trace for trace in getattr(result, "tool_traces", [])
+        if trace.get("tool_name") == "search_knowledge_base"
+    ]
+    knowledge_used = "search_knowledge_base" in tools_used
+    knowledge_status = "skipped"
+    for status in ("used", "degraded", "error", "empty"):
+        if any(trace.get("knowledge_status", "error") == status for trace in knowledge_traces):
+            knowledge_status = status
+            break
+    knowledge_reason = "agent_tool:" + knowledge_status if knowledge_traces else "agent_did_not_search"
 
     # 4. 写入记忆
     await _memory.add_message(req.user_id, conv_id, MsgRole.USER, req.message)
@@ -420,7 +413,7 @@ async def chat(req: ChatRequest):
         agent_type=result.agent_type.value,
         escalated=result.escalated,
         latency_ms=round(result.latency_ms, 1),
-        knowledge_used=knowledge.used,
+        knowledge_used=knowledge_used,
         intent_group=intent_result.intent_group,
         entities=intent_result.entities,
         intent_confidence=round(intent_result.confidence, 4),
@@ -430,51 +423,10 @@ async def chat(req: ChatRequest):
         supporting_agents=[agent_type.value for agent_type in result.supporting_agents],
         routing_reason=result.routing_reason,
         routing_confidence=result.routing_confidence,
-        knowledge_status=knowledge.status,
-        knowledge_reason=knowledge.reason,
-        tools_used=list(getattr(result, "tools_used", []) or []),
+        knowledge_status=knowledge_status,
+        knowledge_reason=knowledge_reason,
+        tools_used=tools_used,
     )
-
-
-async def _build_knowledge_context(message: str, intent, top_k: int = 3) -> KnowledgeContextResult:
-    """
-    为 /chat 主链路构建 RAG 知识上下文。
-
-    这里复用 MCPToolManager 的查询改写、并行召回、重排、fallback 能力。
-    """
-    if _tool_manager is None or _knowledge_policy is None:
-        return KnowledgeContextResult(status="error", reason="knowledge_not_initialized")
-    decision = _knowledge_policy.decide(message, intent)
-    if not decision.should_search:
-        return KnowledgeContextResult(status="skipped", reason=decision.reason)
-    try:
-        result = await _tool_manager.search_with_rewrite("knowledge_search", message, top_k=top_k)
-        if result.degraded:
-            return KnowledgeContextResult(status="degraded", reason=result.error or "tool_fallback")
-        if not result.success or not isinstance(result.data, list) or not result.data:
-            status = "error" if result.error and result.error != "所有子查询均无结果" else "empty"
-            return KnowledgeContextResult(status=status, reason=result.error or "no_results")
-
-        parts = ["[知识库检索结果]"]
-        used = False
-        for i, item in enumerate(result.data[:top_k], start=1):
-            if not isinstance(item, dict):
-                continue
-            title = str(item.get("title", "未命名文档"))
-            content = str(item.get("content", "")).strip()
-            score = item.get("score", "")
-            if not content:
-                continue
-            used = True
-            parts.append(f"{i}. 标题: {title}\n   相关度: {score}\n   内容: {content[:600]}")
-
-        if not used:
-            return KnowledgeContextResult(status="empty", reason="no_usable_results")
-        parts.append("请优先依据以上知识库内容回答；如果知识库内容不足，再结合通用客服能力说明。")
-        return KnowledgeContextResult("\n".join(parts), True, "used", decision.reason)
-    except Exception as ex:
-        logger.warning(f"构建知识库上下文失败: {ex}")
-        return KnowledgeContextResult(status="error", reason=type(ex).__name__)
 
 
 @app.get("/monitor")

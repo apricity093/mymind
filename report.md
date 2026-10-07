@@ -1,5 +1,49 @@
 # 项目改动记录
 
+## 2026-10-07（同步更新提交记录）
+
+- 改动文件：`HISTORY.md`、`待更新文档清单.md`、`report.md`。
+- 改动摘要：记录本轮程序同步与验证结果；补充 Compose 配置解析通过和 CLI 尚未初始化知识库管理器的文档边界，修正文档清单的本地文件链接。
+- 验证结果：`docker compose -f mymind/docker-compose.yml config --quiet` 成功；此前全量回归 83 项通过，契约测试服务通过。按协作规范提交并推送本轮改动，不包含既有未跟踪 `analysis.md`。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（程序同步完成与文档待更新清单）
+
+- 改动文件：`待更新文档清单.md`、`report.md`。
+- 改动摘要：整理下载版五份 Markdown、五张流程图和本地三份 README 的手动更新位置，写明本地工具式 RAG 默认值、知识状态、监控回退、开关和实验差异；原 README 和下载目录文档未覆盖。
+- 验证结果：使用 `learn_claude` 在允许 Windows 本地套接字的执行环境运行全量测试，`83 passed in 9.87s`；其中 E0–E5 离线实验门禁随测试通过。前端契约测试服务健康检查、知识导入和 Agent 工具式 RAG 对话通过。`git diff --check` 通过；未执行付费真实模型实验。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（同步回归测试与前端契约测试服务）
+
+- 改动文件：`mymind/tests/test_echomind_updates.py`、`mymind/tests/test_intent_routing_fusion.py`、`mymind/tests/test_agent_tool_migration.py`、`mymind/tests/test_rag_retrieval.py`、`mymind/tests/test_knowledge_policy_and_eval.py`、`mymind/tests/e2e_contract_server.py`、`report.md`。
+- 改动摘要：补充领域合分和 Pattern 细化、单实例/多实例/辅助路由监控回退、可配置阈值、模型失败后轨迹保留、同一 Agent 并发工具隔离、Agent 自主检索及 API 状态回归测试；评测测试区分实际调用与未调用，契约测试服务改为使用共享知识工具。
+- 知识库重复导入测试使用只支持 `upsert` 的集合，确认相同稳定 ID 和正文被再次提交写入；本地知识库已符合 09.28 写入语义，无需替换实现。
+- 测试环境：受限执行中 Windows `asyncio` 创建事件循环的本地 `socketpair` 在 `accept` 阻塞，诊断确认尚未进入异步业务代码；测试将继续使用 `learn_claude` 在允许本地套接字的执行环境运行。
+- 验证结果：待 `learn_claude` 执行本轮针对性与全量回归。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（同步 EchoMind 09.28：统一工具式 RAG）
+
+- 改动文件：`mymind/agents/agent_orchestrator.py`、`mymind/agents/tools.py`、`mymind/api/main.py`、`mymind/evaluation/evaluator.py`、`mymind/docker-compose.yml`、`mymind/.env.example`、`mymind/.env.example.env`、`report.md`。
+- 改动摘要：按用户选择默认启用工具调用和 `tool_only` RAG，保留其他 Agent 开关；删除 `/chat` 意图预检索和已预加载去重路径，保留请求内工具结果缓存。检索工具返回实际知识状态，聊天接口从工具轨迹区分使用、空结果、降级和错误；评测改为核对实际检索工具调用。同步 Compose、环境模板和监控回退阈值。
+- 验证结果：待 API 契约、工具状态和评测回归测试验证；本地 `.env` 没有覆盖上述两个开关。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（同步 EchoMind 09.28：失败路径工具轨迹）
+
+- 改动文件：`mymind/agents/agent_orchestrator.py`、`report.md`。
+- 改动摘要：新增请求局部 `AgentCallResult`，模型续轮失败时保留已执行工具、轨迹和用量；专业 Agent 失败回退到 GeneralAgent 时合并此前工具记录，避免最终响应和持久化 Trace 丢失调用历史。保留原有成功路径及请求并发隔离设计。
+- 验证结果：待工具成功、续轮失败、并发和回退回归测试验证。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
+## 2026-10-07（同步 EchoMind 09.28 / 10.02：意图融合与监控路由）
+
+- 改动文件：`mymind/core/intent_recognizer.py`、`mymind/agents/agent_orchestrator.py`、`report.md`。
+- 改动摘要：三路投票先累计领域分，再选领域内具体意图；Pattern 细化限定为同一领域。监控降权达到阈值的专业实例不再参与当次执行，全部实例降权时移除该专业路由并记录 `monitor_fallback`；支持 `MYMIND_MONITOR_FALLBACK_PENALTY` 和下载版的 `ECHOMIND_MONITOR_FALLBACK_PENALTY` 配置。
+- 验证结果：待新增针对性回归测试后在 `learn_claude` 环境运行。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
 ## 2026-10-02（Agent 工具迁移：提交与推送准备）
 
 - 改动文件：`HISTORY.md`、`report.md`。

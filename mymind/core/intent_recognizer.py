@@ -364,16 +364,26 @@ class IntentRecognizer:
         else:
             weights = [(llm, 0.85), (pat, 0.15)]
         scores: Dict[IntentCategory, float] = {}
+        group_scores: Dict[IntentCategory, float] = {}
         for result, w in weights:
             cat  = result.get("intent", IntentCategory.OTHER)
             conf = result.get("confidence", 0.0)
-            scores[cat] = scores.get(cat, 0.0) + w * conf
+            weighted_score = w * conf
+            scores[cat] = scores.get(cat, 0.0) + weighted_score
+            group = _INTENT_GROUPS.get(cat, cat)
+            group_scores[group] = group_scores.get(group, 0.0) + weighted_score
 
-        best = max(scores, key=scores.get)  # type: ignore
-        best_score = scores[best]
+        best_group = max(group_scores, key=group_scores.get)
+        best_score = group_scores[best_group]
+        best = max(
+            (cat for cat in scores if _INTENT_GROUPS.get(cat, cat) == best_group),
+            key=scores.get,
+        )
         pat_intent = pat.get("intent", IntentCategory.OTHER)
         pat_conf = source_scores["pattern"]
-        if best in _GENERIC_INTENTS and pat_intent in _SPECIFIC_INTENTS and pat_conf >= 0.5 and best_score < 0.8:
+        if (best in _GENERIC_INTENTS and pat_intent in _SPECIFIC_INTENTS
+                and _INTENT_GROUPS.get(pat_intent, pat_intent) == best_group
+                and pat_conf >= 0.5 and best_score < 0.8):
             source_scores["refined_by_pattern"] = pat_conf
             return pat_intent, max(best_score, pat_conf), source_scores
         if best_score < self.threshold:

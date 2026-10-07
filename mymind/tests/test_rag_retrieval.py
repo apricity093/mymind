@@ -285,6 +285,8 @@ def test_chat_endpoint_keeps_legacy_and_diagnostic_fields():
                 routing_confidence=0.9,
                 escalated=False,
                 latency_ms=3.0,
+                tools_used=["search_knowledge_base"],
+                tool_traces=[{"tool_name": "search_knowledge_base", "knowledge_status": "used"}],
             )
 
     class Memory:
@@ -297,29 +299,18 @@ def test_chat_endpoint_keeps_legacy_and_diagnostic_fields():
         async def update_profile(self, *args):
             return None
 
-    async def build_knowledge_context(message, intent, top_k=3):
-        return api.KnowledgeContextResult(
-            text="[知识库检索结果]",
-            used=True,
-            status="used",
-            reason="intent:refund",
-        )
-
     old_orch = api._orchestrator
     old_memory = api._memory
     old_builder = api._context_builder
-    old_build = api._build_knowledge_context
     api._orchestrator = Orchestrator()
     api._memory = Memory()
     api._context_builder = SimpleNamespace(build=lambda *args: SimpleNamespace(text="ctx", metadata={}))
-    api._build_knowledge_context = build_knowledge_context
     try:
         response = TestClient(api.app).post("/chat", json={"message": "我要退款"})
     finally:
         api._orchestrator = old_orch
         api._memory = old_memory
         api._context_builder = old_builder
-        api._build_knowledge_context = old_build
     assert response.status_code == 200
     payload = response.json()
     for field in ("conv_id", "request_id", "response", "intent", "agent_type", "escalated", "latency_ms",

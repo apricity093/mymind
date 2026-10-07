@@ -210,21 +210,6 @@ def build_shared_rag_tools(tool_manager: Any) -> Dict[str, AgentToolSpec]:
             cached = dict(req.tool_result_cache[cache_key])
             cached["request_cached"] = True
             return cached
-        if req.knowledge_already_loaded and query.casefold() == req.message.strip().casefold():
-            payload = {
-                "success": True,
-                "query": query,
-                "top_k": top_k,
-                "results": [],
-                "cached": True,
-                "request_cached": True,
-                "preloaded": True,
-                "reranked": False,
-                "degraded": False,
-                "error": None,
-            }
-            req.tool_result_cache[cache_key] = dict(payload)
-            return payload
         if not query:
             return {"success": False, "error": "query 不能为空", "results": []}
         if tool_manager is None:
@@ -240,6 +225,14 @@ def build_shared_rag_tools(tool_manager: Any) -> Dict[str, AgentToolSpec]:
             "degraded": bool(getattr(result, "degraded", False)),
             "error": getattr(result, "error", None),
         }
+        if payload["degraded"]:
+            payload["knowledge_status"] = "degraded"
+        elif payload["success"]:
+            payload["knowledge_status"] = "used" if payload["results"] else "empty"
+        elif payload["error"] == "所有子查询均无结果":
+            payload["knowledge_status"] = "empty"
+        else:
+            payload["knowledge_status"] = "error"
         req.tool_result_cache[cache_key] = dict(payload)
         return payload
 

@@ -214,22 +214,24 @@ def test_tool_loop_stops_after_three_rounds_with_explicit_degradation():
     asyncio.run(run())
 
 
-def test_preloaded_rag_query_is_request_deduplicated():
+def test_rag_tool_query_is_request_deduplicated():
     class Manager:
         calls = 0
 
         async def search_with_rewrite(self, *args, **kwargs):
             self.calls += 1
-            raise AssertionError("preloaded query must not reach the knowledge backend")
+            return SimpleNamespace(success=True, data=[{"content": "退款规则"}])
 
     async def run():
         manager = Manager()
         tool = build_shared_rag_tools(manager)["search_knowledge_base"]
-        req = Request("退款规则", "u", "c", knowledge_already_loaded=True)
-        result = await tool.handler(req, {"query": "退款规则", "top_k": 5})
-        assert result["preloaded"] is True
-        assert result["request_cached"] is True
-        assert manager.calls == 0
+        req = Request("退款规则", "u", "c")
+        first = await tool.handler(req, {"query": "退款规则", "top_k": 5})
+        second = await tool.handler(req, {"query": "退款规则", "top_k": 5})
+        assert first["knowledge_status"] == second["knowledge_status"] == "used"
+        assert second["results"] == first["results"]
+        assert second["request_cached"] is True
+        assert manager.calls == 1
 
     asyncio.run(run())
 

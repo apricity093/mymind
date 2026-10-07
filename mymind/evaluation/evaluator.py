@@ -29,7 +29,6 @@ from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
 
 from core.intent_recognizer import IntentCategory, IntentRecognizer
-from core.knowledge_policy import KnowledgePolicy
 
 logger = logging.getLogger(__name__)
 
@@ -246,7 +245,6 @@ class EndToEndEvaluator:
         model:    str = "claude-3-5-sonnet-20241022",
         baseline_path: Optional[str] = None,
         gateway: Optional[LLMGateway] = None,
-        knowledge_policy: Optional[KnowledgePolicy] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -256,7 +254,6 @@ class EndToEndEvaluator:
         self._orchestrator     = orchestrator
         self._judge            = LLMJudge(client, model, gateway)
         self._intent_evaluator = IntentEvaluator(recognizer)
-        self._knowledge_policy = knowledge_policy or KnowledgePolicy()
         self._history:         List[EvalReport] = []
         self._baseline_path = pathlib.Path(baseline_path) if baseline_path else None
         self._baseline: Optional[EvalReport] = self._load_baseline()
@@ -374,7 +371,7 @@ class EndToEndEvaluator:
             )
             orch_result = await self._orchestrator.run(orch_req)
             actual_answer = orch_result.response
-            knowledge_decision = self._knowledge_policy.decide(question, intent_result.intent)
+            knowledge_search = "search_knowledge_base" in getattr(orch_result, "tools_used", [])
 
             scores = await self._judge.judge(question, actual_answer, context=context or None)
             passed = scores.overall >= self.PASS_THRESHOLD
@@ -401,7 +398,7 @@ class EndToEndEvaluator:
                     score_values["routing_match"] = float(matched)
                     passed = passed and matched
                 if expected_search is not None:
-                    matched = knowledge_decision.should_search == bool(expected_search)
+                    matched = knowledge_search == bool(expected_search)
                     score_values["knowledge_gate_match"] = float(matched)
                     passed = passed and matched
 
@@ -428,8 +425,8 @@ class EndToEndEvaluator:
                     "intent_confidence": intent_result.confidence,
                     "intent_source_scores": intent_result.source_scores,
                     "entities": intent_result.entities,
-                    "knowledge_search": knowledge_decision.should_search,
-                    "knowledge_reason": knowledge_decision.reason,
+                    "knowledge_search": knowledge_search,
+                    "knowledge_reason": "agent_tool_called" if knowledge_search else "agent_did_not_search",
                     "turn": turn_idx,
                     "conv_id": conv_id,
                     "judge_failed": scores.judge_failed,

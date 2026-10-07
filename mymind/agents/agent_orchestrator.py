@@ -58,6 +58,15 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
+def _monitor_fallback_penalty() -> float:
+    raw = os.getenv("MYMIND_MONITOR_FALLBACK_PENALTY") or os.getenv("ECHOMIND_MONITOR_FALLBACK_PENALTY", "0.5")
+    try:
+        return min(max(float(raw), 0.0), 0.9)
+    except ValueError:
+        logger.warning("忽略非法监控降权阈值 %r", raw)
+        return 0.5
+
+
 class AgentType(Enum):
     GENERAL = "general"
     TECHNICAL = "technical"
@@ -68,17 +77,17 @@ class AgentType(Enum):
 @dataclass(frozen=True)
 class AgentFeatureConfig:
     profile_enabled: bool = False
-    tool_use_enabled: bool = False
+    tool_use_enabled: bool = True
     escalation_enabled: bool = False
     composer_enabled: bool = False
     trace_enabled: bool = False
     trace_api_enabled: bool = False
-    knowledge_tool_mode: str = "disabled"
+    knowledge_tool_mode: str = "tool_only"
     max_tool_rounds: int = 3
 
     def __post_init__(self) -> None:
-        if self.knowledge_tool_mode not in {"disabled", "supplemental", "tool_only"}:
-            raise ValueError("knowledge_tool_mode 必须是 disabled、supplemental 或 tool_only")
+        if self.knowledge_tool_mode not in {"disabled", "tool_only"}:
+            raise ValueError("knowledge_tool_mode 必须是 disabled 或 tool_only")
         if not 1 <= int(self.max_tool_rounds) <= 10:
             raise ValueError("max_tool_rounds 必须在 1 到 10 之间")
 
@@ -86,12 +95,12 @@ class AgentFeatureConfig:
     def from_env(cls) -> "AgentFeatureConfig":
         return cls(
             profile_enabled=_env_bool("AGENT_PROFILE_ENABLED", False),
-            tool_use_enabled=_env_bool("AGENT_TOOL_USE_ENABLED", False),
+            tool_use_enabled=_env_bool("AGENT_TOOL_USE_ENABLED", True),
             escalation_enabled=_env_bool("AGENT_ESCALATION_ENABLED", False),
             composer_enabled=_env_bool("AGENT_COMPOSER_ENABLED", False),
             trace_enabled=_env_bool("AGENT_TRACE_ENABLED", False),
             trace_api_enabled=_env_bool("TRACE_API_ENABLED", False),
-            knowledge_tool_mode=os.getenv("KNOWLEDGE_TOOL_MODE", "disabled").strip().lower(),
+            knowledge_tool_mode=os.getenv("KNOWLEDGE_TOOL_MODE", "tool_only").strip().lower(),
             max_tool_rounds=_env_int("AGENT_MAX_TOOL_ROUNDS", 3),
         )
 
@@ -150,6 +159,16 @@ class AgentStats:
 
 
 @dataclass
+class AgentCallResult:
+    content: str = ""
+    success: bool = True
+    cache_metadata: Dict[str, Any] = field(default_factory=dict)
+    tools_used: List[str] = field(default_factory=list)
+    tool_traces: List[Dict[str, Any]] = field(default_factory=list)
+    usage: Optional[CacheUsage] = None
+
+
+@dataclass
 class AgentResponse:
     agent_type: AgentType
     content: str
@@ -175,7 +194,6 @@ class Request:
     intent_confidence: float = 0.0
     entities: Dict[str, List[str]] = field(default_factory=dict)
     request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    knowledge_already_loaded: bool = False
     tool_result_cache: Dict[str, Dict[str, Any]] = field(default_factory=dict, repr=False)
 
 
@@ -277,23 +295,23 @@ class BaseAgent:
         started = time.monotonic()
         self.stats.total += 1
         try:
-            content, cache_metadata, tools_used, tool_traces, usage = await self._call_llm(req)
+            call = await self._call_llm(req)
             latency_ms = (time.monotonic() - started) * 1000
-            if self._metrics is not None and usage is not None:
-                self._metrics.record_provider(usage.provider, self._model, usage, latency_ms)
-            if usage is not None:
-                self.stats.cache_status = usage.status
-            self.stats.success += 1
+            if self._metrics is not None and call.usage is not None:
+                self._metrics.record_provider(call.usage.provider, self._model, call.usage, latency_ms)
+            if call.usage is not None:
+                self.stats.cache_status = call.usage.status
+            self.stats.success += int(call.success)
             self.stats.total_ms += latency_ms
             return AgentResponse(
                 agent_type=self.agent_type,
-                content=content,
-                success=True,
+                content=call.content,
+                success=call.success,
                 latency_ms=latency_ms,
-                escalate=self._needs_escalation(content),
-                cache_metadata=cache_metadata,
-                tools_used=tools_used,
-                tool_traces=tool_traces,
+                escalate=self._needs_escalation(call.content),
+                cache_metadata=call.cache_metadata,
+                tools_used=call.tools_used,
+                tool_traces=call.tool_traces,
             )
         except Exception as ex:
             latency_ms = (time.monotonic() - started) * 1000
@@ -314,136 +332,152 @@ class BaseAgent:
 
     async def _call_llm(
         self, req: Request
-    ) -> tuple[str, Dict[str, Any], List[str], List[Dict[str, Any]], Optional[CacheUsage]]:
-        messages = self._messages(req)
-        stable_prompt = self._stable_prompt()
-        dynamic_prompt = self._dynamic_prompt(req)
-        tools = self.get_tools()
+    ) -> AgentCallResult:
         usages: List[CacheUsage] = []
         tools_used: List[str] = []
         traces: List[Dict[str, Any]] = []
         metadata: Dict[str, Any] = {}
+        try:
+            messages = self._messages(req)
+            stable_prompt = self._stable_prompt()
+            dynamic_prompt = self._dynamic_prompt(req)
+            tools = self.get_tools()
 
-        if self._gateway is None:
-            system, metadata = self._prompt_cache_policy.build_system(stable_prompt, dynamic_prompt)
-            kwargs: Dict[str, Any] = {
-                "model": self._model,
-                "max_tokens": self.profile.max_tokens if self._features.profile_enabled else 1024,
-                "system": system,
-                "messages": messages,
-            }
-            if self._features.profile_enabled:
-                kwargs["temperature"] = self.profile.temperature
-            response = await self._client.messages.create(
-                **kwargs,
+            if self._gateway is None:
+                system, metadata = self._prompt_cache_policy.build_system(stable_prompt, dynamic_prompt)
+                kwargs: Dict[str, Any] = {
+                    "model": self._model,
+                    "max_tokens": self.profile.max_tokens if self._features.profile_enabled else 1024,
+                    "system": system,
+                    "messages": messages,
+                }
+                if self._features.profile_enabled:
+                    kwargs["temperature"] = self.profile.temperature
+                response = await self._client.messages.create(
+                    **kwargs,
+                )
+                usage = getattr(response, "usage", None)
+                metadata.update({
+                    "cache_creation_input_tokens": int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
+                    "cache_read_input_tokens": int(getattr(usage, "cache_read_input_tokens", 0) or 0),
+                    "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
+                })
+                return AgentCallResult(content=extract_text_content(response.content), cache_metadata=metadata)
+
+            for round_index in range(self._features.max_tool_rounds):
+                gateway_request = LLMRequest(
+                    model=self._model,
+                    stable_prompt=stable_prompt,
+                    dynamic_prompt=dynamic_prompt,
+                    messages=messages,
+                    tools=[spec.llm_schema() for spec in tools.values()] if tools else None,
+                    cache_identity=f"{self._model}:{self.agent_type.value}:prompt-v2",
+                    cache_mode="automatic",
+                    max_tokens=self.profile.max_tokens if self._features.profile_enabled else 1024,
+                    temperature=self.profile.temperature if self._features.profile_enabled else None,
+                )
+                try:
+                    result: LLMResult = await self._gateway.complete(gateway_request)
+                except Exception as ex:
+                    if not tools or not _tool_protocol_unsupported(ex):
+                        raise
+                    logger.warning("Provider 不支持工具协议，当前 Agent 回退为无工具生成: %s", ex)
+                    tools = {}
+                    gateway_request.tools = None
+                    result = await self._gateway.complete(gateway_request)
+                    traces.append({
+                        "agent_type": self.agent_type.value,
+                        "tool_name": "",
+                        "tool_call_id": "",
+                        "input": {},
+                        "success": False,
+                        "result_success": None,
+                        "latency_ms": 0.0,
+                        "cached": False,
+                        "reranked": False,
+                        "degraded": True,
+                        "error_code": "provider_tool_unsupported",
+                    })
+                usages.append(result.usage)
+                metadata = dict(result.metadata)
+                calls = list(getattr(result, "tool_calls", []) or [])
+                if not calls:
+                    metadata["tool_rounds"] = round_index
+                    return AgentCallResult(result.text, True, metadata, list(dict.fromkeys(tools_used)), traces, _aggregate_usage(usages))
+
+                assistant_message = getattr(result, "assistant_message", None)
+                if assistant_message:
+                    messages.append(assistant_message)
+                tool_results: List[Dict[str, Any]] = []
+                for call in calls:
+                    spec = tools.get(call.name)
+                    tool_started = time.monotonic()
+                    execution_success = True
+                    result_success: Optional[bool] = None
+                    error_code = ""
+                    output: Any
+                    if spec is None:
+                        execution_success = False
+                        error_code = "unauthorized_tool"
+                        output = {"success": False, "error": "工具不在当前 Agent 白名单中"}
+                    else:
+                        try:
+                            validate_tool_input(spec, call.arguments)
+                            tools_used.append(call.name)
+                            output = spec.handler(req, call.arguments)
+                            if inspect.isawaitable(output):
+                                output = await output
+                            if isinstance(output, dict) and "success" in output:
+                                result_success = bool(output.get("success"))
+                        except ValueError as ex:
+                            execution_success = False
+                            error_code = "invalid_tool_arguments"
+                            output = {"success": False, "error": str(ex)[:200]}
+                        except Exception as ex:
+                            execution_success = False
+                            error_code = "tool_execution_error"
+                            output = {"success": False, "error": str(ex)[:200]}
+                    latency_ms = (time.monotonic() - tool_started) * 1000
+                    traces.append({
+                        "agent_type": self.agent_type.value,
+                        "tool_name": call.name,
+                        "tool_call_id": call.id,
+                        "input": redact_arguments(call.arguments),
+                        "success": execution_success,
+                        "result_success": result_success,
+                        "latency_ms": round(latency_ms, 3),
+                        "cached": bool(output.get("cached") or output.get("request_cached")) if isinstance(output, dict) else False,
+                        "reranked": bool(output.get("reranked")) if isinstance(output, dict) else False,
+                        "degraded": bool(output.get("degraded")) if isinstance(output, dict) else False,
+                        "error_code": error_code or ("tool_result_error" if result_success is False else ""),
+                    })
+                    if call.name == "search_knowledge_base":
+                        traces[-1]["knowledge_status"] = output.get("knowledge_status", "error") if isinstance(output, dict) else "error"
+                    tool_results.append({"id": call.id, "output": output})
+                self._append_tool_results(messages, tool_results)
+
+            metadata["tool_rounds"] = self._features.max_tool_rounds
+            metadata["tool_loop_exhausted"] = True
+            return AgentCallResult(
+                "工具调用已达到安全轮数上限，暂未能完成自动处理。请补充必要信息或转人工客服。",
+                True,
+                metadata,
+                list(dict.fromkeys(tools_used)),
+                traces,
+                _aggregate_usage(usages),
             )
-            usage = getattr(response, "usage", None)
-            metadata.update({
-                "cache_creation_input_tokens": int(getattr(usage, "cache_creation_input_tokens", 0) or 0),
-                "cache_read_input_tokens": int(getattr(usage, "cache_read_input_tokens", 0) or 0),
-                "input_tokens": int(getattr(usage, "input_tokens", 0) or 0),
+        except Exception as ex:
+            logger.exception("%s Agent 模型调用失败", self.agent_type.value)
+            traces.append({
+                "agent_type": self.agent_type.value,
+                "tool_name": "",
+                "success": False,
+                "error_code": type(ex).__name__,
             })
-            return extract_text_content(response.content), metadata, [], [], None
-
-        for round_index in range(self._features.max_tool_rounds):
-            gateway_request = LLMRequest(
-                model=self._model,
-                stable_prompt=stable_prompt,
-                dynamic_prompt=dynamic_prompt,
-                messages=messages,
-                tools=[spec.llm_schema() for spec in tools.values()] if tools else None,
-                cache_identity=f"{self._model}:{self.agent_type.value}:prompt-v2",
-                cache_mode="automatic",
-                max_tokens=self.profile.max_tokens if self._features.profile_enabled else 1024,
-                temperature=self.profile.temperature if self._features.profile_enabled else None,
+            return AgentCallResult(
+                "抱歉，处理您的请求时出现问题，请稍后重试。",
+                False, metadata, list(dict.fromkeys(tools_used)), traces, _aggregate_usage(usages),
             )
-            try:
-                result: LLMResult = await self._gateway.complete(gateway_request)
-            except Exception as ex:
-                if not tools or not _tool_protocol_unsupported(ex):
-                    raise
-                logger.warning("Provider 不支持工具协议，当前 Agent 回退为无工具生成: %s", ex)
-                tools = {}
-                gateway_request.tools = None
-                result = await self._gateway.complete(gateway_request)
-                traces.append({
-                    "agent_type": self.agent_type.value,
-                    "tool_name": "",
-                    "tool_call_id": "",
-                    "input": {},
-                    "success": False,
-                    "result_success": None,
-                    "latency_ms": 0.0,
-                    "cached": False,
-                    "reranked": False,
-                    "degraded": True,
-                    "error_code": "provider_tool_unsupported",
-                })
-            usages.append(result.usage)
-            metadata = dict(result.metadata)
-            calls = list(getattr(result, "tool_calls", []) or [])
-            if not calls:
-                metadata["tool_rounds"] = round_index
-                return result.text, metadata, list(dict.fromkeys(tools_used)), traces, _aggregate_usage(usages)
-
-            assistant_message = getattr(result, "assistant_message", None)
-            if assistant_message:
-                messages.append(assistant_message)
-            tool_results: List[Dict[str, Any]] = []
-            for call in calls:
-                spec = tools.get(call.name)
-                tool_started = time.monotonic()
-                execution_success = True
-                result_success: Optional[bool] = None
-                error_code = ""
-                output: Any
-                if spec is None:
-                    execution_success = False
-                    error_code = "unauthorized_tool"
-                    output = {"success": False, "error": "工具不在当前 Agent 白名单中"}
-                else:
-                    try:
-                        validate_tool_input(spec, call.arguments)
-                        output = spec.handler(req, call.arguments)
-                        if inspect.isawaitable(output):
-                            output = await output
-                        tools_used.append(call.name)
-                        if isinstance(output, dict) and "success" in output:
-                            result_success = bool(output.get("success"))
-                    except ValueError as ex:
-                        execution_success = False
-                        error_code = "invalid_tool_arguments"
-                        output = {"success": False, "error": str(ex)[:200]}
-                    except Exception as ex:
-                        execution_success = False
-                        error_code = "tool_execution_error"
-                        output = {"success": False, "error": str(ex)[:200]}
-                latency_ms = (time.monotonic() - tool_started) * 1000
-                traces.append({
-                    "agent_type": self.agent_type.value,
-                    "tool_name": call.name,
-                    "tool_call_id": call.id,
-                    "input": redact_arguments(call.arguments),
-                    "success": execution_success,
-                    "result_success": result_success,
-                    "latency_ms": round(latency_ms, 3),
-                    "cached": bool(output.get("cached") or output.get("request_cached")) if isinstance(output, dict) else False,
-                    "reranked": bool(output.get("reranked")) if isinstance(output, dict) else False,
-                    "degraded": bool(output.get("degraded")) if isinstance(output, dict) else False,
-                    "error_code": error_code or ("tool_result_error" if result_success is False else ""),
-                })
-                tool_results.append({"id": call.id, "output": output})
-            self._append_tool_results(messages, tool_results)
-
-        metadata["tool_rounds"] = self._features.max_tool_rounds
-        metadata["tool_loop_exhausted"] = True
-        return (
-            "工具调用已达到安全轮数上限，暂未能完成自动处理。请补充必要信息或转人工客服。",
-            metadata,
-            list(dict.fromkeys(tools_used)),
-            traces,
-            _aggregate_usage(usages),
-        )
 
     def _append_tool_results(self, messages: List[Dict[str, Any]], results: List[Dict[str, Any]]) -> None:
         protocol = getattr(self._gateway, "tool_protocol", "openai")
@@ -758,7 +792,7 @@ class AgentOrchestrator:
 
     def set_rag_tool_manager(self, tool_manager: Optional[Any]) -> None:
         shared = {}
-        if self.features.tool_use_enabled and self.features.knowledge_tool_mode in {"supplemental", "tool_only"}:
+        if self.features.tool_use_enabled and self.features.knowledge_tool_mode == "tool_only":
             shared = build_shared_rag_tools(tool_manager)
         for agents in self._pool.values():
             for agent in agents:
@@ -882,16 +916,26 @@ class AgentOrchestrator:
             target = AgentType.ESCALATION if self._pool.get(AgentType.ESCALATION) else AgentType.GENERAL
             return RoutingDecision(target, reason="紧急度或意图触发人工升级节点", confidence=max(req.intent_confidence, 0.8))
         scores = self._domain_scores(req)
-        available = {kind: score for kind, score in scores.items() if kind == AgentType.GENERAL or self._pool.get(kind)}
+        degraded = {
+            kind for kind in (AgentType.TECHNICAL, AgentType.BILLING)
+            if scores[kind] > 0 and self._monitor_degraded(kind)
+        }
+        available = {
+            kind: score for kind, score in scores.items()
+            if kind == AgentType.GENERAL or (self._pool.get(kind) and kind not in degraded)
+        }
         ordered = sorted(available.items(), key=lambda item: item[1], reverse=True)
         if not ordered:
             return RoutingDecision(AgentType.GENERAL, reason="无可用专属 Agent，降级到 GeneralAgent", confidence=0.1)
         primary, primary_score = ordered[0]
         supporting = [kind for kind, score in ordered[1:] if kind != AgentType.GENERAL and score >= 0.45]
         for kind in self._collaboration_targets(req):
-            if kind != primary and kind not in supporting:
+            if kind in available and kind != primary and kind not in supporting:
                 supporting.append(kind)
-        return RoutingDecision(primary, supporting, self._routing_reason(req, available, primary, supporting), round(min(primary_score, 1.0), 3))
+        reason = self._routing_reason(req, available, primary, supporting)
+        if degraded:
+            reason += f", monitor_fallback=[{', '.join(sorted(kind.value for kind in degraded))}]"
+        return RoutingDecision(primary, supporting, reason, round(min(primary_score, 1.0), 3))
 
     def _collaboration_targets(self, req: Request) -> List[AgentType]:
         message = req.message.lower()
@@ -942,7 +986,14 @@ class AgentOrchestrator:
 
     def _best_agent(self, agent_type: AgentType) -> Optional[BaseAgent]:
         agents = self._pool.get(agent_type, [])
+        if agent_type in {AgentType.TECHNICAL, AgentType.BILLING}:
+            threshold = _monitor_fallback_penalty()
+            agents = [agent for agent in agents if agent.stats.monitor_penalty < threshold]
         return max(agents, key=lambda item: item.stats.routing_score()) if agents else None
+
+    def _monitor_degraded(self, agent_type: AgentType) -> bool:
+        agents = self._pool.get(agent_type, [])
+        return bool(agents) and all(agent.stats.monitor_penalty >= _monitor_fallback_penalty() for agent in agents)
 
     async def _execute(self, req: Request, agent_type: AgentType) -> AgentResponse:
         agent = self._best_agent(agent_type) or self._best_agent(AgentType.GENERAL)
@@ -952,7 +1003,10 @@ class AgentOrchestrator:
         if not response.success and agent_type not in {AgentType.GENERAL, AgentType.ESCALATION}:
             fallback = self._best_agent(AgentType.GENERAL)
             if fallback:
+                failed = response
                 response = await fallback.handle(req)
+                response.tools_used = list(dict.fromkeys(failed.tools_used + response.tools_used))
+                response.tool_traces = failed.tool_traces + response.tool_traces
         return response
 
     def get_stats(self) -> Dict[str, Any]:

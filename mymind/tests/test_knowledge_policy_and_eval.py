@@ -1,4 +1,6 @@
 import asyncio
+
+import pytest
 from types import SimpleNamespace
 
 from api.main import ChatResponse
@@ -7,7 +9,6 @@ from core.knowledge_policy import KnowledgePolicy
 from evaluation.evaluator import EndToEndEvaluator, QualityScores
 from mcp.knowledge_base import KnowledgeBase
 from mcp.tool_manager import MCPToolManager, Tool
-from tests.fakes import FakeCollection
 
 
 def test_knowledge_policy_uses_intent_then_business_fallback():
@@ -45,12 +46,27 @@ def test_tool_fallback_is_degraded_and_never_enters_rerank():
 
 
 def test_knowledge_import_is_idempotent_upsert():
+    class UpsertCollection:
+        def __init__(self):
+            self.items = {}
+            self.calls = []
+
+        def upsert(self, ids, documents, metadatas):
+            self.calls.append((ids, documents, metadatas))
+            self.items.update(zip(ids, documents))
+
+        def count(self):
+            return len(self.items)
+
     knowledge = KnowledgeBase.__new__(KnowledgeBase)
-    knowledge._collection = FakeCollection()
+    knowledge._collection = UpsertCollection()
     documents = [{"title": "退款政策", "content": "七天内可以退款"}]
     assert knowledge.add_documents(documents) == 1
     assert knowledge.add_documents(documents) == 1
     assert knowledge.doc_count == 1
+    first, second = knowledge._collection.calls
+    assert first[0] == second[0]
+    assert first[1] == second[1] == ["七天内可以退款"]
 
 
 def test_chat_response_keeps_legacy_contract_and_adds_optional_diagnostics():
@@ -78,7 +94,8 @@ def test_old_baseline_without_new_metrics_remains_readable():
     assert report.regressions == []
 
 
-def test_evaluator_records_routing_and_knowledge_expectations():
+@pytest.mark.parametrize("uses_tool", [True, False])
+def test_evaluator_records_routing_and_knowledge_expectations(uses_tool):
     class Orchestrator:
         async def recognize_intent(self, message, history=None):
             return IntentResult(
@@ -102,6 +119,7 @@ def test_evaluator_records_routing_and_knowledge_expectations():
                 supporting_agents=[],
                 routing_reason="intent=refund",
                 routing_confidence=0.9,
+                tools_used=["search_knowledge_base"] if uses_tool else [],
             )
 
     class Judge:
@@ -122,7 +140,9 @@ def test_evaluator_records_routing_and_knowledge_expectations():
             "expect_knowledge_search": True,
         }])
         assert report.avg_scores["routing_accuracy"] == 1.0
-        assert report.avg_scores["knowledge_gate_accuracy"] == 1.0
+        assert report.avg_scores["knowledge_gate_accuracy"] == float(uses_tool)
+        assert report.results[0].metadata["knowledge_search"] is uses_tool
+        assert report.results[0].passed is uses_tool
         assert report.results[0].metadata["intent_group"] == "billing"
 
     asyncio.run(run())

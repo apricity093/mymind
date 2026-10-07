@@ -1,5 +1,13 @@
 # HISTORY
 
+## fix(mymind): 同步 EchoMind 09.28/10.02 意图、轨迹和工具式 RAG — 2026-10-07
+
+- 三路意图投票先合并领域分，再选组内具体意图；Pattern 仅细化同一领域。
+- 使用请求局部 `AgentCallResult` 保留工具调用，模型续轮失败和专业 Agent 回退后继续保存已发生的轨迹；监控降权支持单实例回退和健康实例筛选。
+- 按本次配置选择默认启用工具调用与工具式 RAG，删除 `/chat` 意图预检索；聊天接口和评测记录实际检索结果，其他 Agent 开关保持原值。
+- 同步环境模板、Compose、API 契约测试服务和回归用例；提供 `待更新文档清单.md`，列出五份下载版文档、五张流程图和本地三份 README 的手动更新项。
+- 验证：`learn_claude` 全量测试 `83 passed`，包含 E0–E5 离线门禁；健康检查、知识导入和工具式 RAG 对话契约通过；Compose 配置解析和 `git diff --check` 通过。未重新执行付费真实模型实验。
+
 ## feat(agent): 迁移 Profile、工具调用、升级、Composer 与 Trace — 2026-10-02
 
 - 在 Python 主版本中新增结构化 Agent Profile、角色级工具白名单、统一多 Provider 工具协议、独立人工升级节点、多 Agent Composer 和请求级 Trace。

@@ -26,12 +26,9 @@ import uvicorn
 
 from api.main import (
     ChatResponse,
-    KnowledgeContextResult,
     _background_tasks,
-    _build_knowledge_context,
     _context_builder,
     _knowledge_base,
-    _knowledge_policy,
     _last_context_metadata,
     _memory,
     _monitor,
@@ -41,9 +38,9 @@ from api.main import (
     app,
 )
 from core.intent_recognizer import IntentCategory, IntentResult, UrgencyLevel
-from core.knowledge_policy import KnowledgePolicy
 from core.retrieval import Chunker, variant_config
 from agents.agent_orchestrator import AgentType
+from agents.tools import build_shared_rag_tools
 
 
 class InMemoryKnowledge:
@@ -119,6 +116,9 @@ class InMemoryToolManager:
 
 
 class E2EOrchestrator:
+    def __init__(self, manager):
+        self._search = build_shared_rag_tools(manager)["search_knowledge_base"]
+
     def get_stats(self):
         return {"agents": 3}
 
@@ -135,7 +135,10 @@ class E2EOrchestrator:
         )
 
     async def run(self, request):
+        knowledge = await self._search.handler(request, {"query": request.message, "top_k": 3})
         return SimpleNamespace(
+            tools_used=["search_knowledge_base"],
+            tool_traces=[{"tool_name": "search_knowledge_base", "knowledge_status": knowledge["knowledge_status"]}],
             response="已根据知识库为您处理退款：提交后 1-3 个工作日审核，通过后 5-7 个工作日原路退回。",
             intent=IntentCategory.REFUND,
             agent_type=AgentType.BILLING,
@@ -165,15 +168,6 @@ class E2EMonitor:
         return {"agents": 3, "context": dict(_last_context_metadata)}
 
 
-async def _used_knowledge(message, intent, top_k=3):
-    return KnowledgeContextResult(
-        text="[知识库检索结果]",
-        used=True,
-        status="used",
-        reason="intent:refund",
-    )
-
-
 @asynccontextmanager
 async def _noop_lifespan(application):
     yield
@@ -184,13 +178,11 @@ def install():
 
     knowledge = InMemoryKnowledge()
     manager = InMemoryToolManager(knowledge)
-    api_module._orchestrator = E2EOrchestrator()
+    api_module._orchestrator = E2EOrchestrator(manager)
     api_module._memory = E2EMemory()
     api_module._tool_manager = manager
     api_module._knowledge_base = knowledge
-    api_module._knowledge_policy = KnowledgePolicy()
     api_module._context_builder = SimpleNamespace(build=lambda *args: SimpleNamespace(text="ctx", metadata={"e2e": True}))
-    api_module._build_knowledge_context = _used_knowledge
     api_module._monitor = E2EMonitor()
     app.router.lifespan_context = _noop_lifespan
 
