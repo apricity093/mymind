@@ -551,7 +551,8 @@ async def add_knowledge(body: BatchDocInput):
         _knowledge_base.add_documents,
         [{"title": d.title, "content": d.content} for d in body.documents],
     )
-    _tool_manager.invalidate_cache()
+    if await asyncio.to_thread(_tool_manager.invalidate_cache) < 0:
+        raise HTTPException(503, "知识库已更新，但旧缓存清理失败，请重试导入")
     total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
     return {
         "message": f"成功处理 {count} 个文档片段",
@@ -596,7 +597,8 @@ async def upload_knowledge(file: UploadFile = File(...)):
         docs = [{"title": title, "content": text}]
 
     count = await asyncio.to_thread(_knowledge_base.add_documents, docs)
-    _tool_manager.invalidate_cache()
+    if await asyncio.to_thread(_tool_manager.invalidate_cache) < 0:
+        raise HTTPException(503, "知识库已更新，但旧缓存清理失败，请重试导入")
     total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
     return {
         "message": f"文件 {filename} 处理成功",

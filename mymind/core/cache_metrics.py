@@ -143,6 +143,13 @@ class ObservedCacheStore:
         self.store = store
         self.metrics = metrics
 
+    def get_generation(self, namespace: str) -> int:
+        try:
+            return self.store.get_generation(namespace)
+        except Exception:
+            self.metrics.record_application(namespace, "error")
+            raise
+
     def get(self, namespace: str, key: str) -> Any:
         try:
             value = self.store.get(namespace, key)
@@ -152,9 +159,12 @@ class ObservedCacheStore:
         self.metrics.record_application(namespace, "hit" if value is not None else "miss")
         return value
 
-    def set(self, namespace: str, key: str, value: Any, ttl: float) -> None:
+    def set(
+        self, namespace: str, key: str, value: Any, ttl: float,
+        *, generation: Optional[int] = None,
+    ) -> None:
         try:
-            return self.store.set(namespace, key, value, ttl)
+            return self.store.set(namespace, key, value, ttl, generation=generation)
         except Exception:
             self.metrics.record_application(namespace, "error")
             raise

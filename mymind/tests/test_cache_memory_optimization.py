@@ -69,10 +69,13 @@ def test_knowledge_cache_collapses_fifty_concurrent_misses_and_invalidates():
 
 def test_cache_outage_fails_open_and_does_not_cache_fallbacks():
     class BrokenCache:
+        def get_generation(self, namespace):
+            raise ConnectionError("redis unavailable")
+
         def get(self, namespace, key):
             raise ConnectionError("redis unavailable")
 
-        def set(self, namespace, key, value, ttl):
+        def set(self, namespace, key, value, ttl, *, generation=None):
             raise ConnectionError("redis unavailable")
 
         def invalidate_namespace(self, namespace):

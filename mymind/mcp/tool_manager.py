@@ -235,6 +235,13 @@ class MCPToolManager:
             # 参数校验（根据 JSON Schema 的 required 和 properties.type）
             self._validate_params(tool, params)
 
+            cache_generation = None
+            if tool.cache_ttl > 0:
+                try:
+                    cache_generation = self._cache_store.get_generation(self._cache_namespace)
+                except Exception as ex:
+                    logger.warning(f"缓存版本读取失败，跳过本次缓存写入: {ex}")
+
             data = await asyncio.wait_for(tool.handler(params, context), timeout=tool.timeout_s)
             latency = (time.monotonic() - t0) * 1000
 
@@ -250,8 +257,11 @@ class MCPToolManager:
                 data, reranked = await self._rerank(query, data, rerank_top_k), True
 
             # 写缓存：缓存最终返回结果，避免下次命中未重排的原始结果。
-            if tool.cache_ttl > 0:
-                self._set_cache(name, params, data, tool.cache_ttl, cache_rerank_top_k, reranked)
+            if tool.cache_ttl > 0 and cache_generation is not None:
+                self._set_cache(
+                    name, params, data, tool.cache_ttl, cache_rerank_top_k, reranked,
+                    generation=cache_generation,
+                )
 
             return ToolResult(success=True, data=data, tool_name=name,
                               latency_ms=latency, reranked=reranked)
@@ -433,6 +443,8 @@ class MCPToolManager:
         ttl: float,
         rerank_top_k: int = 0,
         reranked: bool = False,
+        *,
+        generation: int,
     ) -> None:
         try:
             self._cache_store.set(
@@ -440,6 +452,7 @@ class MCPToolManager:
                 self._cache_key(name, params, rerank_top_k),
                 {"data": data, "reranked": reranked},
                 ttl,
+                generation=generation,
             )
         except Exception as ex:
             logger.warning(f"缓存写入失败，忽略缓存: {ex}")

@@ -1,5 +1,12 @@
 # 项目改动记录
 
+## 2026-10-09（知识库更新后同步清理缓存）
+
+- 改动文件：`mymind/core/cache_store.py`、`mymind/core/cache_metrics.py`、`mymind/mcp/tool_manager.py`、`mymind/api/main.py`、`mymind/tests/test_cache_memory_optimization.py`、`mymind/tests/test_knowledge_cache_invalidation.py`、`mymind/wiki/完整使用指南.md`、`HISTORY.md`、`report.md`。
+- 改动摘要：知识导入完成后等待缓存失效与旧数据删除；Redis 切换知识缓存版本后实际删除旧版本键，缓存写入核对检索开始时的版本，阻止更新前的在途检索回填旧结果。缓存清理失败时导入接口返回 503，并说明知识库已更新及需要重试清理。
+- 验证结果：使用 `learn_claude` 运行缓存、知识导入和检索相关回归，`58 passed`；Python 全量回归 `107 passed`。新增测试覆盖内存缓存、指标包装器、共享 Redis 后端替身、批量导入和 TXT/Markdown/JSON 上传，验证未到 TTL 即清空旧键、保留新版本与其他命名空间、拒绝在途旧结果回填，以及清理失败返回 503。Windows 沙箱无法创建 asyncio 本地套接字，测试在允许本地套接字的执行环境中完成。本机 Redis 连接超时，真实服务验证未完成；未调用付费模型。
+- 是否触及冻结清单：否；当前项目规则未定义冻结清单。
+
 ## 2026-10-07（维护完成与提交记录）
 
 - 改动文件：`HISTORY.md`、`report.md`。
