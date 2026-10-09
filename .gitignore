@@ -11,5 +11,11 @@ __pycache__/
 desktop.png
 mobile.png
 
-report.md
-AGENTS.md
+# Local project documents
+/AGENTS.md
+/HISTORY.md
+/check.md
+/report.md
+/review_rag_experiment.md
+/待更新文档清单.md
+/说明
