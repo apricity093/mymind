@@ -211,10 +211,10 @@ def test_knowledge_add_and_upload_keep_legacy_contract():
         def __init__(self):
             self.count = 10
 
-        def add_documents(self, documents):
+        def import_documents(self, documents):
             added = sum(1 for doc in documents if doc.get("content"))
             self.count += added
-            return added
+            return {"processed_chunks": added, "status": "success"}
 
         @property
         def doc_count(self):

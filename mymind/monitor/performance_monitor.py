@@ -125,12 +125,14 @@ class PerformanceMonitor:
         interval_s:       float = 10.0,
         webhook_url:      Optional[str] = None,
         prometheus_port:  Optional[int] = None,   # None = 不启动
+        embedding_status=None,
     ):
         self._orchestrator = orchestrator
         self._tool_manager = tool_manager
         self._interval     = interval_s
         self._webhook      = webhook_url
         self._detector     = AnomalyDetector()
+        self._embedding_status = embedding_status
 
         self._alerts:      List[Alert]      = []
         self._suggestions: List[Suggestion] = []
@@ -311,6 +313,7 @@ class PerformanceMonitor:
     def summary(self) -> Dict[str, Any]:
         """返回当前监控摘要，供 API 层暴露。"""
         return {
+            "embedding": self._embedding_status() if self._embedding_status else {},
             "agent_stats":   self._orchestrator.get_stats(),
             "tool_stats":    self._tool_manager.get_stats(),
             "active_alerts": [asdict(a) for a in self._alerts if not a.resolved][-10:],

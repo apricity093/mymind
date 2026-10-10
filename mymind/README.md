@@ -2,6 +2,8 @@
 
 mymind 是面向客服场景的多 Agent 智能客服系统。本目录为 Python / FastAPI 主版本实现，承担细粒度意图识别、多 Agent 路由、RAG 检索、三级记忆、在线监控与实验评测。
 
+当前 Qwen/MiniLM 双索引的配置、导入与补齐见 [使用说明](docs/rag.md)，连通性见 [接入报告](experiments/QWEN_EMBEDDING_MIGRATION_REPORT.md)，冻结选择、真实质量实验、费用和应用验收见 [Qwen第二轮报告](experiments/QWEN_RAG_OPTIMIZATION_REPORT.md)。历史 Gemini 第一轮模型对比见 [实验报告](experiments/GEMINI_RAG_REPORT.md)，原第二轮工程修复与额度断点保存在 [第二轮报告](experiments/RAG_OPTIMIZATION_V2_REPORT.md)。
+
 ## 项目目录架构
 
 ```text
@@ -22,12 +24,14 @@ mymind/
 ├── core/                              # 核心业务组件
 │   ├── cache_metrics.py               # 应用 / Provider 级缓存指标
 │   ├── cache_store.py                 # 运行时与实验共享的缓存接口
-│   ├── intent_recognizer.py           # LLM / 字符 n-gram / 关键词三路融合意图识别
+│   ├── intent_recognizer.py           # LLM / Qwen embedding / 关键词并行意图融合
 │   ├── knowledge_policy.py            # R0–R4 检索实验的确定性知识门控
 │   ├── llm_gateway.py                 # 多 Provider 统一 LLM 网关
 │   ├── llm_utils.py                   # LLM 响应处理工具
 │   ├── prompt_cache.py                # Anthropic prompt-cache 边界构造
-│   ├── retrieval.py                   # RAG 检索核心（切块、去重、BM25 + RRF、重排）
+│   ├── retrieval.py                   # BM25 / RRF / 检索统计与实验基线
+│   ├── embedding.py                   # 独立 embedding API 与查询预算
+│   ├── document_chunking.py           # 结构解析、模型预算与递归切分
 │   └── skill_loader.py                # Skill 热加载器
 ├── data/                              # 数据目录
 │   ├── demo_docs/                     # 示例知识文档
@@ -48,7 +52,8 @@ mymind/
 │   └── run_experiments.py             # 实验运行入口
 ├── logs/                              # 运行日志（Git 忽略）
 ├── mcp/                               # MCP 工具与知识库
-│   ├── knowledge_base.py              # 基于 ChromaDB 的 RAG 知识库
+│   ├── knowledge_base.py              # 原生产切块与 R0–R4 实验基线
+│   ├── indexed_knowledge_base.py      # 生产双索引、原文状态与补齐
 │   └── tool_manager.py                # MCP 工具调用管理
 ├── memory/                            # 多轮对话记忆
 │   ├── conversation_memory.py         # 三级记忆（工作记忆 / 情景记忆 / 用户画像）

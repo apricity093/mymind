@@ -1,0 +1,2053 @@
+{
+  "version": "synthetic-service-v2-20261009",
+  "labels": [
+    "query",
+    "complaint",
+    "request",
+    "greeting",
+    "escalation",
+    "technical",
+    "billing",
+    "account",
+    "feedback",
+    "order_status",
+    "logistics",
+    "refund",
+    "invoice",
+    "payment_issue",
+    "account_security",
+    "technical_login",
+    "technical_crash",
+    "human_handoff",
+    "other"
+  ],
+  "cases": [
+    {
+      "id": "intent-v2-query-0-0",
+      "family_id": "query-0",
+      "split": "dev",
+      "message": "积分兑换有什么门槛？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-0-1",
+      "family_id": "query-0",
+      "split": "dev",
+      "message": "想了解积分能换什么",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-1-0",
+      "family_id": "query-1",
+      "split": "dev",
+      "message": "你们几点开始营业？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-1-1",
+      "family_id": "query-1",
+      "split": "dev",
+      "message": "周末服务窗口开到几点",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-2-0",
+      "family_id": "query-2",
+      "split": "test",
+      "message": "会员分几个等级？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-2-1",
+      "family_id": "query-2",
+      "split": "test",
+      "message": "能介绍一下会员档位吗",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-3-0",
+      "family_id": "query-3",
+      "split": "test",
+      "message": "这个系列有哪些颜色？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-3-1",
+      "family_id": "query-3",
+      "split": "test",
+      "message": "我想知道这款现货的配色",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-4-0",
+      "family_id": "query-4",
+      "split": "test",
+      "message": "门店位置在哪里？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-4-1",
+      "family_id": "query-4",
+      "split": "test",
+      "message": "去实体店应该走到哪个地址",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-5-0",
+      "family_id": "query-5",
+      "split": "test",
+      "message": "支持哪些语言？",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-query-5-1",
+      "family_id": "query-5",
+      "split": "test",
+      "message": "产品的界面可以切换成哪些文字",
+      "intent": "query",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-0-0",
+      "family_id": "complaint-0",
+      "split": "dev",
+      "message": "客服态度让我很不舒服",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-0-1",
+      "family_id": "complaint-0",
+      "split": "dev",
+      "message": "接待的人很不耐烦我很生气",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-1-0",
+      "family_id": "complaint-1",
+      "split": "dev",
+      "message": "一直没人处理我的问题",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-1-1",
+      "family_id": "complaint-1",
+      "split": "dev",
+      "message": "等了大半天仍然无人回应",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-2-0",
+      "family_id": "complaint-2",
+      "split": "test",
+      "message": "你们承诺的服务没有兑现",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-2-1",
+      "family_id": "complaint-2",
+      "split": "test",
+      "message": "说好的售后根本没做到",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-3-0",
+      "family_id": "complaint-3",
+      "split": "test",
+      "message": "连续几次答复互相矛盾",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-3-1",
+      "family_id": "complaint-3",
+      "split": "test",
+      "message": "每个人都给我不同的说法实在受不了",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-4-0",
+      "family_id": "complaint-4",
+      "split": "test",
+      "message": "这次服务体验太差了",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-4-1",
+      "family_id": "complaint-4",
+      "split": "test",
+      "message": "整个办理过程让我非常失望",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-5-0",
+      "family_id": "complaint-5",
+      "split": "test",
+      "message": "工单被无故关闭我要投诉",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-complaint-5-1",
+      "family_id": "complaint-5",
+      "split": "test",
+      "message": "问题没解决你们就结案这不合理",
+      "intent": "complaint",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-0-0",
+      "family_id": "request-0",
+      "split": "dev",
+      "message": "请帮我取消尚未支付的订单",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-0-1",
+      "family_id": "request-0",
+      "split": "dev",
+      "message": "我不买了把待付款单子撤掉吧",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-1-0",
+      "family_id": "request-1",
+      "split": "dev",
+      "message": "替我修改还未发货的收货地址",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-1-1",
+      "family_id": "request-1",
+      "split": "dev",
+      "message": "包裹没出库请换个收件地点",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-2-0",
+      "family_id": "request-2",
+      "split": "test",
+      "message": "把收货人改成我母亲",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-2-1",
+      "family_id": "request-2",
+      "split": "test",
+      "message": "这单还没寄请更换收件姓名",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-3-0",
+      "family_id": "request-3",
+      "split": "test",
+      "message": "请合并这两笔未发货订单",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-3-1",
+      "family_id": "request-3",
+      "split": "test",
+      "message": "两个待出库订单能一起寄吗",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-4-0",
+      "family_id": "request-4",
+      "split": "test",
+      "message": "替我暂停自动续订",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-4-1",
+      "family_id": "request-4",
+      "split": "test",
+      "message": "下个周期先不要自动续上",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-5-0",
+      "family_id": "request-5",
+      "split": "test",
+      "message": "请延后这笔预约到周六",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-request-5-1",
+      "family_id": "request-5",
+      "split": "test",
+      "message": "帮忙把服务预约挪到周末",
+      "intent": "request",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-0-0",
+      "family_id": "greeting-0",
+      "split": "dev",
+      "message": "你好呀",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-0-1",
+      "family_id": "greeting-0",
+      "split": "dev",
+      "message": "嗨在吗",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-1-0",
+      "family_id": "greeting-1",
+      "split": "dev",
+      "message": "早上好客服",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-1-1",
+      "family_id": "greeting-1",
+      "split": "dev",
+      "message": "早安今天辛苦了",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-2-0",
+      "family_id": "greeting-2",
+      "split": "test",
+      "message": "下午好",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-2-1",
+      "family_id": "greeting-2",
+      "split": "test",
+      "message": "午后好呀有人在线吗",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-3-0",
+      "family_id": "greeting-3",
+      "split": "test",
+      "message": "晚上好",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-3-1",
+      "family_id": "greeting-3",
+      "split": "test",
+      "message": "晚安之前来打个招呼",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-4-0",
+      "family_id": "greeting-4",
+      "split": "test",
+      "message": "hello",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-4-1",
+      "family_id": "greeting-4",
+      "split": "test",
+      "message": "hi there",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-5-0",
+      "family_id": "greeting-5",
+      "split": "test",
+      "message": "第一次来向你问好",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-greeting-5-1",
+      "family_id": "greeting-5",
+      "split": "test",
+      "message": "刚进来先说声你好",
+      "intent": "greeting",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-0-0",
+      "family_id": "escalation-0",
+      "split": "dev",
+      "message": "请主管复核之前的处理决定",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-0-1",
+      "family_id": "escalation-0",
+      "split": "dev",
+      "message": "这个结论希望上级重新审核",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-1-0",
+      "family_id": "escalation-1",
+      "split": "dev",
+      "message": "我要与你们经理谈",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-1-1",
+      "family_id": "escalation-1",
+      "split": "dev",
+      "message": "请安排负责经理接待",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-2-0",
+      "family_id": "escalation-2",
+      "split": "test",
+      "message": "需要升级到上一级处理",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-2-1",
+      "family_id": "escalation-2",
+      "split": "test",
+      "message": "目前权限不够请向上升级",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-3-0",
+      "family_id": "escalation-3",
+      "split": "test",
+      "message": "让门店负责人给我答复",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-3-1",
+      "family_id": "escalation-3",
+      "split": "test",
+      "message": "希望由门店管理人员处理这件事",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-4-0",
+      "family_id": "escalation-4",
+      "split": "test",
+      "message": "请上级复查我的工单证据",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-4-1",
+      "family_id": "escalation-4",
+      "split": "test",
+      "message": "要求更高权限的负责人重看材料",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-5-0",
+      "family_id": "escalation-5",
+      "split": "test",
+      "message": "我要求管理层书面解释",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-escalation-5-1",
+      "family_id": "escalation-5",
+      "split": "test",
+      "message": "请让管理团队说明决定依据",
+      "intent": "escalation",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-0-0",
+      "family_id": "technical-0",
+      "split": "dev",
+      "message": "接口超时时间怎么配置",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-0-1",
+      "family_id": "technical-0",
+      "split": "dev",
+      "message": "SDK等待时长应该填在哪里",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-1-0",
+      "family_id": "technical-1",
+      "split": "dev",
+      "message": "导出的文件格式不正确",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-1-1",
+      "family_id": "technical-1",
+      "split": "dev",
+      "message": "下载报表的列格式总是不对",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-2-0",
+      "family_id": "technical-2",
+      "split": "test",
+      "message": "数据同步延迟很大",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-2-1",
+      "family_id": "technical-2",
+      "split": "test",
+      "message": "两端数据隔很久才一致",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-3-0",
+      "family_id": "technical-3",
+      "split": "test",
+      "message": "批量导入字段映射怎么设置",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-3-1",
+      "family_id": "technical-3",
+      "split": "test",
+      "message": "上传表格的列如何对应系统字段",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-4-0",
+      "family_id": "technical-4",
+      "split": "test",
+      "message": "回调地址如何验证",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-4-1",
+      "family_id": "technical-4",
+      "split": "test",
+      "message": "Webhook接收地址在哪测试",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-5-0",
+      "family_id": "technical-5",
+      "split": "test",
+      "message": "打印布局错位如何调整",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical-5-1",
+      "family_id": "technical-5",
+      "split": "test",
+      "message": "报表打出来表头跑到下一页了",
+      "intent": "technical",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-0-0",
+      "family_id": "billing-0",
+      "split": "dev",
+      "message": "订阅套餐按月还是按年计费",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-0-1",
+      "family_id": "billing-0",
+      "split": "dev",
+      "message": "这个服务的收费周期怎么算",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-1-0",
+      "family_id": "billing-1",
+      "split": "dev",
+      "message": "账单周期从哪天开始",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-1-1",
+      "family_id": "billing-1",
+      "split": "dev",
+      "message": "每期费用的结算时间怎么定",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-2-0",
+      "family_id": "billing-2",
+      "split": "test",
+      "message": "使用量费用明细在哪里查",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-2-1",
+      "family_id": "billing-2",
+      "split": "test",
+      "message": "想看本期各项服务花了多少钱",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-3-0",
+      "family_id": "billing-3",
+      "split": "test",
+      "message": "套餐升级差价如何折算",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-3-1",
+      "family_id": "billing-3",
+      "split": "test",
+      "message": "月中换高档套餐剩余天数怎么收费",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-4-0",
+      "family_id": "billing-4",
+      "split": "test",
+      "message": "试用结束后的费用标准是什么",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-4-1",
+      "family_id": "billing-4",
+      "split": "test",
+      "message": "免费期过后每月应付多少",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-5-0",
+      "family_id": "billing-5",
+      "split": "test",
+      "message": "账单中的税费怎么算",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-billing-5-1",
+      "family_id": "billing-5",
+      "split": "test",
+      "message": "费用结算时税额采用什么比例",
+      "intent": "billing",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-0-0",
+      "family_id": "account-0",
+      "split": "dev",
+      "message": "我要修改绑定邮箱",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-0-1",
+      "family_id": "account-0",
+      "split": "dev",
+      "message": "旧邮箱不用了请换个联系方式",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-1-0",
+      "family_id": "account-1",
+      "split": "dev",
+      "message": "我想注销账户",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-1-1",
+      "family_id": "account-1",
+      "split": "dev",
+      "message": "以后不用了帮我关闭个人账号",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-2-0",
+      "family_id": "account-2",
+      "split": "test",
+      "message": "更新我的昵称和头像",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-2-1",
+      "family_id": "account-2",
+      "split": "test",
+      "message": "个人资料展示信息想换一下",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-3-0",
+      "family_id": "account-3",
+      "split": "test",
+      "message": "如何合并两个个人账户",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-3-1",
+      "family_id": "account-3",
+      "split": "test",
+      "message": "我注册了两个号能合并资料吗",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-4-0",
+      "family_id": "account-4",
+      "split": "test",
+      "message": "请解绑不再使用的手机号",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-4-1",
+      "family_id": "account-4",
+      "split": "test",
+      "message": "旧号码停用了要解除关联",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-5-0",
+      "family_id": "account-5",
+      "split": "test",
+      "message": "我要更改账户所在地区",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account-5-1",
+      "family_id": "account-5",
+      "split": "test",
+      "message": "个人账号地区设置如何调整",
+      "intent": "account",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-0-0",
+      "family_id": "feedback-0",
+      "split": "dev",
+      "message": "这次接待很棒谢谢",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-0-1",
+      "family_id": "feedback-0",
+      "split": "dev",
+      "message": "服务让我非常满意",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-1-0",
+      "family_id": "feedback-1",
+      "split": "dev",
+      "message": "给刚才的客服一个好评",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-1-1",
+      "family_id": "feedback-1",
+      "split": "dev",
+      "message": "工作人员耐心解决了问题值得表扬",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-2-0",
+      "family_id": "feedback-2",
+      "split": "test",
+      "message": "处理速度超出预期",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-2-1",
+      "family_id": "feedback-2",
+      "split": "test",
+      "message": "这么快解决我很惊喜",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-3-0",
+      "family_id": "feedback-3",
+      "split": "test",
+      "message": "说明写得很清楚",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-3-1",
+      "family_id": "feedback-3",
+      "split": "test",
+      "message": "帮助文档很实用赞一个",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-4-0",
+      "family_id": "feedback-4",
+      "split": "test",
+      "message": "配送安排很贴心",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-4-1",
+      "family_id": "feedback-4",
+      "split": "test",
+      "message": "你们这次安排得很周到谢谢",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-5-0",
+      "family_id": "feedback-5",
+      "split": "test",
+      "message": "新版使用体验好多了",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-feedback-5-1",
+      "family_id": "feedback-5",
+      "split": "test",
+      "message": "更新之后真的顺手很多",
+      "intent": "feedback",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-0-0",
+      "family_id": "order_status-0",
+      "split": "dev",
+      "message": "订单现在到哪一步了",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-0-1",
+      "family_id": "order_status-0",
+      "split": "dev",
+      "message": "购买记录目前是什么处理状态",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-1-0",
+      "family_id": "order_status-1",
+      "split": "dev",
+      "message": "我的单子已经发货了吗",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-1-1",
+      "family_id": "order_status-1",
+      "split": "dev",
+      "message": "仓库是否把这笔订单发出了",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-2-0",
+      "family_id": "order_status-2",
+      "split": "test",
+      "message": "付款后订单还显示待处理",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-2-1",
+      "family_id": "order_status-2",
+      "split": "test",
+      "message": "我想确认已付订单是否进入备货",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-3-0",
+      "family_id": "order_status-3",
+      "split": "test",
+      "message": "订单号AB1024有被取消吗",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-3-1",
+      "family_id": "order_status-3",
+      "split": "test",
+      "message": "查一下AB1024是否仍然有效",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-4-0",
+      "family_id": "order_status-4",
+      "split": "test",
+      "message": "预售订单什么时候开始备货",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-4-1",
+      "family_id": "order_status-4",
+      "split": "test",
+      "message": "这笔预订目前进入生产了吗",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-5-0",
+      "family_id": "order_status-5",
+      "split": "test",
+      "message": "我这笔订单是否已经完成",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-order_status-5-1",
+      "family_id": "order_status-5",
+      "split": "test",
+      "message": "购买流程现在算结单了吗",
+      "intent": "order_status",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-0-0",
+      "family_id": "logistics-0",
+      "split": "dev",
+      "message": "物流一直不更新",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-0-1",
+      "family_id": "logistics-0",
+      "split": "dev",
+      "message": "运单跟踪停在前天没动",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-1-0",
+      "family_id": "logistics-1",
+      "split": "dev",
+      "message": "快递什么时候到",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-1-1",
+      "family_id": "logistics-1",
+      "split": "dev",
+      "message": "包裹预计哪天送达",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-2-0",
+      "family_id": "logistics-2",
+      "split": "test",
+      "message": "配送员联系不到怎么办",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-2-1",
+      "family_id": "logistics-2",
+      "split": "test",
+      "message": "承运人员没接电话怎么查件",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-3-0",
+      "family_id": "logistics-3",
+      "split": "test",
+      "message": "包裹显示签收但我没收到",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-3-1",
+      "family_id": "logistics-3",
+      "split": "test",
+      "message": "承运记录写送达可我没拿到",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-4-0",
+      "family_id": "logistics-4",
+      "split": "test",
+      "message": "能查一下包裹走到哪里吗",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-4-1",
+      "family_id": "logistics-4",
+      "split": "test",
+      "message": "货物现在经过哪个运输站点",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-5-0",
+      "family_id": "logistics-5",
+      "split": "test",
+      "message": "偏远地区配送要多久",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-logistics-5-1",
+      "family_id": "logistics-5",
+      "split": "test",
+      "message": "寄到山区运输会多花几天",
+      "intent": "logistics",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-0-0",
+      "family_id": "refund-0",
+      "split": "dev",
+      "message": "我要申请退款",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-0-1",
+      "family_id": "refund-0",
+      "split": "dev",
+      "message": "这件商品不想要了钱能退回来吗",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-1-0",
+      "family_id": "refund-1",
+      "split": "dev",
+      "message": "退货后多久退回钱",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-1-1",
+      "family_id": "refund-1",
+      "split": "dev",
+      "message": "寄回商品之后款项几天到账",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-2-0",
+      "family_id": "refund-2",
+      "split": "test",
+      "message": "有质量问题怎么退货退款",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-2-1",
+      "family_id": "refund-2",
+      "split": "test",
+      "message": "收到坏的产品想退钱流程是什么",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-3-0",
+      "family_id": "refund-3",
+      "split": "test",
+      "message": "退款申请卡在审核",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-3-1",
+      "family_id": "refund-3",
+      "split": "test",
+      "message": "退钱单一直等待审批怎么处理",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-4-0",
+      "family_id": "refund-4",
+      "split": "test",
+      "message": "退款可以改到账户余额吗",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-4-1",
+      "family_id": "refund-4",
+      "split": "test",
+      "message": "原路退的钱能改成平台余额吗",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-5-0",
+      "family_id": "refund-5",
+      "split": "test",
+      "message": "定制商品能否退回退款",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-refund-5-1",
+      "family_id": "refund-5",
+      "split": "test",
+      "message": "刻了名字的设备可以退钱吗",
+      "intent": "refund",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-0-0",
+      "family_id": "invoice-0",
+      "split": "dev",
+      "message": "帮我开电子发票",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-0-1",
+      "family_id": "invoice-0",
+      "split": "dev",
+      "message": "这笔消费需要票据",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-1-0",
+      "family_id": "invoice-1",
+      "split": "dev",
+      "message": "发票抬头写错了",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-1-1",
+      "family_id": "invoice-1",
+      "split": "dev",
+      "message": "票据上的公司名字怎么改",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-2-0",
+      "family_id": "invoice-2",
+      "split": "test",
+      "message": "发票税号怎么填写",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-2-1",
+      "family_id": "invoice-2",
+      "split": "test",
+      "message": "开票时纳税识别号放在哪里",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-3-0",
+      "family_id": "invoice-3",
+      "split": "test",
+      "message": "电子发票下载入口在哪里",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-3-1",
+      "family_id": "invoice-3",
+      "split": "test",
+      "message": "已开的票从哪儿取到文件",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-4-0",
+      "family_id": "invoice-4",
+      "split": "test",
+      "message": "能换成增值税专用发票吗",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-4-1",
+      "family_id": "invoice-4",
+      "split": "test",
+      "message": "普通票如何改成专票",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-5-0",
+      "family_id": "invoice-5",
+      "split": "test",
+      "message": "发票金额与订单不一致",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-invoice-5-1",
+      "family_id": "invoice-5",
+      "split": "test",
+      "message": "票据显示的总额少了一部分",
+      "intent": "invoice",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-0-0",
+      "family_id": "payment_issue-0",
+      "split": "dev",
+      "message": "支付失败但卡里余额够",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-0-1",
+      "family_id": "payment_issue-0",
+      "split": "dev",
+      "message": "结账被拒绝可账户有钱",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-1-0",
+      "family_id": "payment_issue-1",
+      "split": "dev",
+      "message": "同一单被重复扣款",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-1-1",
+      "family_id": "payment_issue-1",
+      "split": "dev",
+      "message": "付款后发现扣了两遍钱",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-2-0",
+      "family_id": "payment_issue-2",
+      "split": "test",
+      "message": "扣钱了页面却说未支付",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-2-1",
+      "family_id": "payment_issue-2",
+      "split": "test",
+      "message": "银行已经扣款订单仍待付款",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-3-0",
+      "family_id": "payment_issue-3",
+      "split": "test",
+      "message": "支付验证码通过却没完成",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-3-1",
+      "family_id": "payment_issue-3",
+      "split": "test",
+      "message": "银行卡验证后付款一直转圈",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-4-0",
+      "family_id": "payment_issue-4",
+      "split": "test",
+      "message": "这个月莫名多扣了一笔",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-4-1",
+      "family_id": "payment_issue-4",
+      "split": "test",
+      "message": "没买新东西怎么又扣费了",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-5-0",
+      "family_id": "payment_issue-5",
+      "split": "test",
+      "message": "付款时显示交易限额",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-payment_issue-5-1",
+      "family_id": "payment_issue-5",
+      "split": "test",
+      "message": "收银台说超过支付额度怎么办",
+      "intent": "payment_issue",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-0-0",
+      "family_id": "account_security-0",
+      "split": "dev",
+      "message": "账户被盗了",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-0-1",
+      "family_id": "account_security-0",
+      "split": "dev",
+      "message": "发现别人进入了我的账号",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-1-0",
+      "family_id": "account_security-1",
+      "split": "dev",
+      "message": "收到异常登录提醒",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-1-1",
+      "family_id": "account_security-1",
+      "split": "dev",
+      "message": "异地设备登入通知不是我本人",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-2-0",
+      "family_id": "account_security-2",
+      "split": "test",
+      "message": "我要重置密码",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-2-1",
+      "family_id": "account_security-2",
+      "split": "test",
+      "message": "忘了口令希望换个新的",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-3-0",
+      "family_id": "account_security-3",
+      "split": "test",
+      "message": "如何开启两步验证",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-3-1",
+      "family_id": "account_security-3",
+      "split": "test",
+      "message": "想给账号加第二道验证",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-4-0",
+      "family_id": "account_security-4",
+      "split": "test",
+      "message": "密码可能泄露需要保护账户",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-4-1",
+      "family_id": "account_security-4",
+      "split": "test",
+      "message": "凭据落到别人手里怎样紧急处理",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-5-0",
+      "family_id": "account_security-5",
+      "split": "test",
+      "message": "有人擅自改了我的绑定号码",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-account_security-5-1",
+      "family_id": "account_security-5",
+      "split": "test",
+      "message": "账户手机号被陌生人换了",
+      "intent": "account_security",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-0-0",
+      "family_id": "technical_login-0",
+      "split": "dev",
+      "message": "登录一直报401",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-0-1",
+      "family_id": "technical_login-0",
+      "split": "dev",
+      "message": "进入账户时提示认证401失败",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-1-0",
+      "family_id": "technical_login-1",
+      "split": "dev",
+      "message": "验证码收不到",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-1-1",
+      "family_id": "technical_login-1",
+      "split": "dev",
+      "message": "等登录短信很久仍没到",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-2-0",
+      "family_id": "technical_login-2",
+      "split": "test",
+      "message": "无法登录账号",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-2-1",
+      "family_id": "technical_login-2",
+      "split": "test",
+      "message": "输入资料后一直进不了系统",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-3-0",
+      "family_id": "technical_login-3",
+      "split": "test",
+      "message": "登录页面不断循环跳转",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-3-1",
+      "family_id": "technical_login-3",
+      "split": "test",
+      "message": "验证完又回到登入页怎么办",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-4-0",
+      "family_id": "technical_login-4",
+      "split": "test",
+      "message": "单点登录授权失败",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-4-1",
+      "family_id": "technical_login-4",
+      "split": "test",
+      "message": "SSO进入系统时卡在认证环节",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-5-0",
+      "family_id": "technical_login-5",
+      "split": "test",
+      "message": "正确密码也提示登录过期",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_login-5-1",
+      "family_id": "technical_login-5",
+      "split": "test",
+      "message": "口令没错但登入总说会话失效",
+      "intent": "technical_login",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-0-0",
+      "family_id": "technical_crash-0",
+      "split": "dev",
+      "message": "应用一直崩溃",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-0-1",
+      "family_id": "technical_crash-0",
+      "split": "dev",
+      "message": "软件打开就退出了",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-1-0",
+      "family_id": "technical_crash-1",
+      "split": "dev",
+      "message": "页面报500错误",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-1-1",
+      "family_id": "technical_crash-1",
+      "split": "dev",
+      "message": "浏览业务页面出现服务器500",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-2-0",
+      "family_id": "technical_crash-2",
+      "split": "test",
+      "message": "更新后软件闪退",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-2-1",
+      "family_id": "technical_crash-2",
+      "split": "test",
+      "message": "安装新版后程序突然关掉",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-3-0",
+      "family_id": "technical_crash-3",
+      "split": "test",
+      "message": "点击保存导致整个应用退出",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-3-1",
+      "family_id": "technical_crash-3",
+      "split": "test",
+      "message": "提交按钮一按程序就挂了",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-4-0",
+      "family_id": "technical_crash-4",
+      "split": "test",
+      "message": "桌面客户端启动黑屏随后崩溃",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-4-1",
+      "family_id": "technical_crash-4",
+      "split": "test",
+      "message": "电脑端打开黑一下便自动关闭",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-5-0",
+      "family_id": "technical_crash-5",
+      "split": "test",
+      "message": "系统报错503打不开",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-technical_crash-5-1",
+      "family_id": "technical_crash-5",
+      "split": "test",
+      "message": "访问服务返回503无法使用",
+      "intent": "technical_crash",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-0-0",
+      "family_id": "human_handoff-0",
+      "split": "dev",
+      "message": "转人工客服",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-0-1",
+      "family_id": "human_handoff-0",
+      "split": "dev",
+      "message": "给我真人接待",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-1-0",
+      "family_id": "human_handoff-1",
+      "split": "dev",
+      "message": "我要找人工",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-1-1",
+      "family_id": "human_handoff-1",
+      "split": "dev",
+      "message": "请安排在线工作人员",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-2-0",
+      "family_id": "human_handoff-2",
+      "split": "test",
+      "message": "不要机器人请转人",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-2-1",
+      "family_id": "human_handoff-2",
+      "split": "test",
+      "message": "能不能让真正的人跟我聊",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-3-0",
+      "family_id": "human_handoff-3",
+      "split": "test",
+      "message": "我需要人工协助填写",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-3-1",
+      "family_id": "human_handoff-3",
+      "split": "test",
+      "message": "安排客服本人帮我办理吧",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-4-0",
+      "family_id": "human_handoff-4",
+      "split": "test",
+      "message": "请接通电话客服",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-4-1",
+      "family_id": "human_handoff-4",
+      "split": "test",
+      "message": "让我直接和服务人员说话",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-5-0",
+      "family_id": "human_handoff-5",
+      "split": "test",
+      "message": "机器人理解不了换真人",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-human_handoff-5-1",
+      "family_id": "human_handoff-5",
+      "split": "test",
+      "message": "这个问题我想交给人工沟通",
+      "intent": "human_handoff",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-0-0",
+      "family_id": "other-0",
+      "split": "dev",
+      "message": "帮我写一首关于月亮的诗",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-0-1",
+      "family_id": "other-0",
+      "split": "dev",
+      "message": "写几句月光主题诗歌吧",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-1-0",
+      "family_id": "other-1",
+      "split": "dev",
+      "message": "今天的球赛谁赢了",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-1-1",
+      "family_id": "other-1",
+      "split": "dev",
+      "message": "昨晚那场比赛比分是多少",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-2-0",
+      "family_id": "other-2",
+      "split": "test",
+      "message": "世界最高的山叫什么",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-2-1",
+      "family_id": "other-2",
+      "split": "test",
+      "message": "哪座山峰海拔世界第一",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-3-0",
+      "family_id": "other-3",
+      "split": "test",
+      "message": "推荐一个晚饭菜谱",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-3-1",
+      "family_id": "other-3",
+      "split": "test",
+      "message": "晚上做什么家常菜好",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-4-0",
+      "family_id": "other-4",
+      "split": "test",
+      "message": "计算三角形面积公式",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-4-1",
+      "family_id": "other-4",
+      "split": "test",
+      "message": "怎样求三角形的面积",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-5-0",
+      "family_id": "other-5",
+      "split": "test",
+      "message": "陪我玩个猜数字游戏",
+      "intent": "other",
+      "synthetic": true
+    },
+    {
+      "id": "intent-v2-other-5-1",
+      "family_id": "other-5",
+      "split": "test",
+      "message": "我们来猜一个你心里的数",
+      "intent": "other",
+      "synthetic": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "id": "diagnostic-0-0",
+      "family_id": "diagnostic-0",
+      "message": "退款迟迟没到而且没人回复，我很生气",
+      "allowed_intents": [
+        "refund",
+        "complaint"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-0-1",
+      "family_id": "diagnostic-0",
+      "message": "麻烦处理一下：退款迟迟没到而且没人回复，我很生气",
+      "allowed_intents": [
+        "refund",
+        "complaint"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-1-0",
+      "family_id": "diagnostic-1",
+      "message": "账户被盗以后现在也登不进去",
+      "allowed_intents": [
+        "account_security",
+        "technical_login"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-1-1",
+      "family_id": "diagnostic-1",
+      "message": "麻烦处理一下：账户被盗以后现在也登不进去",
+      "allowed_intents": [
+        "account_security",
+        "technical_login"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-2-0",
+      "family_id": "diagnostic-2",
+      "message": "扣了两遍钱我要退回多收那笔",
+      "allowed_intents": [
+        "payment_issue",
+        "refund"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-2-1",
+      "family_id": "diagnostic-2",
+      "message": "麻烦处理一下：扣了两遍钱我要退回多收那笔",
+      "allowed_intents": [
+        "payment_issue",
+        "refund"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-3-0",
+      "family_id": "diagnostic-3",
+      "message": "帮我查包裹顺便开个发票",
+      "allowed_intents": [
+        "logistics",
+        "invoice"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-3-1",
+      "family_id": "diagnostic-3",
+      "message": "麻烦处理一下：帮我查包裹顺便开个发票",
+      "allowed_intents": [
+        "logistics",
+        "invoice"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-4-0",
+      "family_id": "diagnostic-4",
+      "message": "找真人然后让经理复核",
+      "allowed_intents": [
+        "human_handoff",
+        "escalation"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-4-1",
+      "family_id": "diagnostic-4",
+      "message": "麻烦处理一下：找真人然后让经理复核",
+      "allowed_intents": [
+        "human_handoff",
+        "escalation"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-5-0",
+      "family_id": "diagnostic-5",
+      "message": "程序闪退导致支付失败",
+      "allowed_intents": [
+        "technical_crash",
+        "payment_issue"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-5-1",
+      "family_id": "diagnostic-5",
+      "message": "麻烦处理一下：程序闪退导致支付失败",
+      "allowed_intents": [
+        "technical_crash",
+        "payment_issue"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-6-0",
+      "family_id": "diagnostic-6",
+      "message": "我想注销账号并退掉订阅",
+      "allowed_intents": [
+        "account",
+        "refund"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-6-1",
+      "family_id": "diagnostic-6",
+      "message": "麻烦处理一下：我想注销账号并退掉订阅",
+      "allowed_intents": [
+        "account",
+        "refund"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-7-0",
+      "family_id": "diagnostic-7",
+      "message": "服务太差我要找主管",
+      "allowed_intents": [
+        "complaint",
+        "escalation"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-7-1",
+      "family_id": "diagnostic-7",
+      "message": "麻烦处理一下：服务太差我要找主管",
+      "allowed_intents": [
+        "complaint",
+        "escalation"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-8-0",
+      "family_id": "diagnostic-8",
+      "message": "账单金额不对而且发票也有问题",
+      "allowed_intents": [
+        "billing",
+        "invoice"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-8-1",
+      "family_id": "diagnostic-8",
+      "message": "麻烦处理一下：账单金额不对而且发票也有问题",
+      "allowed_intents": [
+        "billing",
+        "invoice"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-9-0",
+      "family_id": "diagnostic-9",
+      "message": "订单发没发，发了以后多久送到",
+      "allowed_intents": [
+        "order_status",
+        "logistics"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    },
+    {
+      "id": "diagnostic-9-1",
+      "family_id": "diagnostic-9",
+      "message": "麻烦处理一下：订单发没发，发了以后多久送到",
+      "allowed_intents": [
+        "order_status",
+        "logistics"
+      ],
+      "scoring": "diagnostic_only_no_new_route_rule"
+    }
+  ],
+  "synthetic": true
+}

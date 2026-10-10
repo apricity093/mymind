@@ -13,8 +13,12 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
+from pathlib import Path
+from contextlib import nullcontext
 import re
 import time
+import uuid
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional
@@ -24,6 +28,7 @@ from anthropic import AsyncAnthropic
 from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
 from core.cache_store import CacheStore, InMemoryCacheStore
+from core.embedding import TextEmbedding, build_embedding, EmbeddingError
 
 logger = logging.getLogger(__name__)
 
@@ -71,13 +76,13 @@ class IntentResult:
 
 # ── Few-shot 模板（同时用于 LLM 示例和 Embedding 匹配）────────────────────────
 _TEMPLATES: Dict[IntentCategory, List[str]] = {
-    IntentCategory.QUERY:      ["我的订单状态是什么？", "如何重置密码？", "快递什么时候到？"],
+    IntentCategory.QUERY:      ["有哪些会员套餐？", "营业时间是什么？", "积分规则在哪里查看？"],
     IntentCategory.COMPLAINT:  ["等了好几个小时！", "服务太差了！", "一直没人处理！"],
-    IntentCategory.REQUEST:    ["帮我取消订单", "我需要修改地址", "请协助退款"],
+    IntentCategory.REQUEST:    ["帮我取消订单", "我需要修改地址", "请协助变更收货人"],
     IntentCategory.GREETING:   ["你好", "嗨，有人吗", "早上好"],
-    IntentCategory.ESCALATION: ["我要投诉！", "转人工客服", "找你们经理"],
-    IntentCategory.TECHNICAL:  ["应用一直崩溃", "无法登录", "出现500错误"],
-    IntentCategory.BILLING:    ["为什么扣了两次款？", "申请退款", "发票问题"],
+    IntentCategory.ESCALATION: ["找你们经理", "请主管复核处理决定", "需要升级到上级处理"],
+    IntentCategory.TECHNICAL:  ["如何配置接口超时时间", "导出的文件格式不正确", "数据同步有延迟"],
+    IntentCategory.BILLING:    ["账单周期如何计算", "订阅套餐如何计费", "费用明细在哪里查看"],
     IntentCategory.ACCOUNT:    ["修改邮箱", "注销账户", "更新个人信息"],
     IntentCategory.FEEDBACK:   ["服务很棒！", "非常满意", "给个好评"],
     IntentCategory.ORDER_STATUS: ["我的订单现在是什么状态？", "订单有没有发货？", "订单处理到哪一步了？"],
@@ -136,14 +141,14 @@ def _cosine(a: List[float], b: List[float]) -> float:
     dot = sum(x * y for x, y in zip(a, b))
     na  = sum(x * x for x in a) ** 0.5
     nb  = sum(x * x for x in b) ** 0.5
-    return dot / (na * nb) if na and nb else 0.0
+    return float(dot / (na * nb)) if na and nb else 0.0
 
 
 class IntentRecognizer:
     """
     端到端意图识别器。
 
-    初始化时不加载任何本地模型，所有 AI 能力通过 Anthropic API 调用。
+    聊天网关与 embedding 独立配置。
     模板 Embedding 在首次请求时懒加载并缓存，后续复用。
     """
 
@@ -156,6 +161,9 @@ class IntentRecognizer:
         cache_store: Optional[CacheStore] = None,
         cache_ttl: float = 600.0,
         gateway: Optional[LLMGateway] = None,
+        embedding: Optional[TextEmbedding] = None,
+        template_cache_path: Optional[str] = None,
+        template_wait_s: float = 3.0,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -164,10 +172,15 @@ class IntentRecognizer:
         self._gateway = gateway
         self.model     = model
         self.threshold = confidence_threshold
-        # 第三方兼容 API（如 DeepSeek）通常不支持 Embedding，禁用该策略。
-        # 官方 Anthropic SDK 当前没有 embeddings 资源，因此下面会使用稳定的
-        # 本地字符 n-gram 向量作为轻量兜底，保证三路融合链路真实可跑。
-        self._embedding_enabled = not bool(base_url)
+        self._templates = {cat: list(texts) for cat, texts in _TEMPLATES.items()}
+        self.embedding = embedding or build_embedding()
+        self._embedding_enabled = self.embedding.enabled
+        self._template_lock = asyncio.Lock()
+        self._template_revision = 0
+        self._embedding_degraded = False
+        self._template_task = None
+        self._template_wait_s = template_wait_s
+        self._template_cache_path = Path(template_cache_path or os.getenv("INTENT_TEMPLATE_CACHE_PATH", "./data/intent_templates.json"))
 
         self._tpl_embeddings: Dict[IntentCategory, List[List[float]]] = {}
         self._cache_store = cache_store or InMemoryCacheStore(max_entries=1000)
@@ -222,15 +235,19 @@ class IntentRecognizer:
             source_scores=source_scores,
         )
 
-        self._cache_store.set("intent", key, result, self._cache_ttl)
+        # 临时失败结果不缓存，下一次相同请求仍可探测 embedding 恢复。
+        if not emb.get("failed"):
+            self._cache_store.set("intent", key, result, self._cache_ttl)
         return result
 
     def learn(self, message: str, correct: IntentCategory) -> None:
         """在线学习：将纠正样本加入模板，清除对应 Embedding 缓存。"""
-        tpls = _TEMPLATES.setdefault(correct, [])
+        tpls = self._templates.setdefault(correct, [])
         if message not in tpls:
             tpls.append(message)
             self._tpl_embeddings.pop(correct, None)  # 下次重新计算
+            self._template_revision += 1
+            self._cache_store.invalidate_namespace("intent")
             logger.info(f"学习新样本 → {correct.value}: {message[:40]}")
 
     # ── 三路识别策略 ──────────────────────────────────────────────────────────
@@ -245,7 +262,7 @@ class IntentRecognizer:
         # 构建 Few-shot 示例
         examples = "\n".join(
             f'  消息: "{t}" → 意图: {cat.value}'
-            for cat, tpls in _TEMPLATES.items()
+            for cat, tpls in self._templates.items()
             for t in tpls[:1]  # 每类取 1 条，控制 prompt 长度
         )
         # 最近 3 轮对话上下文
@@ -297,6 +314,7 @@ class IntentRecognizer:
 
     async def _embedding_recognize(self, message: str) -> Dict[str, Any]:
         """策略 2：Embedding 向量相似度匹配。"""
+        identity = uuid.uuid4().hex[:12]
         try:
             await self._load_template_embeddings()
             msg_vec = await self._embed_text(message)
@@ -307,10 +325,19 @@ class IntentRecognizer:
                 if score > best_score:
                     best_score, best_cat = score, cat
 
+            if self._embedding_degraded:
+                self.embedding.telemetry.record("intent", identity, "recovered")
+                self._cache_store.invalidate_namespace("intent")
+                self._embedding_degraded = False
             return {"intent": best_cat, "confidence": best_score}
         except Exception as ex:
-            logger.warning(f"Embedding 识别失败: {ex}")
-            return {"intent": IntentCategory.OTHER, "confidence": 0.0}
+            from core.embedding import EmbeddingError
+            reason = str(ex) if isinstance(ex, EmbeddingError) else type(ex).__name__
+            self._embedding_degraded = True
+            outcome = "google_failed" if self.embedding.settings.model == "gemini-embedding-001" else "provider_failed"
+            self.embedding.telemetry.record("intent", identity, outcome, reason)
+            self.embedding.telemetry.record("intent", identity, "degraded")
+            return {"intent": IntentCategory.OTHER, "confidence": 0.0, "failed": True}
 
     def _pattern_recognize(self, message: str) -> Dict[str, Any]:
         """策略 3：关键词模式匹配（同步，零延迟兜底）。"""
@@ -353,13 +380,13 @@ class IntentRecognizer:
             "pattern": float(pat.get("confidence", 0.0) or 0.0),
         }
         if llm.get("failed"):
-            if emb.get("intent") != IntentCategory.OTHER and emb.get("confidence", 0.0) > 0:
+            if not emb.get("failed") and emb.get("intent") != IntentCategory.OTHER and emb.get("confidence", 0.0) > 0:
                 return emb["intent"], source_scores["embedding"], source_scores
             if pat.get("intent") != IntentCategory.OTHER and pat.get("confidence", 0.0) > 0:
                 return pat["intent"], source_scores["pattern"], source_scores
             return IntentCategory.OTHER, 0.0, source_scores
 
-        if self._embedding_enabled:
+        if self._embedding_enabled and not emb.get("failed"):
             weights = [(llm, 0.7), (emb, 0.2), (pat, 0.1)]
         else:
             weights = [(llm, 0.85), (pat, 0.15)]
@@ -417,40 +444,67 @@ class IntentRecognizer:
     # ── 辅助 ──────────────────────────────────────────────────────────────────
 
     async def _load_template_embeddings(self) -> None:
-        """懒加载所有模板的 Embedding（只在首次调用时执行）。"""
-        missing = [cat for cat in _TEMPLATES if cat not in self._tpl_embeddings]
-        if not missing:
+        """并发请求共享准备任务，有界等待；任务由生命周期关闭。"""
+        if all(cat in self._tpl_embeddings for cat in self._templates):
             return
+        self.start_template_preparation()
+        await asyncio.wait_for(asyncio.shield(self._template_task), self._template_wait_s)
 
-        all_texts = [t for cat in missing for t in _TEMPLATES[cat]]
-        vecs = [await self._embed_text(text) for text in all_texts]
-        idx = 0
-        for cat in missing:
-            n = len(_TEMPLATES[cat])
-            self._tpl_embeddings[cat] = vecs[idx: idx + n]
-            idx += n
+    def start_template_preparation(self):
+        if self._embedding_enabled and (self._template_task is None or self._template_task.done()):
+            self._template_task = asyncio.create_task(self._prepare_templates())
+            # 即使所有请求已经降级返回，也读取后台异常。
+            self._template_task.add_done_callback(lambda task: task.exception() if not task.cancelled() else None)
+
+    async def close(self):
+        if self._template_task is not None:
+            await asyncio.gather(self._template_task, return_exceptions=True)
+        await self.client.close()
+
+    async def _prepare_templates(self):
+        async with self._template_lock:
+            if all(cat in self._tpl_embeddings for cat in self._templates):
+                return
+            revision = self._template_revision
+            templates = {cat.value: list(texts) for cat, texts in self._templates.items()}
+            config = {"model": self.embedding.settings.model, "dimensions": self.embedding.settings.dimensions,
+                      "identity": self.embedding.identity, "task": "CLASSIFICATION", "templates": list(templates.items())}
+
+            def prepare():
+                try:
+                    saved = json.loads(self._template_cache_path.read_text(encoding="utf-8"))
+                    vectors = saved["vectors"]
+                    if saved["config"] == json.loads(json.dumps(config)) and len(vectors) == sum(map(len, templates.values())) and all(len(v) == config["dimensions"] for v in vectors):
+                        return vectors
+                except (OSError, ValueError, KeyError, TypeError):
+                    pass
+                budget = self.embedding.query_budget(180) if hasattr(self.embedding, "query_budget") else nullcontext()
+                with budget:
+                    return self.embedding.embed([t for texts in templates.values() for t in texts], "CLASSIFICATION")
+
+            vecs = await asyncio.to_thread(prepare)
+            if revision != self._template_revision:
+                raise EmbeddingError("templates_changed_during_preparation")
+            idx = 0
+            for cat in self._templates:
+                n = len(self._templates[cat])
+                self._tpl_embeddings[cat] = vecs[idx: idx + n]
+                idx += n
+            def save():
+                self._template_cache_path.parent.mkdir(parents=True, exist_ok=True)
+                self._template_cache_path.write_text(json.dumps({"config": config, "vectors": vecs}), encoding="utf-8")
+            try:
+                await asyncio.to_thread(save)
+            except OSError:
+                logger.warning("意图模板持久缓存写入失败；本次内存模板仍可使用")
 
     async def _embed_text(self, text: str) -> List[float]:
-        """
-        生成文本向量。
-
-        如果未来接入的官方/兼容客户端提供 embeddings.create，会优先使用远端向量；
-        当前 Anthropic SDK 没有该资源时，退化为字符 n-gram 哈希向量。这样不会因为
-        Embedding 服务缺失导致三路融合中断。
-        """
-        embeddings = getattr(self.client, "embeddings", None)
-        if embeddings is not None:
-            try:
-                resp = await embeddings.create(model="voyage-3-lite", input=[text])
-                return list(resp.data[0].embedding)
-            except Exception as ex:
-                logger.warning(f"远端 Embedding 失败，使用本地向量兜底: {ex}")
-
-        return self._local_embedding(text)
+        """意图消息采用 CLASSIFICATION，失败由融合层执行 85/15。"""
+        return (await asyncio.to_thread(self.embedding.embed, [text], "CLASSIFICATION"))[0]
 
     @staticmethod
     def _local_embedding(text: str, dims: int = 256) -> List[float]:
-        """稳定的字符 n-gram 哈希向量，用于无远端 Embedding 时的语义近似匹配。"""
+        """旧字符向量实验基线；生产识别不调用。"""
         normalized = text.lower().strip()
         vec = [0.0] * dims
         tokens = set()
@@ -490,7 +544,10 @@ class IntentRecognizer:
             "message": " ".join(self._clean_text(message).casefold().split())[:1000],
             "history": normalized_history,
             "model": self.model,
-            "rules_version": "intent-v3",
+            "rules_version": "intent-gemini-v1",
+            "embedding": self.embedding.identity,
+            "threshold": self.threshold,
+            "template_revision": self._template_revision,
         }
         return hashlib.sha256(json.dumps(payload, ensure_ascii=True, sort_keys=True).encode()).hexdigest()
 

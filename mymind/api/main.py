@@ -104,7 +104,8 @@ async def lifespan(app: FastAPI):
     from agents.agent_orchestrator import AgentOrchestrator, Request
     from core.intent_recognizer import IntentRecognizer
     from evaluation.evaluator import EndToEndEvaluator
-    from mcp.knowledge_base import KnowledgeBase
+    from mcp.indexed_knowledge_base import KnowledgeBase
+    from core.embedding import build_embedding
     from mcp.tool_manager import MCPToolManager, Tool
     from memory.conversation_memory import MemoryManager
     from monitor.performance_monitor import PerformanceMonitor
@@ -117,19 +118,24 @@ async def lifespan(app: FastAPI):
     import redis as sync_redis
 
     cfg = _anthropic_cfg()
+    embedding = build_embedding()
+    logger.info("embedding_model=%s dimensions=%s key_present=%s", embedding.settings.model or "(未配置)",
+                embedding.settings.dimensions, bool(embedding.settings.api_key))
     logger.info(f"模型: {cfg['model']}  base_url: {cfg.get('base_url', '(官方)')}")
     gateway = build_gateway(
         cfg["provider"], cfg["api_key"], cfg["model"], cfg.get("base_url"),
         cache_enabled=True,
     )
 
-    # 意图识别器（Orchestrator 内部也会创建，这里单独暴露给 Evaluator）
+    # 编排器与评测器共享意图识别器及独立的 embedding 组件。
     recognizer = IntentRecognizer(
         api_key=cfg["api_key"],
         base_url=cfg.get("base_url"),
         model=cfg["model"],
         gateway=gateway,
+        embedding=embedding,
     )
+    recognizer.start_template_preparation()
 
     # Skills：启动时从目录加载业务能力说明，并在 Agent 调用 LLM 时动态注入。
     skills_dir = os.getenv("mymind_SKILLS_DIR", str(pathlib.Path(_ROOT) / "skills"))
@@ -149,6 +155,7 @@ async def lifespan(app: FastAPI):
         prompt_cache_min_chars=int(os.getenv("PROMPT_CACHE_MIN_CHARS", "4096")),
         provider=cfg["provider"],
         gateway=gateway,
+        intent_recognizer=recognizer,
     )
 
     # 记忆管理器（Redis 工作记忆 + ChromaDB 情景记忆/用户画像）
@@ -185,6 +192,8 @@ async def lifespan(app: FastAPI):
         chroma_host=os.getenv("CHROMA_HOST", "chromadb"),
         chroma_port=int(os.getenv("CHROMA_PORT", "8000")),
         chroma_path=os.getenv("CHROMA_PERSIST_DIRECTORY", "/app/data/chroma"),
+        embedding=embedding,
+        on_change=_tool_manager.invalidate_cache,
     )
     if _orchestrator.features.trace_enabled:
         _orchestrator.set_trace_store(RedisTraceStore(
@@ -207,7 +216,7 @@ async def lifespan(app: FastAPI):
 
     _tool_manager.register(Tool(
         name="knowledge_search",
-        description="搜索知识库（基于 ChromaDB 向量检索）",
+        description="搜索知识库（向量与 BM25 混合召回）",
         handler=_knowledge_base.search_handler,
         schema={
             "type": "object",
@@ -231,6 +240,7 @@ async def lifespan(app: FastAPI):
         interval_s=float(os.getenv("MONITOR_INTERVAL", "10")),
         webhook_url=os.getenv("ALERT_WEBHOOK_URL") or None,
         prometheus_port=prom_port,
+        embedding_status=_knowledge_base.stats,
     )
     await _monitor.start()
 
@@ -255,6 +265,9 @@ async def lifespan(app: FastAPI):
         await _memory.close()
     if _cache_redis is not None:
         _cache_redis.close()
+    _knowledge_base.close()
+    await recognizer.close()
+    embedding.close()
     logger.info("mymind 已关闭")
 
 
@@ -434,7 +447,7 @@ async def monitor_summary():
     """实时监控摘要：Agent 成功率、工具统计、告警、优化建议。"""
     if _monitor is None:
         raise HTTPException(503, "服务未就绪")
-    summary = _monitor.summary()
+    summary = await asyncio.to_thread(_monitor.summary)
     summary["context"] = dict(_last_context_metadata)
     return summary
 
@@ -497,6 +510,8 @@ class DocInput(BaseModel):
     """单篇文档输入。"""
     title:   str
     content: str
+    source_id: Optional[str] = None
+    format: str = "md"
 
 
 class BatchDocInput(BaseModel):
@@ -533,7 +548,7 @@ async def add_knowledge(body: BatchDocInput):
     """
     批量导入文档到知识库。
 
-    文档会自动切片（每片 500 字）并存入 ChromaDB，ChromaDB 内置 Embedding 模型自动向量化。
+    文档按章节和模型预算切片，两套索引独立入库；主索引失败时报告备用入库结果。
 
     示例请求体：
     ```json
@@ -547,18 +562,23 @@ async def add_knowledge(body: BatchDocInput):
     """
     if _knowledge_base is None or _tool_manager is None:
         raise HTTPException(503, "知识库未初始化")
-    count = await asyncio.to_thread(
-        _knowledge_base.add_documents,
-        [{"title": d.title, "content": d.content} for d in body.documents],
+    outcome = await asyncio.to_thread(
+        _knowledge_base.import_documents,
+        [d.model_dump(exclude_none=True) for d in body.documents],
     )
+    count = outcome["processed_chunks"]
     if await asyncio.to_thread(_tool_manager.invalidate_cache) < 0:
         raise HTTPException(503, "知识库已更新，但旧缓存清理失败，请重试导入")
     total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
     return {
-        "message": f"成功处理 {count} 个文档片段",
+        "message": ("索引失败，原文已保存" if outcome.get("status") == "failed" else
+                    f"部分完成 {count} 个文档片段" if outcome.get("status") == "partial" else
+                    f"备用入库成功，主索引待补齐；处理 {count} 个片段" if outcome.get("degraded") else
+                    f"成功处理 {count} 个文档片段"),
         "added_chunks": count,
         "processed_chunks": count,
         "total_chunks": total,
+        **outcome,
     }
 
 
@@ -594,17 +614,22 @@ async def upload_knowledge(file: UploadFile = File(...)):
     else:
         # txt / md：整个文件作为一篇文档
         title = filename.rsplit(".", 1)[0] if "." in filename else filename
-        docs = [{"title": title, "content": text}]
+        docs = [{"title": title, "content": text, "format": "md" if filename.endswith(".md") else "txt"}]
 
-    count = await asyncio.to_thread(_knowledge_base.add_documents, docs)
+    outcome = await asyncio.to_thread(_knowledge_base.import_documents, docs)
+    count = outcome["processed_chunks"]
     if await asyncio.to_thread(_tool_manager.invalidate_cache) < 0:
         raise HTTPException(503, "知识库已更新，但旧缓存清理失败，请重试导入")
     total = await asyncio.to_thread(lambda: _knowledge_base.doc_count)
     return {
-        "message": f"文件 {filename} 处理成功",
+        "message": (f"文件 {filename} 索引失败，原文已保存" if outcome.get("status") == "failed" else
+                    f"文件 {filename} 部分入库完成" if outcome.get("status") == "partial" else
+                    f"文件 {filename} 备用入库成功，主索引待补齐" if outcome.get("degraded") else
+                    f"文件 {filename} 处理成功"),
         "added_chunks": count,
         "processed_chunks": count,
         "total_chunks": total,
+        **outcome,
     }
 
 
@@ -617,7 +642,23 @@ async def knowledge_stats():
         "total_chunks": await asyncio.to_thread(lambda: _knowledge_base.doc_count),
         "index_version": _knowledge_base.index_version,
         "chunk_config": _knowledge_base.chunk_config,
+        **(await asyncio.to_thread(_knowledge_base.stats) if hasattr(_knowledge_base, "stats") else {}),
     }
+
+
+@app.post("/knowledge/repair", tags=["知识库"])
+async def repair_knowledge():
+    """从已保存原文补齐主索引；全部成功才恢复主模型链路。"""
+    if _knowledge_base is None:
+        raise HTTPException(503, "知识库未初始化")
+    return await asyncio.to_thread(_knowledge_base.repair_main)
+
+
+@app.delete("/knowledge/documents/{source_id}", tags=["知识库"])
+async def delete_knowledge(source_id: str):
+    if _knowledge_base is None:
+        raise HTTPException(503, "知识库未初始化")
+    return await asyncio.to_thread(_knowledge_base.delete_document, source_id)
 
 
 @app.post("/eval/run")

@@ -748,6 +748,7 @@ class AgentOrchestrator:
         features: Optional[AgentFeatureConfig] = None,
         trace_store: Optional[TraceStore] = None,
         rag_tool_manager: Optional[Any] = None,
+        intent_recognizer: Optional[IntentRecognizer] = None,
     ):
         kwargs: Dict[str, Any] = {"api_key": api_key}
         if base_url:
@@ -758,7 +759,8 @@ class AgentOrchestrator:
         self.metrics = metrics or CacheMetricsCollector()
         cache_policy = PromptCachePolicy(prompt_cache_enabled, prompt_cache_min_chars)
         self.gateway = gateway or build_gateway(provider, api_key, model, base_url, cache_enabled=prompt_cache_enabled or provider != "anthropic")
-        self._intent_recognizer = IntentRecognizer(api_key=api_key, base_url=base_url, model=model, gateway=self.gateway)
+        self._intent_recognizer = intent_recognizer or IntentRecognizer(
+            api_key=api_key, base_url=base_url, model=model, gateway=self.gateway)
         self._trace_store = trace_store or (InMemoryTraceStore() if self.features.trace_enabled else None)
 
         def configured(agent_cls: type[BaseAgent]) -> BaseAgent:

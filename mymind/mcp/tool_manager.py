@@ -16,8 +16,10 @@ import asyncio
 import hashlib
 import json
 import logging
+import os
 import time
 import weakref
+from collections import Counter
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -27,7 +29,7 @@ from anthropic import AsyncAnthropic
 from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
 from core.cache_store import CacheStore, InMemoryCacheStore
-from core.retrieval import dedupe_items, deterministic_rank
+from core.retrieval import dedupe_items, deterministic_rank, parse_rerank_indices
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ class ToolResult:
     cached:         bool = False
     latency_ms:     float = 0.0
     reranked:       bool = False   # 是否经过重排
-    degraded:       bool = False   # 是否来自 fallback，而非真实工具结果
+    degraded:       bool = False   # 备用索引成功或工具故障回退；error 区分失败提示
 
 
 @dataclass
@@ -156,6 +158,7 @@ class MCPToolManager:
         self._cache_store = cache_store or InMemoryCacheStore(max_entries=5000)
         self._cache_locks: "weakref.WeakValueDictionary[str, asyncio.Lock]" = weakref.WeakValueDictionary()
         self._cache_namespace = "knowledge"
+        self.rerank_stats = Counter()
 
     # ── 注册 / 注销 ───────────────────────────────────────────────────────────
 
@@ -257,14 +260,15 @@ class MCPToolManager:
                 data, reranked = await self._rerank(query, data, rerank_top_k), True
 
             # 写缓存：缓存最终返回结果，避免下次命中未重排的原始结果。
-            if tool.cache_ttl > 0 and cache_generation is not None:
+            index_degraded = isinstance(data, list) and any(isinstance(item, dict) and item.get("degraded") for item in data)
+            if tool.cache_ttl > 0 and cache_generation is not None and not index_degraded:
                 self._set_cache(
                     name, params, data, tool.cache_ttl, cache_rerank_top_k, reranked,
                     generation=cache_generation,
                 )
 
             return ToolResult(success=True, data=data, tool_name=name,
-                              latency_ms=latency, reranked=reranked)
+                              latency_ms=latency, reranked=reranked, degraded=index_degraded)
 
         except asyncio.TimeoutError:
             tool.stats.failed += 1
@@ -343,7 +347,7 @@ class MCPToolManager:
         """
         完整的检索优化链路：查询改写 → 并行召回 → 去重 → 重排 → Top-K
 
-        这是解决"检索不全、召回不好"的完整方案。
+        合并子查询的候选片段，保留真实备用知识的降级状态。
         """
         # 1. 查询改写：生成多角度子查询
         sub_queries = await self.rewrite_query(query, n=3)
@@ -361,7 +365,7 @@ class MCPToolManager:
         merged = []
         degraded_errors = []
         for r in results:
-            if isinstance(r, ToolResult) and r.degraded:
+            if isinstance(r, ToolResult) and r.degraded and r.error:
                 if r.error:
                     degraded_errors.append(r.error)
                 continue
@@ -382,23 +386,33 @@ class MCPToolManager:
 
         # 4. 重排：用 LLM 对合并结果按相关性打分，取 Top-K
         reranked = await self._rerank(query, merged, top_k)
-        return ToolResult(success=True, data=reranked, tool_name=tool_name, reranked=True)
+        return ToolResult(success=True, data=reranked, tool_name=tool_name, reranked=True,
+                          degraded=any(item.get("degraded") for item in reranked))
 
     # ── 结果重排（解决召回不好）──────────────────────────────────────────────
 
     async def _rerank(self, query: str, items: List[Any], top_k: int) -> List[Any]:
         """
-        用 LLM 对召回结果重新打分排序。
-
-        解决问题：向量检索的相似度分数不等于"对用户有用"，
-        LLM 能理解语义相关性，重排后 Top-K 质量显著提升。
+        在总预算内向 LLM 提交完整候选正文，并按返回编号取 Top-K。
+        失败时使用确定性检索排序。
         """
         if len(items) <= top_k:
             return items
 
-        # 将结果序列化为文本供 LLM 评分
-        items_text = "\n".join(f"{i}. {json.dumps(item, ensure_ascii=False)[:200]}"
-                               for i, item in enumerate(items))
+        # 总字符预算是一项聊天上下文设置，与 embedding token 预算独立。
+        budget = int(os.getenv("RAG_RERANK_MAX_CHARS", "24000")) - len(query) - 600
+        blocks, visible = [], []
+        for item in items:
+            block = (f"编号: {len(visible)}\n标题: {item.get('title', '')}\n"
+                     f"章节: {item.get('section_path', '')}\n正文:\n{item.get('content', '')}")
+            if len(block) + 2 > budget:
+                continue
+            budget -= len(block) + 2
+            blocks.append(block)
+            visible.append(item)
+        if not visible:
+            return deterministic_rank(items, top_k)
+        items_text = "\n\n".join(blocks)
         prompt = f"""根据用户查询，对以下检索结果按相关性打分（0-10），返回 JSON 数组。
 用户查询: "{query}"
 检索结果:
@@ -411,10 +425,14 @@ class MCPToolManager:
         try:
             raw = await self._complete_text(prompt, 0.0, "rerank-v1")
             s, e = raw.find("["), raw.rfind("]") + 1
-            order: List[int] = json.loads(raw[s:e])
-            reranked = [items[i] for i in order if 0 <= i < len(items)]
-            return reranked[:top_k]
+            order = parse_rerank_indices(raw[s:e], len(visible), len(visible))
+            if not order:
+                raise ValueError("重排未返回有效编号")
+            self.rerank_stats["llm_success"] += 1
+            reranked = [visible[i] for i in order]
+            return dedupe_items(reranked + list(items))[:top_k]
         except Exception as ex:
+            self.rerank_stats["failed_fallback"] += 1
             logger.warning(f"重排失败，使用确定性回退: {ex}")
             return deterministic_rank(items, top_k)
 
@@ -504,12 +522,14 @@ class MCPToolManager:
                 stable_prompt="你是知识库检索辅助程序，只输出任务要求的 JSON。",
                 messages=[{"role": "user", "content": prompt}],
                 cache_identity=f"tool:{self._model}:{identity}",
-                max_tokens=256,
+                max_tokens=int(os.getenv("RAG_RERANK_MAX_TOKENS", "4096")) if identity.startswith("rerank") else 256,
                 temperature=temperature,
             ))
             return extract_text_content(result.text)
         resp = await self._client.messages.create(
-            model=self._model, max_tokens=256, temperature=temperature,
+            model=self._model,
+            max_tokens=int(os.getenv("RAG_RERANK_MAX_TOKENS", "4096")) if identity.startswith("rerank") else 256,
+            temperature=temperature,
             messages=[{"role": "user", "content": prompt}],
         )
         return extract_text_content(resp.content)

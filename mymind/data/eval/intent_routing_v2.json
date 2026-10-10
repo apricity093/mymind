@@ -1,0 +1,34 @@
+{
+  "version": "intent-routing-v2-20261010",
+  "intent_dataset": "intent_optimization_v2.json",
+  "annotation_method": "既有标准意图按业务角色职责映射，非独立人工路由标注",
+  "scope": "单域问题的主Agent；不标注辅助Agent",
+  "escalation_disabled_primary": "general",
+  "case_overrides": {
+    "intent-v2-account_security-4-1": {
+      "primary_agent": "escalation",
+      "reason": "账户凭据泄露且明确要求紧急处理，按紧急优先人工升级策略处理"
+    }
+  },
+  "primary_agent_by_intent": {
+    "query": "general",
+    "complaint": "general",
+    "request": "general",
+    "greeting": "general",
+    "escalation": "escalation",
+    "technical": "technical",
+    "billing": "billing",
+    "account": "billing",
+    "feedback": "general",
+    "order_status": "general",
+    "logistics": "general",
+    "refund": "billing",
+    "invoice": "billing",
+    "payment_issue": "billing",
+    "account_security": "billing",
+    "technical_login": "technical",
+    "technical_crash": "technical",
+    "human_handoff": "escalation",
+    "other": "general"
+  }
+}

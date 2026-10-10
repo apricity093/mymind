@@ -144,9 +144,9 @@ def test_knowledge_import_clears_live_cache_before_returning(monkeypatch, cache_
             content = "旧政策"
             doc_count = 1
 
-            def add_documents(self, documents):
+            def import_documents(self, documents):
                 self.content = documents[0]["content"]
-                return len(documents)
+                return {"processed_chunks": len(documents), "status": "success"}
 
         knowledge = Knowledge()
         calls = 0
@@ -191,9 +191,9 @@ def test_import_reports_cache_cleanup_failure(monkeypatch, upload):
     class Knowledge:
         content = "旧政策"
 
-        def add_documents(self, documents):
+        def import_documents(self, documents):
             self.content = documents[0]["content"]
-            return 1
+            return {"processed_chunks": 1, "status": "success"}
 
     async def run():
         knowledge = Knowledge()

@@ -50,7 +50,7 @@ def register_variant(name: str) -> Callable[[Callable[[], "VariantConfig"]], Cal
 def _r0() -> "VariantConfig":
     return VariantConfig(
         name="r0",
-        label="当前生产实现",
+        label="原生产基线",
         chunk_mode="sentence",
         chunk_size=CHUNK_SIZE_DEFAULT,
         overlap=0,
@@ -496,7 +496,7 @@ class BM25Index:
         for token in counts:
             self.document_frequency[token] = self.document_frequency.get(token, 0) + 1
         self.average_document_length = statistics.mean(
-            [len(self.frequencies[d]) for d in self.frequencies]
+            [sum(self.frequencies[d].values()) for d in self.frequencies]
         ) if self.frequencies else 0.0
 
     def remove(self, doc_id: str) -> None:
@@ -510,14 +510,14 @@ class BM25Index:
         self.documents.pop(doc_id, None)
         self.items.pop(doc_id, None)
         self.average_document_length = statistics.mean(
-            [len(self.frequencies[d]) for d in self.frequencies]
+            [sum(self.frequencies[d].values()) for d in self.frequencies]
         ) if self.frequencies else 0.0
 
     def score(self, doc_id: str, query: str) -> float:
         counts = self.frequencies.get(doc_id)
         if not counts:
             return 0.0
-        document_length = len(counts)
+        document_length = sum(counts.values())
         average_length = self.average_document_length or document_length
         denominator = self.k1 * ((1 - self.b) + self.b * document_length / average_length)
         score = 0.0

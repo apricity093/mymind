@@ -12,7 +12,7 @@ ChromaDB 在这里的角色：
   两者是不同的 collection，互不干扰。
 
 本文件同时支持 check.md 定义的 R0-R4 检索变体：
-  - 默认构造（variant=None）保持生产 R0 行为与 knowledge_base collection；
+  - 默认构造（variant=None）回放原生产 R0 行为与 knowledge_base collection；
   - 传入 variant 时使用独立、版本化的 collection，并从原始文档重建索引。
 """
 import asyncio
@@ -65,7 +65,7 @@ class KnowledgeBase:
         )
         self._chunker = Chunker(self._config) if self._config else None
 
-        # 优先连接独立 ChromaDB 服务（服务端内置 embedding 模型，客户端无需下载）
+        # Chroma 0.5.23 的默认 embedding 在客户端执行，HTTP 模式也需要模型文件。
         self._use_server = False
         try:
             # HttpClient 默认也会初始化 ChromaDB telemetry；显式关闭避免 posthog 兼容性错误日志。
@@ -89,9 +89,8 @@ class KnowledgeBase:
             # cosine 只对新 collection 生效；版本化名称保证实验 collection 一定是新建的。
             metadata["hnsw:space"] = "cosine"
         collection_kwargs: Dict[str, Any] = {"name": self._collection_name, "metadata": metadata}
-        if not self._use_server and embedding_function is not None:
-            # 服务端 Chroma 使用其内置默认 embedding；本地模式允许注入同一
-            # all-MiniLM-L6-v2 实例（例如把模型下载到项目 workspace）。
+        if embedding_function is not None:
+            # HTTP 和本地客户端均使用指定 embedding function。
             collection_kwargs["embedding_function"] = embedding_function
         self._collection = self._client.get_or_create_collection(**collection_kwargs)
 

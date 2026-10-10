@@ -239,7 +239,7 @@ def build_shared_rag_tools(tool_manager: Any) -> Dict[str, AgentToolSpec]:
     return {
         "search_knowledge_base": make_tool(
             "search_knowledge_base",
-            "检索知识库并返回相关文档片段；不得把降级结果描述为真实业务查询。",
+            "检索知识库并返回文档片段；备用索引结果带 degraded 标记，工具故障提示不作为知识证据。",
             {
                 "query": {"type": "string", "description": "用户问题或检索关键词"},
                 "top_k": {"type": "integer", "description": "返回结果条数"},
