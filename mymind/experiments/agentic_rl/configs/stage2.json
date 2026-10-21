@@ -1,0 +1,25 @@
+{
+  "model_id": "Qwen/Qwen3-4B-Instruct-2507",
+  "model_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "model_dir": "models/Qwen3-4B-Instruct-2507",
+  "tasks": "data/agentic_rl/dev/dev_tasks.json",
+  "standards": "data/agentic_rl/dev/dev_standards.json",
+  "policy_support": "data/agentic_rl/dev/policy_support.json",
+  "output_dir": "runs/stage2-20261011/prepare",
+  "task_ids": ["S04", "S07", "S10", "S13", "D02", "P05"],
+  "candidates_per_task": 2,
+  "probe_queries": ["银行卡审核通过四个工作日退款到账时效", "平台余额渠道退款到账时效政策范围", "报表导出生产环境开通记录与项目白名单"],
+  "retrieval": {
+    "knowledge_dir": "data/agentic_rl/knowledge", "collection_prefix": "agentic_policy_v1",
+    "candidates": 12, "top_k": 5, "observation_chars": 16000, "chunk_tokens": 512,
+    "embedding_budget_s": 8, "timeout_s": 30,
+    "rerank_model": "deepseek-flash", "rerank_base_url": "https://api.deepseek.com", "rerank_thinking": "disabled",
+    "rerank_chars": 24000, "rerank_tokens": 1024, "rerank_timeout_s": 45, "rerank_retries": 1
+  },
+  "generation": {
+    "model": "deepseek-flash", "base_url": "https://api.deepseek.com", "thinking": "disabled",
+    "response_format": "json_object",
+    "temperature": 0, "top_p": 1, "max_new_tokens": 3072, "context_tokens": 16384,
+    "timeout_s": 90, "retries": 1
+  }
+}

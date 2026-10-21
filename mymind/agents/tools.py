@@ -164,11 +164,12 @@ def build_diagnostic_plan(req: Request, arguments: Dict[str, Any]) -> Dict[str, 
 
 
 def check_billing_fields(req: Request, arguments: Dict[str, Any]) -> Dict[str, Any]:
+    payment_channel = arguments.get("payment_channel", "").strip()
     fields = {
         "order_id": bool(req.entities.get("order_id")),
         "amount": bool(req.entities.get("amount")),
         "date": bool(req.entities.get("date")),
-        "payment_channel": bool(arguments.get("payment_channel")),
+        "payment_channel": bool(payment_channel) and payment_channel.casefold() not in {"unknown", "未知"},
     }
     return {
         "fields": fields,

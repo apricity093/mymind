@@ -70,8 +70,7 @@ def build():
                 answerable=False, tags=["unanswerable"], evidence_groups=[], required_conditions=[], forbidden_claims=[f"编造{missing}的具体值"],
                 absence_reason=f"全库未规定{missing}，办理时长不能推出该标准", absent_topic=missing, confusing_sources=["v2-policy-00"], synthetic=True))
     answers = [q["id"] for q in questions if q["split"]=="test" and q["answerable"]][:24]+[q["id"] for q in questions if q["split"]=="test" and not q["answerable"]][:6]
-    rag = dict(version=VERSION, synthetic=True, evaluation_scope="共享知识库的问题泛化，非未见文档或真实用户泛化", corpus=corpus, questions=questions, answer_ids=answers,
-               legacy_regression_datasets=["gemini_rag_eval.json", "gemini_rag_boundary_eval.json"])
+    rag = dict(version=VERSION, synthetic=True, evaluation_scope="共享知识库的问题泛化，非未见文档或真实用户泛化", corpus=corpus, questions=questions, answer_ids=answers)
     cases=[]
     for label, families in INTENTS.items():
         for j, pair in enumerate(families):

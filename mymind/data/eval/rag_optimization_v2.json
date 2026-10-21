@@ -7897,9 +7897,5 @@
     "rag-v2-absent-02-1",
     "rag-v2-absent-04-0",
     "rag-v2-absent-04-1"
-  ],
-  "legacy_regression_datasets": [
-    "gemini_rag_eval.json",
-    "gemini_rag_boundary_eval.json"
   ]
 }

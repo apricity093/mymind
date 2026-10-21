@@ -1,0 +1,17 @@
+# PyTorch CUDA 11.8 wheels: https://download.pytorch.org/whl/cu118
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.7.1+cu118
+transformers==5.2.0
+peft==0.18.0
+trl==1.10.0
+accelerate==1.15.0
+jmespath==1.0.1
+requests==2.32.5
+anthropic==0.40.0
+openai==2.44.0
+pydantic==2.10.3
+httpx==0.28.1
+python-dotenv==1.0.1
+chromadb==1.0.21
+numpy==2.2.5
+pytest==9.0.3

@@ -1,6 +1,17 @@
 # mymind
 
-mymind 是一个面向客服场景的多 Agent 系统。本仓库包含 Python 主版本、Java 重构版本和一个可切换双后端的 Vue 调试前端。
+mymind 是一个面向客服场景的多 Agent 系统，包含工具式 RAG、意图与路由评测，以及 Qwen3-4B 的 LoRA SFT／在线 GRPO 后训练实验。本仓库包含 Python 主版本、Java 重构版本和一个可切换双后端的 Vue 调试前端。
+
+`/chat` 负责意图识别、主辅 Agent 编排、记忆与工具检索；独立的 `api.policy_app:app` 运行经过 SFT／RL 的共享客服策略。后训练实验给定账单或技术角色，未训练主辅路由，也未将所选策略接入 `/chat`。两条链路的评测分别报告。
+
+## 项目与结果入口
+
+| 阅读目的 | 入口 |
+| --- | --- |
+| 正式选定配置、三阶段结果与应用主辅路由 | [交互结果展示](mymind-results.html)，可直接用浏览器打开 |
+| 两条业务链路、训练协议与独立推理 | [策略架构与运行](mymind/docs/agentic_rl_architecture.md) |
+| SFT、GRPO、评分器与结果范围 | [训练评测说明](mymind/experiments/agentic_rl/README.md) |
+| 客服任务、证据与处置术语 | [领域词汇表](CONTEXT.md) |
 
 ## 项目组成
 
@@ -10,12 +21,96 @@ mymind 是一个面向客服场景的多 Agent 系统。本仓库包含 Python �
 | `mymindJava/` | Java 21 / Spring Boot 重构版，使用专用知识工具与本地 Hybrid RAG | 8080 |
 | `mymindFrontend/` | Vue / Vite 调试前端，可切换 Python 和 Java 后端 | 5173 |
 
+## 文件结构
+
+Python 后端位于仓库根目录下的 `mymind/`。以下列出主要文件；实验权重、索引和真实服务配置按运行环境保留，部分本地产物由 Git 忽略。
+
+### 项目根目录
+
+```text
+mymind/                                   # 项目根目录
+├── mymind/                               # Python 后端，结构见下文
+├── exports/                              # 展示与独立推理导出
+│   └── showcase/                         # 结果页的 HTML 片段
+├── scripts/                              # 数据构建、训练诊断、结果汇总与本地证据复核
+│   ├── verify_agentic_retained.py        # 保留证据的零模型复核
+│   └── verify_stage7_retained.py         # 阶段7保留证据复核
+├── README.md                             # 项目介绍、结构、启动与接口
+├── CONTEXT.md                            # 领域术语与系统边界
+├── mymind-results.html                   # 交互结果展示
+├── environment-local.yml                 # 本地 agentic_rl Conda 环境
+├── pytest.ini                            # 根目录 pytest 配置
+├── LICENSE
+└── .gitignore
+```
+
+### Python 后端 `mymind/`
+
+```text
+mymind/
+├── agents/                               # 多 Agent 应用与共享客服策略
+│   ├── agent_orchestrator.py             # 意图路由、主辅编排、工具循环与 Composer
+│   ├── tools.py                          # 角色工具、参数校验与 Trace 脱敏
+│   ├── trace_store.py                    # 请求级工具 Trace 存储
+│   └── customer_policy/                  # SFT/RL 共用的客服策略运行时
+│       ├── protocol.py                   # 动作、观察与终止输出协议
+│       ├── environment.py                # 工具交互环境与预算
+│       ├── generation.py                 # 模型生成与 LoRA 推理
+│       ├── retrieval.py                  # 策略原子检索及可见证据
+│       └── runner.py                     # 单任务策略执行
+├── api/
+│   ├── main.py                           # 多 Agent FastAPI 服务（/chat 等）
+│   ├── policy_app.py                     # 所选 SFT/RL 策略的独立推理服务
+│   └── configs/agent-dev.json            # 策略服务开发配置
+├── core/                                 # 意图、LLM 网关、Embedding、切块、检索与缓存
+├── mcp/                                  # 知识库与 MCP 工具管理
+│   ├── indexed_knowledge_base.py         # 当前主/备双索引、原文保存与补齐
+│   ├── knowledge_base.py                 # 原知识库与检索实验基线
+│   └── tool_manager.py                   # 工具执行、查询改写、重排与缓存
+├── memory/                               # 三级记忆与上下文预算
+├── monitor/                              # 在线表现与性能监控
+├── evaluation/                           # 端到端评测与检索指标
+├── experiments/                          # 实验实现、配置与报告入口
+│   ├── agentic_rl/                       # 教师示范、SFT、GRPO、评分与正式评测
+│   ├── intent_routing.py                 # 主辅Agent路由回归与历史分类重放
+│   ├── qwen_application_acceptance.py    # 当前应用检索与服务验收
+│   └── README.md                         # 各实验入口及适用范围
+├── data/                                 # 后端本地数据
+│   ├── demo_docs/                        # 示例知识文档
+│   ├── eval/                             # 应用意图、路由与RAG评测语料
+│   └── chroma/                           # 运行时 Chroma 数据
+├── docs/                                 # 策略训练架构与 ADR
+├── wiki/                                 # 使用指南、业务流程与技术讲解
+├── skills/                               # 通用、账单和技术客服技能定义
+├── tests/                                # 单元、集成、协议与实验契约测试
+├── config/                               # Prometheus、Grafana、Nginx 部署配置
+├── artifacts/                            # 本地产物与实验缓存
+├── logs/                                 # 运行日志
+├── tools/                                # 工具扩展预留目录
+├── README.md                             # 后端详细结构与运行说明
+├── requirements-local.txt                # 本地开发与 CPU 检查依赖
+├── requirements-agentic-rl.txt           # 服务器模型推理与训练依赖
+├── requirements.txt                      # 后端基础依赖
+├── requirements-dev.txt                  # 开发依赖
+├── Dockerfile
+├── docker-compose.yml                    # Redis、Chroma 等依赖服务
+├── build-image.sh                        # 镜像构建
+├── run-image.sh                          # 镜像运行
+├── docker-deploy.sh                      # 部署脚本
+├── .env.example                          # 环境变量示例
+└── .env.example.env                      # 补充环境变量示例
+```
+
+`mymind/data/` 保存随附的后端示例与应用评测数据；策略实验的数据资源位于工作根目录的 `data/agentic_rl/`，单独保留。详细模块职责见 [Python 后端说明](mymind/README.md)。环境、IDE、缓存目录与真实 `.env` 未展开。
+
+仓库提供实现、少量合成开发样例、配置模板、测试与结果摘要。正式及校准数据集、各版本评分标准和来源记录，以及原始轨迹、158 条教师示范及 token 导出、冻结作业配置、模型权重和知识索引均单独保存。结果页内嵌已核对的指标，公开仓库本身不包含重跑全部正式训练或独立核验每条历史轨迹所需的资源。
+
 ## Python 主链路
 
 ```text
 POST /chat
   -> Redis 工作记忆 + ChromaDB 情景记忆/用户画像
-  -> LLM / 字符 n-gram / 关键词三路意图识别
+  -> LLM / Qwen embedding / 关键词三路意图识别
   -> ContextBuilder 控制上下文预算
   -> RoutingDecision 选择主 Agent 和辅助 Agent
   -> General / Technical / Billing Agent 工具循环
@@ -34,6 +129,21 @@ Python 支持 Anthropic、OpenAI、DeepSeek 原生接口和 DeepSeek Anthropic �
 ## 快速启动
 
 ### Python
+
+本地开发、运行和测试统一使用 Conda 环境 `agentic_rl`（Python 3.10）。在仓库根目录创建环境：
+
+```powershell
+conda env create -f environment-local.yml
+conda activate agentic_rl
+```
+
+环境已存在时，使用 `python` 执行下文命令。补装或更新本地依赖：
+
+```powershell
+& python -m pip install -r mymind/requirements-local.txt
+```
+
+本地清单覆盖 Python 后端、Chroma/ONNX 检索、离线实验和 pytest；模型推理及训练在服务器 `mindagent` 中运行，使用 `mymind/requirements-agentic-rl.txt`。Redis/Chroma 服务仍按下面的 Docker 命令启动。
 
 在 `mymind/` 目录准备 `.env`，至少配置：
 

@@ -20,7 +20,7 @@ import os
 import time
 import weakref
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -52,6 +52,7 @@ class ToolResult:
     latency_ms:     float = 0.0
     reranked:       bool = False   # 是否经过重排
     degraded:       bool = False   # 备用索引成功或工具故障回退；error 区分失败提示
+    diagnostics:    Dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -246,18 +247,19 @@ class MCPToolManager:
                     logger.warning(f"缓存版本读取失败，跳过本次缓存写入: {ex}")
 
             data = await asyncio.wait_for(tool.handler(params, context), timeout=tool.timeout_s)
+            # 重排（针对返回列表的检索工具）
+            reranked = False
+            diagnostics = {"rerank_status": "disabled"}
+            if rerank_top_k > 0 and tool.supports_rerank and isinstance(data, list):
+                query = params.get("query", "")
+                diagnostics["candidates"] = data
+                data = await self._rerank(query, data, rerank_top_k, diagnostics)
+                reranked = diagnostics["rerank_status"] == "llm_success"
             latency = (time.monotonic() - t0) * 1000
-
             tool.stats.success += 1
             tool.stats.consecutive_fails = 0
             tool.stats.total_latency_ms += latency
             tool.breaker.record_success()
-
-            # 重排（针对返回列表的检索工具）
-            reranked = False
-            if rerank_top_k > 0 and tool.supports_rerank and isinstance(data, list):
-                query = params.get("query", "")
-                data, reranked = await self._rerank(query, data, rerank_top_k), True
 
             # 写缓存：缓存最终返回结果，避免下次命中未重排的原始结果。
             index_degraded = isinstance(data, list) and any(isinstance(item, dict) and item.get("degraded") for item in data)
@@ -268,7 +270,8 @@ class MCPToolManager:
                 )
 
             return ToolResult(success=True, data=data, tool_name=name,
-                              latency_ms=latency, reranked=reranked, degraded=index_degraded)
+                              latency_ms=latency, reranked=reranked, degraded=index_degraded,
+                              diagnostics=diagnostics)
 
         except asyncio.TimeoutError:
             tool.stats.failed += 1
@@ -391,12 +394,15 @@ class MCPToolManager:
 
     # ── 结果重排（解决召回不好）──────────────────────────────────────────────
 
-    async def _rerank(self, query: str, items: List[Any], top_k: int) -> List[Any]:
+    async def _rerank(self, query: str, items: List[Any], top_k: int,
+                      diagnostics: Optional[Dict[str, Any]] = None) -> List[Any]:
         """
         在总预算内向 LLM 提交完整候选正文，并按返回编号取 Top-K。
         失败时使用确定性检索排序。
         """
+        diagnostics = diagnostics if diagnostics is not None else {}
         if len(items) <= top_k:
+            diagnostics["rerank_status"] = "skipped_small_candidate_set"
             return items
 
         # 总字符预算是一项聊天上下文设置，与 embedding token 预算独立。
@@ -411,7 +417,9 @@ class MCPToolManager:
             blocks.append(block)
             visible.append(item)
         if not visible:
+            diagnostics["rerank_status"] = "skipped_budget"
             return deterministic_rank(items, top_k)
+        diagnostics["rerank_input"] = visible
         items_text = "\n\n".join(blocks)
         prompt = f"""根据用户查询，对以下检索结果按相关性打分（0-10），返回 JSON 数组。
 用户查询: "{query}"
@@ -423,15 +431,18 @@ class MCPToolManager:
         prompt = self._clean_text(prompt)
 
         try:
-            raw = await self._complete_text(prompt, 0.0, "rerank-v1")
+            raw = await self._complete_text(prompt, 0.0, "rerank-v1", diagnostics)
+            diagnostics["rerank_response"] = raw
             s, e = raw.find("["), raw.rfind("]") + 1
             order = parse_rerank_indices(raw[s:e], len(visible), len(visible))
             if not order:
                 raise ValueError("重排未返回有效编号")
             self.rerank_stats["llm_success"] += 1
+            diagnostics["rerank_status"] = "llm_success"
             reranked = [visible[i] for i in order]
             return dedupe_items(reranked + list(items))[:top_k]
         except Exception as ex:
+            diagnostics.update(rerank_status="failed_fallback", rerank_error=type(ex).__name__)
             self.rerank_stats["failed_fallback"] += 1
             logger.warning(f"重排失败，使用确定性回退: {ex}")
             return deterministic_rank(items, top_k)
@@ -515,7 +526,8 @@ class MCPToolManager:
             value = str(value)
         return value.encode("utf-8", errors="ignore").decode("utf-8")
 
-    async def _complete_text(self, prompt: str, temperature: float, identity: str) -> str:
+    async def _complete_text(self, prompt: str, temperature: float, identity: str,
+                             diagnostics: Optional[Dict[str, Any]] = None) -> str:
         if self._gateway is not None:
             result = await self._gateway.complete(LLMRequest(
                 model=self._model,
@@ -525,6 +537,10 @@ class MCPToolManager:
                 max_tokens=int(os.getenv("RAG_RERANK_MAX_TOKENS", "4096")) if identity.startswith("rerank") else 256,
                 temperature=temperature,
             ))
+            if diagnostics is not None:
+                diagnostics["rerank_usage"] = asdict(result.usage)
+                diagnostics["rerank_response_model"] = result.metadata.get("response_model")
+                diagnostics["rerank_finish_reason"] = result.metadata.get("finish_reason")
             return extract_text_content(result.text)
         resp = await self._client.messages.create(
             model=self._model,
@@ -532,6 +548,8 @@ class MCPToolManager:
             temperature=temperature,
             messages=[{"role": "user", "content": prompt}],
         )
+        if diagnostics is not None:
+            diagnostics["rerank_usage"] = resp.usage.model_dump() if resp.usage else None
         return extract_text_content(resp.content)
 
     # ── 统计 ──────────────────────────────────────────────────────────────────

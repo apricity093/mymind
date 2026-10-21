@@ -6,7 +6,6 @@ from types import SimpleNamespace
 import chromadb
 import httpx
 import pytest
-from pathlib import Path
 
 from core.document_chunking import BudgetChunker, parse_sections
 from core.embedding import EmbeddingError, EmbeddingSettings, EmbeddingTelemetry, GeminiEmbedding
@@ -308,18 +307,6 @@ def test_missing_collections_rebuild_backup_from_saved_originals(knowledge, tmp_
     restarted.close()
 
 
-@pytest.mark.parametrize("filename", ["gemini_rag_eval.json", "gemini_rag_boundary_eval.json"])
-def test_long_evaluation_facts_are_anchored_in_source_and_splits_are_disjoint(filename):
-    path = Path(__file__).resolve().parents[1] / "data/eval" / filename
-    data = json.loads(path.read_text(encoding="utf-8"))
-    assert all(len(doc["content"]) > 1000 for doc in data["corpus"])
-    corpus = "\n".join(doc["content"] for doc in data["corpus"])
-    assert all(fact in corpus for q in data["questions"] for fact in q["evidence"])
-    dev = {q["question"] for q in data["questions"] if q["split"] == "dev"}
-    test = {q["question"] for q in data["questions"] if q["split"] == "test"}
-    assert not dev.intersection(test)
-
-
 def test_live_api_import_reports_degraded_and_repair_refreshes_cache(knowledge, monkeypatch):
     from fastapi.testclient import TestClient
     import api.main as api
@@ -403,7 +390,7 @@ def test_rerank_sees_tail_and_omitted_duplicate_indices_are_repaired(monkeypatch
         items = [{"chunk_id": str(i), "title": "政策", "content": "正文" * 180 + f"关键条件{i}"} for i in range(4)]
         prompts = []
 
-        async def complete(prompt, temperature, identity):
+        async def complete(prompt, temperature, identity, diagnostics=None):
             prompts.append(prompt)
             return "[2]"
 

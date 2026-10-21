@@ -290,6 +290,8 @@ class OpenAIGateway(ProviderGateway):
                                   "max_tokens": request.max_tokens}
         if request.temperature is not None:
             kwargs["temperature"] = request.temperature
+        if self.provider == "deepseek" and getattr(self, "thinking", None):
+            kwargs["extra_body"] = {"thinking": {"type": self.thinking}}
         if request.tools:
             kwargs["tools"] = [self._openai_tool(item) for item in request.tools]
         if request.cache_identity and self.cache_enabled and self.provider == "openai":
@@ -327,10 +329,13 @@ class OpenAIGateway(ProviderGateway):
                 }
                 for call in tool_calls
             ]
+        metadata = self._metadata(request, usage)
+        metadata.update(response_model=raw_response.get("model"),
+                        finish_reason=raw_response.get("choices", [{}])[0].get("finish_reason"))
         return LLMResult(
             text,
             usage,
-            self._metadata(request, usage),
+            metadata,
             tool_calls=tool_calls,
             assistant_message=assistant_message,
         )
@@ -373,6 +378,10 @@ class DeepSeekGateway(OpenAIGateway):
     """DeepSeek native endpoint; automatic caching needs no request marker."""
 
     provider = "deepseek"
+
+    def __init__(self, api_key, model, base_url=None, cache_enabled=True, *, thinking=None):
+        super().__init__(api_key, model, base_url, cache_enabled)
+        self.thinking = thinking
 
     async def complete(self, request: LLMRequest) -> LLMResult:
         result = await super().complete(request)

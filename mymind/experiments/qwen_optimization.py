@@ -790,7 +790,7 @@ def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--stage',choices=STAGES+['all','byte_baseline'],default='all')
     parser.add_argument('--output',type=Path,required=True)
-    parser.add_argument('--previous',type=Path,default=ROOT/'artifacts/rag-optimization-v2/20261009-v2-01')
+    parser.add_argument('--previous',type=Path,default=ROOT/'artifacts/qwen-optimization-v2/20261010-qwen-01')
     parser.add_argument('--rag-data',type=Path,default=ROOT/'data/eval/rag_optimization_v2.json')
     parser.add_argument('--intent-data',type=Path,default=ROOT/'data/eval/intent_optimization_v2.json')
     parser.add_argument('--api-interval',type=float,default=.05)

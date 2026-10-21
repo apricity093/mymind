@@ -1,0 +1,107 @@
+[
+  {
+    "clause_id": "refund_window",
+    "source_id": "billing-policy",
+    "text": "实验线上支付渠道的常规到账范围为审核通过后 3 个工作日内，实验银行卡渠道为 5 个工作日内。这两个名称是实验约定的渠道类别，按用户提供的渠道标识匹配，不能仅因一笔银行卡支付通过网络完成就把它归入线上支付渠道。恰好达到相应上限仍在常规范围内；超过上限且核对原支付账户后仍未到账，建议人工核实退款流水。常规范围内可说明等待与核对方法，但不能保证一定到账。当前规则不提供审核阶段本身的超时阈值。"
+  },
+  {
+    "clause_id": "refund_multi",
+    "source_id": "billing-policy",
+    "text": "同一咨询最多涉及两笔既有退款时，按各笔标识分别匹配渠道、审核状态与通过后的完整工作日数，再形成整体下一步。每笔独立计时，不以另一笔或订单整体时间替代，也不互相重置时效。任一笔已有充分依据需要人工核实，整体升级，并说明对应记录和原因；另一笔仍需判断的信息可以附带请求补充。没有已知升级条件而某笔缺少决定性信息时，整体请求补充，并说明另一笔已有依据的判断。两笔均有充分依据且仍在常规范围内时，分别说明时限和判断。不能只给整体处置而遗漏逐笔判断或待补项。"
+  },
+  {
+    "clause_id": "billing_handoff",
+    "source_id": "billing-policy",
+    "text": "涉及实际退款、补偿、账单调整或疑似重复扣款时，需要人工或财务核验。疑似重复扣款应核对订单、两笔交易的时间、金额、渠道和交易记录；材料未齐时仍可先明确人工核实决定并列出待补信息。不能把用户报告的两笔扣款认定为已经确认重复，也不能承诺自动退回或声称退款已经执行。一般政策咨询不因涉及退款主题就必须升级。"
+  },
+  {
+    "clause_id": "auth_expired",
+    "source_id": "technical-policy",
+    "text": "401 首先检查认证信息，包括凭据有效性和过期状态；用户提供的响应明确提示 Token 过期时，可指导重新授权或使用有效凭据后验证。不要索取完整密钥，也不能声称已经恢复认证。"
+  },
+  {
+    "clause_id": "capabilities",
+    "source_id": "technical-policy",
+    "text": "基础查询、报表预览属于基础查询能力；报表导出、批量报表生成属于导出能力。在认证有效的前提下，两类能力均要求目标项目的访问白名单包含当前请求出口地址；导出能力还要求对应功能已由平台开通，基础查询能力不需要导出功能开通。"
+  },
+  {
+    "clause_id": "config_scope",
+    "source_id": "technical-policy",
+    "text": "平台功能开通按项目和运行环境生效，运行环境区分测试与生产。判断当前请求时，只使用目标项目、目标环境均匹配的开通记录。其他项目或环境已开通，不能证明当前已开通或未开通；缺少当前范围的记录时，当前状态未知。访问白名单按项目生效，不另按运行环境区分，但必须核对当前请求出口地址；不能将功能开通的环境限制套用到白名单。"
+  },
+  {
+    "clause_id": "permission_unknown",
+    "source_id": "technical-policy",
+    "text": "403 本身不足以确定哪项条件缺失。判断具体处置需要结合接口用途、目标项目与环境、用户提供的开通记录、当前请求出口地址与白名单情况。缺少决定性状态时请求补充对应范围的信息，不能用政策检索代替当前配置查询，也不能把范围不匹配的记录当作未开通。客服的指导和升级决定不代表已经修改配置、开通功能或生成导出文件。已满足所列条件仍报错时，不应编造额外根因。"
+  },
+  {
+    "clause_id": "fault_handling",
+    "source_id": "technical-policy",
+    "text": "500 表示服务端处理异常，不能仅凭错误码认定用户或平台单方根因。对于影响有限且已经恢复的只读请求，可指导记录时间、接口、request_id、发生频率与响应摘要，并从网络及已知配置变更等低风险方向排查；不要求先收齐这些字段才能提供一般指导。生产大面积不可用、支付链路异常、数据丢失或错乱时应明确升级人工或二线，并附待补材料。不能因为尚缺日志就延迟升级，也不能把偶发作为排除严重故障的理由。\n"
+  },
+  {
+    "clause_id": "refund_clock",
+    "source_id": "billing-policy",
+    "text": "到账时限从审核通过起算，进入渠道处理中不重置计时。"
+  },
+  {
+    "clause_id": "refund_accepted",
+    "source_id": "billing-policy",
+    "text": "退款申请受理表示申请已被接收，不表示审核通过。"
+  },
+  {
+    "clause_id": "refund_online_limit",
+    "source_id": "billing-policy",
+    "text": "实验线上支付渠道的常规到账范围为审核通过后 3 个工作日内"
+  },
+  {
+    "clause_id": "refund_bank_limit",
+    "source_id": "billing-policy",
+    "text": "实验银行卡渠道为 5 个工作日内"
+  },
+  {
+    "clause_id": "refund_overdue",
+    "source_id": "billing-policy",
+    "text": "超过上限且核对原支付账户后仍未到账，建议人工核实退款流水。"
+  },
+  {
+    "clause_id": "refund_wait",
+    "source_id": "billing-policy",
+    "text": "常规范围内可说明等待与核对方法，但不能保证一定到账。"
+  },
+  {
+    "clause_id": "refund_scope",
+    "source_id": "billing-policy",
+    "text": "本版到账时效说明仅覆盖标识为“线上支付渠道”和“银行卡渠道”的退款，其他渠道未规定对应到账时限。"
+  },
+  {
+    "clause_id": "channel_handoff",
+    "source_id": "billing-policy",
+    "text": "对未覆盖渠道，需要人工核实适用时效，不能套用上述两个渠道的天数。"
+  },
+  {
+    "clause_id": "enablement_scope",
+    "source_id": "technical-policy",
+    "text": "平台功能开通按项目和运行环境生效，运行环境区分测试与生产。"
+  },
+  {
+    "clause_id": "unmatched_scope",
+    "source_id": "technical-policy",
+    "text": "其他项目或环境已开通，不能证明当前已开通或未开通；缺少当前范围的记录时，当前状态未知。"
+  },
+  {
+    "clause_id": "config_actors",
+    "source_id": "technical-policy",
+    "text": "具备目标项目配置权的用户可以调整白名单，导出功能的开通需要平台人工处理。"
+  },
+  {
+    "clause_id": "limited_fault",
+    "source_id": "technical-policy",
+    "text": "对于影响有限且已经恢复的只读请求，可指导记录时间、接口、request_id、发生频率与响应摘要，并从网络及已知配置变更等低风险方向排查；不要求先收齐这些字段才能提供一般指导。"
+  },
+  {
+    "clause_id": "severe_fault",
+    "source_id": "technical-policy",
+    "text": "生产大面积不可用、支付链路异常、数据丢失或错乱时应明确升级人工或二线，并附待补材料。"
+  }
+]

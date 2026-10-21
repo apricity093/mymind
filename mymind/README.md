@@ -4,16 +4,29 @@ mymind 是面向客服场景的多 Agent 智能客服系统。本目录为 Pytho
 
 当前 Qwen/MiniLM 双索引、检索与意图路由评测见[实验说明](experiments/README.md)。
 
+多 Agent 应用入口为 `api.main:app`；SFT120／RL40 的共享策略通过独立的 `api.policy_app:app` 推理，未接入 `/chat` 或训练主辅路由。接口实现见[策略服务](api/policy_app.py)。
+
 ## 项目目录架构
 
 ```text
 mymind/
-├── agents/                            # 多 Agent 路由与编排
+├── agents/                            # 多 Agent 路由、编排与共享客服策略
 │   ├── agent_orchestrator.py          # Profile、主/辅路由、工具循环、升级与 Composer
 │   ├── tools.py                       # 角色白名单工具、Schema 校验和 Trace 脱敏
-│   └── trace_store.py                 # 内存 / Redis 请求级工具 Trace
+│   ├── trace_store.py                 # 内存 / Redis 请求级工具 Trace
+│   └── customer_policy/               # SFT/RL 共用的客服策略运行时
+│       ├── configuration.py           # 工作根目录与策略配置加载
+│       ├── protocol.py                # 动作、观察与终止输出协议
+│       ├── environment.py             # 工具交互环境与预算
+│       ├── generation.py              # 模型生成与 LoRA 推理
+│       ├── retrieval.py               # 原子检索与策略可见证据
+│       ├── rendering.py               # 最终客服正文渲染
+│       ├── runner.py                  # 单任务策略执行
+│       └── resources/                 # 随源码提供的客服知识
 ├── api/                               # Web 服务入口
-│   └── main.py                        # FastAPI 应用（/chat、/search、/knowledge/* 等）
+│   ├── main.py                        # FastAPI 应用（/chat、/search、/knowledge/* 等）
+│   ├── policy_app.py                  # 所选 SFT/RL 策略的独立推理服务
+│   ├── configs/agent-dev.json         # 策略服务开发配置
 ├── artifacts/                         # 实验产物（评测报告、Chroma 实验库、模型等，Git 忽略）
 │   └── experiments/
 ├── config/                            # 部署与可观测性配置
@@ -37,10 +50,16 @@ mymind/
 │   ├── demo_docs/                     # 示例知识文档
 │   ├── eval/                          # 评测语料、标注数据与构建脚本
 │   └── chroma/                        # 运行时 ChromaDB 数据（Git 忽略）
+├── docs/                              # 设计文档
+│   ├── agentic_rl_architecture.md     # 共享客服策略与训练架构
+│   └── adr/                           # 架构决策记录
 ├── evaluation/                        # 评测框架
 │   ├── evaluator.py                   # 端到端 Agent 评测
 │   └── retrieval_metrics.py           # RAG 检索指标与统计
 ├── experiments/                       # 可复现实验（说明见 experiments/README.md）
+│   ├── agentic_rl/                    # 教师示范、SFT、GRPO、评分与正式评测
+│   ├── intent_routing.py              # 主辅Agent路由回归与历史分类重放
+│   ├── qwen_application_acceptance.py # 当前应用检索与服务验收
 │   ├── offline.py                     # 离线 / 字符代理实验
 │   ├── integration.py                 # 集成实验
 │   ├── real_model.py                  # 真实模型实验
@@ -71,25 +90,28 @@ mymind/
 ├── docker-compose.yml                 # 本地依赖编排（Redis、ChromaDB 等）
 ├── build-image.sh / run-image.sh      # 镜像构建 / 运行脚本
 ├── docker-deploy.sh                   # 部署脚本
+├── requirements-local.txt             # 本地开发、运行与 CPU 检查依赖
+├── requirements-agentic-rl.txt        # 服务器模型推理与训练依赖
 ├── requirements.txt / requirements-dev.txt
 ├── .env.example / .env.example.env    # 环境变量样例（真实 .env 不入库）
 └── .gitignore
 ```
 
-> 说明：`.venv/`、`.idea/`、`.pytest_cache/`、`__pycache__/` 等运行环境、IDE 与缓存目录未在上图中列出。
+> 说明：这里的 `mymind/` 是项目根目录下的 Python 后端；根目录结构见[项目说明](../README.md#文件结构)。工作根目录 `data/agentic_rl/` 保存策略实验数据和标准，`agentic_runs/` 保存本地实验记录；这些资源单独保留，不随公开仓库提供。`.venv/`、`.idea/`、`.pytest_cache/`、`__pycache__/` 等运行环境、IDE 与缓存目录未在上图中列出。
 
 ## 目录职责速览
 
 | 目录 | 职责 |
 | --- | --- |
-| `agents/` | 多 Agent 路由决策与编排 |
-| `api/` | FastAPI Web 服务入口 |
+| `agents/` | 多 Agent 路由编排与共享客服策略运行时 |
+| `api/` | 多 Agent 应用及独立 SFT/RL 策略的 FastAPI 入口 |
 | `artifacts/` | 实验与评测产物（Git 忽略） |
 | `config/` | Prometheus、Grafana、Nginx 等部署配置 |
 | `core/` | 意图识别、LLM 网关、RAG、缓存、Skill 加载等核心能力 |
 | `data/` | 示例文档、评测数据与运行时 ChromaDB 数据 |
+| `docs/` | 策略训练架构与 ADR |
 | `evaluation/` | 端到端 Agent 评测与检索指标 |
-| `experiments/` | 可复现的缓存、记忆与 RAG 实验 |
+| `experiments/` | 缓存、记忆、RAG、多 Agent 与 SFT/GRPO 实验 |
 | `logs/` | 运行日志（Git 忽略） |
 | `mcp/` | 知识库与 MCP 工具调用 |
 | `memory/` | 多轮对话三级记忆与上下文构建 |
@@ -151,8 +173,8 @@ TRACE_MAX_ENTRIES=200
 ## 验证
 
 ```powershell
-D:\anaconda3\envs\learn_claude\python.exe -m pytest -q
-D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer agent-migration
+D:\anaconda3\envs\agentic_rl\python.exe -m pytest -q
+D:\anaconda3\envs\agentic_rl\python.exe -m experiments.run_experiments --layer agent-migration
 ```
 
 迁移正式评测集位于 `data/eval/agent_migration_dataset.json`：共 240 条，六类各 40 条，其中 60 条多轮、60 条对抗或缺失信息场景。原 EchoMind 的 11 条意图和 5 组对话保存在 `data/eval/echomind_smoke.json`，明确标记为 `formal_gate=false`，只用于 Smoke Test。

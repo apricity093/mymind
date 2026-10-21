@@ -32,18 +32,24 @@ mobile.png
 /mymind/experiments/QWEN_EMBEDDING_MIGRATION_REPORT.md
 /mymind/experiments/QWEN_RAG_OPTIMIZATION_REPORT.md
 /mymind/experiments/RAG_OPTIMIZATION_V2_REPORT.md
-/data/agentic_rl/calibration/sources.json
-/data/agentic_rl/**/generation_record.json
+/data/agentic_rl/
 
 # Personal server operations and resource locations
 /mymind/api/POLICY_APP.md
 /exports/stage8-20261016/README.md
 /exports/stage8-20261016/selected-models.json
+/exports/stage8-20261016/dependencies.json
+/exports/stage8-20261016/run-agent.sh
 /scripts/sync_agentic.ps1
 /scripts/remote_check_pre_stage7_fixes.py
 /scripts/launch_stage7.sh
 /scripts/run_agentic.sh
 /scripts/stage6_setup.py
+/scripts/launch_stage*.sh
+/scripts/*_sync_files.txt
+/scripts/check_stage7_evaluation.sh
+/scripts/run_stage8_demo.py
+/scripts/run_stage8a_sequence.py
 
 # Local service credentials; keep configuration examples public
 .env

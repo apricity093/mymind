@@ -334,7 +334,7 @@ class KnowledgeBase:
             self._changed()
             return self.stats()
 
-    def search(self, query, top_k=5, mode="hybrid"):
+    def search(self, query, top_k=5, mode="hybrid", *, diagnostics=None):
         if mode not in {"vector", "bm25", "hybrid"}:
             raise ValueError("检索模式须为 vector、bm25 或 hybrid")
         identity = uuid.uuid4().hex[:12]
@@ -344,16 +344,23 @@ class KnowledgeBase:
         if complete:
             try:
                 budget = self.embedding.query_budget(self.query_budget_s) if hasattr(self.embedding, "query_budget") else nullcontext()
-                with budget:
+                usage_context = self.embedding.capture_usage() if hasattr(self.embedding, "capture_usage") else nullcontext(None)
+                with usage_context as usage, budget:
                     vector = self.embedding.embed([query], "RETRIEVAL_QUERY")[0] if mode != "bm25" else None
+                if diagnostics is not None:
+                    diagnostics["embedding_usage"] = usage
                 route = "main"
             except Exception as ex:
+                if diagnostics is not None:
+                    diagnostics["embedding_error"] = self._reason(ex)
                 self.telemetry.record("query", identity, self._failure_outcome, self._reason(ex))
         with self._lock:
             # 编码期间的更新可能使主库 pending；只查询当前完整的向量空间。
             if not self._main_complete:
                 route = "backup"
             self._set_route(route, identity)
+            if diagnostics is not None:
+                diagnostics.update(index_route=route, degraded=route == "backup", mode=mode)
             collection = self._main if route == "main" else self._backup
             index = self._bm25[route]
             recall_k = max(20, top_k)
@@ -376,6 +383,8 @@ class KnowledgeBase:
             weight = self._vector_weights[route]
             items = weighted_rrf(vector_items, bm25_items, vector_weight=weight, bm25_weight=1-weight) if mode == "hybrid" else vector_items if mode == "vector" else bm25_items
             result = dedupe_items(items)[:top_k]
+            if diagnostics is not None:
+                diagnostics.update(vector_candidates=vector_items, bm25_candidates=bm25_items)
             if route == "backup":
                 self.telemetry.record("query", identity, "degraded", f"evidence_count={len(result)}")
             return [{**item, "index_route": route, "degraded": route == "backup",
@@ -386,7 +395,8 @@ class KnowledgeBase:
         return self.search(query, top_k, "vector")
 
     async def search_handler(self, params, context):
-        return await asyncio.to_thread(self.search, params.get("query", ""), params.get("top_k", 5))
+        return await asyncio.to_thread(self.search, params.get("query", ""), params.get("top_k", 5),
+                                      diagnostics=context.get("retrieval_diagnostics") if context else None)
 
     def close(self):
         self._db.close()

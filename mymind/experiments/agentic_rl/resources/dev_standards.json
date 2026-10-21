@@ -1,0 +1,4286 @@
+[
+  {
+    "task_id": "S01",
+    "group_id": "R01",
+    "split": "dev",
+    "dispositions": [
+      "request_info"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1：银行卡支付的退款昨天提示申请已受理，后面有没有审核结果我不清楚。现在还没收到钱，是否已经超过到账时间？",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "bank_card"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "accepted"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "unknown"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "refund_state_unknown"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_accepted"
+          ],
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "approval_status",
+            "purpose": "decision"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "elapsed_workdays",
+            "purpose": "decision",
+            "condition": "if_approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "limit_workdays",
+            "value": 5
+          }
+        ],
+        "supports": [
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S02",
+    "group_id": "R02",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1：线上支付渠道的退款已审核通过，从通过算已过 2 个完整工作日，目前显示渠道处理中，还没有到账，是否仍在常规时间内？",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "online_payment"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "elapsed_workdays",
+            "value": 2
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": "unknown"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "channel_processing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "limit_workdays",
+            "value": 3
+          }
+        ],
+        "supports": [
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "within_window",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "within_refund_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "wait_within_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_online_limit"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "verify_refund_if_overdue_unreceived",
+            "params": {
+              "limit_workdays": 3
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_online_limit"
+          ],
+          [
+            "refund_overdue"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "check_original_account"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {
+      "reasons": [
+        {
+          "target": "R1",
+          "code": "refund_overdue"
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "S03",
+    "group_id": "R04",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1：线上支付渠道的退款已审核通过，从通过算已过 4 个完整工作日，目前显示渠道处理中，已核对原支付账户仍未到账，应该怎么办？",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "online_payment"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "elapsed_workdays",
+            "value": 4
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "channel_processing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "limit_workdays",
+            "value": 3
+          }
+        ],
+        "supports": [
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "within_window",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "refund_overdue"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "verify_refund"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_online_limit"
+          ],
+          [
+            "refund_overdue"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "order_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "transaction_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {
+      "next_steps": [
+        {
+          "target": "R1",
+          "code": "wait_within_window"
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "S04",
+    "group_id": "R03",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1：银行卡渠道的退款已审核通过，从通过算已过 4 个完整工作日，目前显示渠道处理中，已核对原支付账户仍未到账，应该怎么办？",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "bank_card"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "elapsed_workdays",
+            "value": 4
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "channel_processing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "limit_workdays",
+            "value": 5
+          }
+        ],
+        "supports": [
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "within_window",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "within_refund_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "wait_within_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_bank_limit"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "verify_refund_if_overdue_unreceived",
+            "params": {
+              "limit_workdays": 5
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_bank_limit"
+          ],
+          [
+            "refund_overdue"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "check_original_account"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {
+      "reasons": [
+        {
+          "target": "R1",
+          "code": "refund_overdue"
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "S05",
+    "group_id": "B01",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "订单 A102 看起来扣了两次钱，两笔都是 99 元，第二笔交易号暂时找不到，请帮我核实处理。",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "A102",
+            "type": "reported_charge_count",
+            "value": 2
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "A102",
+            "type": "charges_same_order",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "A102",
+            "code": "suspected_duplicate_charge"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "role:1",
+            "billing_handoff"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "A102",
+            "code": "verify_duplicate_charge"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "role:1",
+            "billing_handoff"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "A102",
+            "field": "payment_time",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "A102",
+            "field": "payment_channel",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "A102",
+            "field": "transaction_summary",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "A102",
+            "field": "transaction_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S06",
+    "group_id": "P01",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：我是项目管理员，基础查询接口返回 403。认证有效，配置页显示本次请求的出口地址没有加入访问白名单，如何处理？",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。",
+      "user:2": "请求 Q1 的项目为 Alpha，运行环境为生产，出口地址为 203.0.113.10；认证有效，我有 Alpha 项目的配置权。所述白名单属于 Alpha 项目，所述当前功能开通记录属于 Alpha 项目的生产环境。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_scope",
+            "value": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip",
+            "value": "203.0.113.10"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "user_can_configure",
+            "value": {
+              "project": "Alpha",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 403
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "基础查询"
+          },
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "基础查询接口"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "required_capability",
+            "value": "basic_query"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "platform_enablement_required",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_actor",
+            "value": "project_user"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip_allowed",
+            "value": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10",
+              "status": false
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "user_config_fixable"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "capabilities"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "adjust_project_whitelist",
+            "params": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S07",
+    "group_id": "P02",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：我是项目管理员，报表导出接口返回 403。认证有效，配置页显示导出功能已开通，但本次请求出口地址不在白名单，如何处理？",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。",
+      "user:2": "请求 Q1 的项目为 Alpha，运行环境为生产，出口地址为 203.0.113.10；认证有效，我有 Alpha 项目的配置权。所述白名单属于 Alpha 项目，所述当前功能开通记录属于 Alpha 项目的生产环境。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_scope",
+            "value": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip",
+            "value": "203.0.113.10"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "user_can_configure",
+            "value": {
+              "project": "Alpha",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 403
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出"
+          },
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出接口"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "required_capability",
+            "value": "export"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "platform_enablement_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_actor",
+            "value": "project_user"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip_allowed",
+            "value": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10",
+              "status": false
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "feature_enabled",
+            "value": {
+              "project": "Alpha",
+              "environment": "production",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "enablement_actor",
+            "value": "platform"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "user_config_fixable"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "capabilities"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "adjust_project_whitelist",
+            "params": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S08",
+    "group_id": "P03",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：我是项目管理员，报表导出接口返回 403。认证有效，配置页显示导出功能未开通，本次请求出口地址也不在白名单，如何处理？",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。",
+      "user:2": "请求 Q1 的项目为 Alpha，运行环境为生产，出口地址为 203.0.113.10；认证有效，我有 Alpha 项目的配置权。所述白名单属于 Alpha 项目，所述当前功能开通记录属于 Alpha 项目的生产环境。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_scope",
+            "value": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip",
+            "value": "203.0.113.10"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "user_can_configure",
+            "value": {
+              "project": "Alpha",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 403
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出"
+          },
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出接口"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "required_capability",
+            "value": "export"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "platform_enablement_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_actor",
+            "value": "project_user"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip_allowed",
+            "value": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10",
+              "status": false
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "feature_enabled",
+            "value": {
+              "project": "Alpha",
+              "environment": "production",
+              "status": false
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "enablement_actor",
+            "value": "platform"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "platform_enablement_required"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "capabilities"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "request_platform_enablement",
+            "params": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "adjust_project_whitelist",
+            "params": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S09",
+    "group_id": "P04",
+    "split": "dev",
+    "dispositions": [
+      "request_info"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：我是项目管理员，报表导出接口返回 403。认证有效，但我不知道功能是否开通，也没有查看白名单。请确定是我自己改，还是需要平台处理。",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。",
+      "user:2": "请求 Q1 的项目为 Alpha，运行环境为生产，出口地址为 203.0.113.10；认证有效，我有 Alpha 项目的配置权。所述白名单属于 Alpha 项目，所述当前功能开通记录属于 Alpha 项目的生产环境。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_scope",
+            "value": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip",
+            "value": "203.0.113.10"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "user_can_configure",
+            "value": {
+              "project": "Alpha",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 403
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出"
+          },
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出接口"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "required_capability",
+            "value": "export"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "platform_enablement_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_actor",
+            "value": "project_user"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip_allowed",
+            "value": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10",
+              "status": "unknown"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "feature_enabled",
+            "value": {
+              "project": "Alpha",
+              "environment": "production",
+              "status": "unknown"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:2"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "enablement_actor",
+            "value": "platform"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "permission_state_unknown"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ],
+          [
+            "enablement_scope"
+          ],
+          [
+            "unmatched_scope"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "feature_enabled",
+            "purpose": "decision"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "outbound_ip_allowed",
+            "purpose": "decision"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:2"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S10",
+    "group_id": "T01",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：接口返回 401，响应摘要为 Token 已过期，我还没重新授权。应该先做什么？",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 401
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "token_expired",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "token_expired"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "auth_expired"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "reauthorize_then_verify"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "auth_expired"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S11",
+    "group_id": "F01",
+    "split": "dev",
+    "dispositions": [
+      "answer"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：测试环境的只读查询刚有一次超时，之后已经恢复，其他请求正常，没有支付或数据写入受影响。我想知道接下来应记录什么、怎样初步排查。",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "test"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_read_only",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "timeout_observed",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "occurrence",
+            "value": "single"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "recovered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "payment_affected",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "write_affected",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "limited_recovered_fault"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "limited_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "record_diagnostics",
+            "params": {
+              "fields": [
+                "event_time",
+                "interface_name",
+                "request_id",
+                "occurrence"
+              ]
+            }
+          },
+          {
+            "target": "Q1",
+            "code": "record_diagnostics",
+            "params": {
+              "fields": [
+                "event_time",
+                "interface_name",
+                "request_id",
+                "occurrence",
+                "response_summary"
+              ]
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "limited_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "low_risk_checks",
+            "params": {
+              "directions": [
+                "network",
+                "recent_config_changes"
+              ]
+            }
+          },
+          {
+            "target": "Q1",
+            "code": "low_risk_checks",
+            "params": {
+              "directions": [
+                "network"
+              ]
+            }
+          },
+          {
+            "target": "Q1",
+            "code": "low_risk_checks",
+            "params": {
+              "directions": [
+                "recent_config_changes"
+              ]
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "limited_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "escalate_if_severe_impact"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "role:1",
+            "severe_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S12",
+    "group_id": "F02",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "请求 Q1：生产环境多个用户的支付接口持续返回 500，支付流程受到影响，目前还没拿到 request_id。",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 500
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "occurrence",
+            "value": "continuous"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "affected_users",
+            "value": "multiple"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "payment_affected",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "severe_business_impact"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "role:1",
+            "severe_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "escalate_technical"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "role:1",
+            "severe_fault"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "request_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "event_time",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "interface_name",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  },
+  {
+    "task_id": "S13",
+    "group_id": "R06",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1：平台余额渠道的退款已审核通过，从通过算已过 4 个完整工作日，核对原余额账户仍未到账。我只想知道是否超过该渠道的常规时效。",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "balance"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "elapsed_workdays",
+            "value": 4
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "policy_uncovered"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "verify_channel_timing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ],
+          [
+            "channel_handoff"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {
+      "reasons": [
+        {
+          "target": "R1",
+          "code": "refund_overdue"
+        }
+      ],
+      "facts": [
+        {
+          "target": "R1",
+          "type": "limit_workdays",
+          "value": 3
+        },
+        {
+          "target": "R1",
+          "type": "limit_workdays",
+          "value": 5
+        },
+        {
+          "target": "R1",
+          "type": "within_window",
+          "value": true
+        },
+        {
+          "target": "R1",
+          "type": "within_window",
+          "value": false
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "D02",
+    "group_id": "D02",
+    "split": "dev",
+    "dispositions": [
+      "escalate"
+    ],
+    "materials": {
+      "user:1": "退款记录 R1 是线上支付渠道，已审核通过，之后已过 4 个完整工作日，目前显示渠道处理中；退款记录 R2 是银行卡渠道，已审核通过，之后已过 2 个完整工作日，目前显示渠道处理中。两笔均核对各自原支付账户仍未到账。请逐笔说明时效及下一步。",
+      "role:1": "你是账单客服。依据用户提供的信息和实际可见政策作条件性判断，不能声称已核验后台或已执行退款、补偿、账单调整。疑似重复扣款需人工或财务核实，材料未齐不延迟升级。只索取必要定位材料，不索取完整银行卡号、密码或验证码。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "payment_channel",
+            "value": "online_payment"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "elapsed_workdays",
+            "value": 4
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "refund_stage",
+            "value": "channel_processing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "limit_workdays",
+            "value": 3
+          }
+        ],
+        "supports": [
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "within_window",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "refund_overdue"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_online_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R1",
+            "code": "verify_refund"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_online_limit"
+          ],
+          [
+            "refund_overdue"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "order_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "R1",
+            "field": "transaction_id",
+            "purpose": "handoff"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "payment_channel",
+            "value": "bank_card"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "approval_status",
+            "value": "approved"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "elapsed_workdays",
+            "value": 2
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "original_account_checked",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "received",
+            "value": false
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "refund_stage",
+            "value": "channel_processing"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "timer_start",
+            "value": "approval"
+          }
+        ],
+        "supports": [
+          [
+            "refund_clock"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "limit_workdays",
+            "value": 5
+          }
+        ],
+        "supports": [
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "within_window",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "R2",
+            "code": "within_refund_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_clock"
+          ],
+          [
+            "refund_bank_limit"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R2",
+            "code": "wait_within_window"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_bank_limit"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R2",
+            "code": "verify_refund_if_overdue_unreceived",
+            "params": {
+              "limit_workdays": 5
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_bank_limit"
+          ],
+          [
+            "refund_overdue"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "R2",
+            "code": "check_original_account"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_wait"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R1",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "R2",
+            "type": "timing_policy_covered",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "refund_scope"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {
+      "next_steps": [
+        {
+          "target": "R1",
+          "code": "wait_within_window"
+        }
+      ],
+      "reasons": [
+        {
+          "target": "R2",
+          "code": "refund_overdue"
+        }
+      ]
+    }
+  },
+  {
+    "task_id": "P05",
+    "group_id": "P05",
+    "split": "dev",
+    "dispositions": [
+      "request_info"
+    ],
+    "materials": {
+      "user:1": "请求 Q1 的报表导出接口返回 403。认证有效，我有 Alpha 项目配置权。目标项目为 Alpha、运行环境为生产，出口地址为 203.0.113.10。Alpha 项目白名单没有该出口地址。我只能看到 Alpha 项目测试环境的导出功能已开通记录，生产环境的开通状态不知道，请判断还需补充什么。",
+      "role:1": "你是技术客服。依据用户提供的信息和实际可见政策给指导，不能编造根因、声称已修改配置或恢复服务。生产大面积不可用、支付链路异常、数据丢失或错乱需人工或二线处理，日志缺失不延迟升级。不索取完整 Token、密钥、密码或验证码，不建议无限重试、删除数据或关闭安全校验。"
+    },
+    "expectations": [
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "request_scope",
+            "value": {
+              "project": "Alpha",
+              "environment": "production"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip",
+            "value": "203.0.113.10"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "auth_valid",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "user_can_configure",
+            "value": {
+              "project": "Alpha",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "http_status",
+            "value": 403
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出"
+          },
+          {
+            "target": "Q1",
+            "type": "interface_name",
+            "value": "报表导出接口"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "required_capability",
+            "value": "export"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "platform_enablement_required",
+            "value": true
+          }
+        ],
+        "supports": [
+          [
+            "capabilities"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "whitelist_actor",
+            "value": "project_user"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "outbound_ip_allowed",
+            "value": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10",
+              "status": false
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "feature_enabled",
+            "value": {
+              "project": "Alpha",
+              "environment": "production",
+              "status": "unknown"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "user:1"
+          ],
+          [
+            "enablement_scope"
+          ],
+          [
+            "unmatched_scope"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "enablement_actor",
+            "value": "platform"
+          }
+        ],
+        "supports": [
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "reasons",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "permission_state_unknown"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "capabilities"
+          ],
+          [
+            "enablement_scope"
+          ],
+          [
+            "unmatched_scope"
+          ]
+        ],
+        "required": true,
+        "decisive": true
+      },
+      {
+        "section": "missing_info",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "field": "feature_enabled",
+            "purpose": "decision"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": true,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "feature_enabled",
+            "value": {
+              "project": "Alpha",
+              "environment": "test",
+              "status": true
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "next_steps",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "code": "adjust_project_whitelist",
+            "params": {
+              "project": "Alpha",
+              "outbound_ip": "203.0.113.10"
+            }
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ],
+          [
+            "config_actors"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      },
+      {
+        "section": "facts",
+        "alternatives": [
+          {
+            "target": "Q1",
+            "type": "environment",
+            "value": "production"
+          }
+        ],
+        "supports": [
+          [
+            "user:1"
+          ]
+        ],
+        "required": false,
+        "decisive": false
+      }
+    ],
+    "severe_items": {}
+  }
+]

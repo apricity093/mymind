@@ -1,0 +1,16 @@
+{
+  "model_id": "Qwen/Qwen3-4B-Instruct-2507",
+  "model_revision": "cdbee75f17c01a7cc42f958dc650907174af0554",
+  "model_dir": "models/Qwen3-4B-Instruct-2507",
+  "adapter_dir": "runs/stage7-preparation-20261014/formal/grpo/checkpoint-40",
+  "output_dir": "runs/policy-demo/rl/app",
+  "generation": {"context_tokens": 16384, "max_new_tokens": 2048, "temperature": 0, "top_p": 1},
+  "budget": {"context_tokens": 16384, "completion_tokens": 8192, "turn_tokens": 2048},
+  "retrieval": {
+    "knowledge_dir": "data/agentic_rl/knowledge", "collection_prefix": "agentic_policy_v1",
+    "candidates": 12, "top_k": 5, "observation_chars": 16000, "chunk_tokens": 512,
+    "embedding_budget_s": 8, "timeout_s": 30,
+    "rerank_model": "deepseek-flash", "rerank_base_url": "https://api.deepseek.com", "rerank_thinking": "disabled",
+    "rerank_chars": 24000, "rerank_tokens": 1024, "rerank_timeout_s": 45, "rerank_retries": 1
+  }
+}

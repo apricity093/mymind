@@ -1,7 +1,6 @@
-"""控制变量的真实 embedding / 检索 / 回答 / 意图实验；缺项显式标为 blocked。"""
+"""检索、回答与意图实验的共享测量函数。"""
 from __future__ import annotations
 
-import argparse
 import asyncio
 import json
 import math
@@ -10,23 +9,14 @@ import re
 import statistics
 import time
 from collections import Counter
-from datetime import datetime
-from pathlib import Path
-
-import chromadb
-from dotenv import load_dotenv
 
 from core.document_chunking import BudgetChunker, parse_sections
-from core.embedding import EmbeddingError, EmbeddingSettings, GeminiEmbedding
 from core.intent_recognizer import IntentCategory, IntentRecognizer, _TEMPLATES, _cosine
 from core.llm_gateway import LLMRequest, build_gateway
 from core.retrieval import BM25Index, weighted_rrf
-from mcp.indexed_knowledge_base import KnowledgeBase, prepare_minilm
+from mcp.indexed_knowledge_base import KnowledgeBase
 from mcp.knowledge_base import KnowledgeBase as BaselineKnowledgeBase
 from mcp.tool_manager import MCPToolManager
-
-ROOT = Path(__file__).resolve().parents[1]
-DATA = ROOT / "data/eval/gemini_rag_eval.json"
 
 
 def normalize(text):
@@ -302,128 +292,3 @@ async def intent_experiments(cases, gemini, args, gateway, model):
             outputs[mode]["development_thresholds"] = {str(level): macro_f1(values)
                                                         for level, values in threshold_rows[mode].items()}
     return outputs
-
-
-async def run(args):
-    load_dotenv(ROOT / ".env")
-    data = json.loads(args.dataset.read_text(encoding="utf-8"))
-    corpus = data["corpus"] + (json.loads((ROOT / "data/eval/rag_corpus.json").read_text(encoding="utf-8"))
-                              if data.get("include_legacy_corpus", True) else [])
-    questions = [q for q in data["questions"] if q["split"] == args.split]
-    cases = [q for q in data["intents"] if q["split"] == args.split]
-    if args.limit:
-        questions, cases = questions[:args.limit], cases[:args.limit]
-    key_present = bool(os.getenv("GEMINI_API_KEY"))
-    configured = bool(os.getenv("EMBEDDING_MODEL"))
-    settings = EmbeddingSettings.from_env() if not configured or key_present else EmbeddingSettings()
-    gemini = GeminiEmbedding(settings, min_interval=args.api_interval)
-    gateway, model = chat_gateway()
-    report = {"date": "2026-10-09", "split": args.split, "suite": args.suite, "dataset": args.dataset.name,
-              "configuration": {"gemini_key_present": key_present, "embedding_model_present": configured,
-                  "llm_key_present": gateway is not None, "embedding_model": settings.model,
-                  "dimensions": settings.dimensions, "chunk_budget": args.chunk_budget,
-                  "threshold": args.threshold, "top_k": args.top_k},
-              "llm_model": model, "api_interval_seconds": args.api_interval,
-              "corpus_documents": len(corpus), "long_documents": [dict(title=d["title"], characters=len(d["content"]))
-                  for d in data["corpus"]], "questions": len(questions), "intents": len(cases),
-              "limits": ["评测语料为合成客服政策和手册，不能代表真实用户分布。",
-                         "原文锚点按去空白后字面覆盖计量；回答指标由真实 LLM 审核，需要人工复核。",
-                         "模型/切块/召回比较固定不使用查询改写；可选真实重排与回答设置各变体一致。",
-                         "查询向量在变体间复用，延迟加回实测编码耗时；不是生产并发负载测量。",
-                         "LLM 次数为网关调用数，SDK 内部重试及未完整返回的 token 用量无法完整计量。"]}
-    try:
-        needs_mini = args.suite in {"smoke", "recovery", "all"} or (
-            args.suite == "rag" and (not args.variants or any(v.startswith("minilm") for v in args.variants)))
-        bm25_only = args.suite == "rag" and args.variants and all(v.endswith("bm25") for v in args.variants)
-        mini, mini_count = prepare_minilm(warm=not bm25_only) if needs_mini else (None, None)
-        if args.suite in {"smoke", "all"}:
-            path = args.output / "smoke-index"
-            path.mkdir(parents=True, exist_ok=True)
-            client = chromadb.PersistentClient(path=str(path), settings=chromadb.Settings(anonymized_telemetry=False))
-            kb = KnowledgeBase(chroma_path=str(path), embedding=gemini, client=client,
-                               backup_function=mini, backup_counter=mini_count, load_defaults=False)
-            started = time.perf_counter()
-            imported = kb.import_documents(data["corpus"])
-            results = kb.search(questions[0]["question"], args.top_k)
-            report["smoke"] = {"status": "measured", "import": imported, "stats": kb.stats(),
-                               "results": results, "latency_ms": (time.perf_counter() - started) * 1000}
-            kb.close()
-        if args.suite == "recovery":
-            if not gemini.enabled:
-                report["recovery"] = {"status": "blocked", "reason": "Gemini configuration missing"}
-            else:
-                path = args.output / "recovery-index"
-                client = chromadb.PersistentClient(path=str(path), settings=chromadb.Settings(anonymized_telemetry=False))
-                invalidations = []
-                kb = KnowledgeBase(chroma_path=str(path), embedding=gemini, client=client,
-                                   backup_function=mini, backup_counter=mini_count, load_defaults=False,
-                                   on_change=lambda: invalidations.append(True) or 0)
-                first = kb.import_documents([{"title": "恢复验证", "content": "测试政策：退货期限七天。"}])
-                real_embed = gemini.embed
-
-                def injected_failure(*params, **kwargs):
-                    raise EmbeddingError("injected_google_failure")
-
-                gemini.embed = injected_failure
-                query_degraded = kb.search("退货期限")
-                gemini.embed = real_embed
-                transient_recovered = kb.search("退货期限")
-                gemini.embed = injected_failure
-                imported = kb.import_documents([{"title": "恢复验证", "content": "测试政策更新：退货期限九天。"},
-                    {"title": "恢复新增", "content": "新增规则：物流查件需提供订单号。"}])
-                gemini.embed = real_embed
-                pending = kb.search("退货期限九天")
-                repaired = kb.repair_main()
-                recovered = kb.search("物流查件")
-                checks = {"initial_main_success": first["status"] == "success",
-                          "query_fallback": bool(query_degraded) and all(r["index_route"] == "backup" for r in query_degraded),
-                          "transient_recovery": bool(transient_recovered) and all(r["index_route"] == "main" for r in transient_recovered),
-                          "import_degraded_success": imported["status"] == "degraded",
-                          "pending_stays_backup": bool(pending) and all(r["index_route"] == "backup" for r in pending),
-                          "update_visible": any("九天" in r["content"] for r in pending),
-                          "old_content_removed": not any("七天" in r["content"] for r in pending),
-                          "repair_complete": repaired["main_complete"],
-                          "new_content_on_main": any("订单号" in r["content"] and r["index_route"] == "main" for r in recovered),
-                          "cache_invalidated": len(invalidations) >= 4}
-                report["recovery"] = {"status": "measured", "all_checks_passed": all(checks.values()),
-                    "fault": "显式注入 Google 失败；入库、备用模型和恢复后 Gemini 均实际调用",
-                    "checks": checks, "query_degraded": query_degraded, "pending_results": pending,
-                    "recovered_results": recovered, "stats": kb.stats(), "cache_invalidations": len(invalidations)}
-                kb.close()
-        if args.suite in {"rag", "all"}:
-            report["retrieval"] = await retrieval_experiments(corpus, questions, gemini, mini, mini_count,
-                                                             args, gateway, model)
-        if args.suite in {"intent", "all"}:
-            report["intent"] = await intent_experiments(cases, gemini, args, gateway, model)
-    except Exception as ex:
-        report["execution_error"] = {"type": type(ex).__name__, "reason": KnowledgeBase._reason(ex)}
-    report["gemini_counting_mode"] = gemini.counting_mode
-    report["api_usage"] = {"gemini": dict(gemini.usage), "llm_calls": gateway.calls if gateway else 0,
-                           "llm_usage": gateway.usage if gateway else []}
-    gemini.close()
-    args.output.mkdir(parents=True, exist_ok=True)
-    filename = args.output / f"{args.suite}-{args.split}-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"
-    filename.write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(filename.resolve())
-    return report
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--suite", choices=["smoke", "recovery", "rag", "intent", "all"], default="smoke")
-    parser.add_argument("--dataset", type=Path, default=DATA)
-    parser.add_argument("--split", choices=["dev", "test"], default="dev")
-    parser.add_argument("--models", choices=["backup", "both"], default="both")
-    parser.add_argument("--variants", nargs="*", help="只运行明确列出的检索变体，避免重复整组实验")
-    parser.add_argument("--limit", type=int, default=0)
-    parser.add_argument("--chunk-budget", type=int, default=512)
-    parser.add_argument("--threshold", type=float, default=.5)
-    parser.add_argument("--top-k", type=int, default=5)
-    parser.add_argument("--answers", action="store_true", help="调用真实聊天模型重排、回答和事实条件审核")
-    parser.add_argument("--api-interval", type=float, default=1, help="Google 实验请求最小间隔秒数；生产不增加此等待")
-    parser.add_argument("--output", type=Path, default=ROOT / "artifacts/gemini-rag")
-    asyncio.run(run(parser.parse_args()))
-
-
-if __name__ == "__main__":
-    main()

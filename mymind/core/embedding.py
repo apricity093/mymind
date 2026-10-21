@@ -82,6 +82,17 @@ class TextEmbedding:
         self._deadline = threading.local()
 
     @contextmanager
+    def capture_usage(self):
+        """收集当前线程这次调用的请求用量，不从共享累计计数推算。"""
+        previous = getattr(self._deadline, "usage", None)
+        events = []
+        self._deadline.usage = events
+        try:
+            yield events
+        finally:
+            self._deadline.usage = previous
+
+    @contextmanager
     def query_budget(self, seconds):
         """能力探测、计数、限速等待与编码共用一个在线查询截止时间。"""
         previous = getattr(self._deadline, "end", None)
@@ -294,6 +305,9 @@ class QwenEmbedding(TextEmbedding):
                 vectors.append([v/norm for v in values])
                 self.usage[f"{task}:texts"] += 1
             tokens = result.get("usage", {}).get("total_tokens")
+            events = getattr(self._deadline, "usage", None)
+            if events is not None:
+                events.append({"task": task, "texts": len(batch), "reported_tokens": tokens})
             if tokens is not None:
                 self.usage["reported_tokens"] += tokens
             return vectors, tokens

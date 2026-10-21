@@ -1,0 +1,6 @@
+name: agentic_rl
+dependencies:
+  - python=3.10
+  - pip
+  - pip:
+      - -r mymind/requirements-local.txt
