@@ -1,6 +1,6 @@
 # Qwen 与 MiniLM 双索引 RAG
 
-生产入口为 `api/main.py` 与 `mcp/indexed_knowledge_base.py`。当前 embedding 为 `qwen3.7-text-embedding-flash`，768 维；聊天 LLM 独立配置。接入记录见 [迁移报告](../experiments/QWEN_EMBEDDING_MIGRATION_REPORT.md)，正式效果与验收见 [Qwen 第二轮报告](../experiments/QWEN_RAG_OPTIMIZATION_REPORT.md)，命令见 [实验说明](../experiments/README.md)。
+生产入口为 `api/main.py` 与 `mcp/indexed_knowledge_base.py`。当前 embedding 为 `qwen3.7-text-embedding-flash`，768 维；聊天 LLM 独立配置。配置、评测摘要与命令见[实验说明](../experiments/README.md)。
 
 ## 配置与启动
 
@@ -102,4 +102,4 @@ $taskOutput='artifacts/qwen-optimization-v2/reproduce'
 
 `all` 依次完成 validate、smoke、chunking、overlap、fusion、intent_dev、select、test、intent_test、answers、production、application；`--stage` 可选单阶段，`--resume` 跳过已经完成的阶段。`byte_baseline` 是原字节512的固定对照，不参与选择。新目录会重新运行实际 API；入口累计扣除历史685次embedding HTTP、264条尝试编码和343次LLM网关调用，受20000/10000/600上限约束。它复用匹配的历史真实意图输出和MiniLM结果；预算不足保留blocked与断点，不能把新目录当作额度重置。
 
-旧 `experiments.optimization_v2` 是 Gemini 实验入口，不能直接把 Qwen 向量写入旧运行或用当前密钥续跑 Google 阶段。独立运行清单、费用、逐题上下文和已知局限见 [第二轮报告](../experiments/QWEN_RAG_OPTIMIZATION_REPORT.md)。冻结数据为合成政策，主路部分指标饱和，不能推广为真实客服泛化或生产负载保证。
+旧 `experiments.optimization_v2` 是 Gemini 实验入口，不能直接把 Qwen 向量写入旧运行或用当前密钥续跑 Google 阶段。评测摘要与已知限制见[实验说明](../experiments/README.md)。冻结数据为合成政策，主路部分指标饱和，不能推广为真实客服泛化或生产负载保证。

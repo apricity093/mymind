@@ -54,7 +54,7 @@ CHROMA_PORT=8001
 ```powershell
 cd mymind
 docker compose up -d redis chromadb
-D:\anaconda3\envs\learn_claude\python.exe -m uvicorn api.main:app --host 0.0.0.0 --port 8000
+python -m uvicorn api.main:app --host 0.0.0.0 --port 8000
 ```
 
 访问：
@@ -185,7 +185,7 @@ Python：
 
 ```powershell
 cd mymind
-D:\anaconda3\envs\learn_claude\python.exe -m pytest -q
+python -m pytest -q
 ```
 
 前端：
@@ -200,7 +200,7 @@ npm run build
 
 ```powershell
 cd mymind
-D:\anaconda3\envs\learn_claude\python.exe -m experiments.run_experiments --layer integration --redis-url redis://:mymind123@localhost:6379/15 --chroma-port 8001
+python -m experiments.run_experiments --layer integration --redis-url redis://:mymind123@localhost:6379/15 --chroma-port 8001
 ```
 
 ## 常见问题

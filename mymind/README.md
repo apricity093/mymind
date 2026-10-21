@@ -2,7 +2,7 @@
 
 mymind 是面向客服场景的多 Agent 智能客服系统。本目录为 Python / FastAPI 主版本实现，承担细粒度意图识别、多 Agent 路由、RAG 检索、三级记忆、在线监控与实验评测。
 
-当前 Qwen/MiniLM 双索引的配置、导入与补齐见 [使用说明](docs/rag.md)，连通性见 [接入报告](experiments/QWEN_EMBEDDING_MIGRATION_REPORT.md)，冻结选择、真实质量实验、费用和应用验收见 [Qwen第二轮报告](experiments/QWEN_RAG_OPTIMIZATION_REPORT.md)。历史 Gemini 第一轮模型对比见 [实验报告](experiments/GEMINI_RAG_REPORT.md)，原第二轮工程修复与额度断点保存在 [第二轮报告](experiments/RAG_OPTIMIZATION_V2_REPORT.md)。
+当前 Qwen/MiniLM 双索引、检索与意图路由评测见[实验说明](experiments/README.md)。
 
 ## 项目目录架构
 

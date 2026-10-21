@@ -10,6 +10,7 @@ __pycache__/
 .edge-e2e/
 desktop.png
 mobile.png
+/agentic_runs/
 
 # Local project documents
 /AGENTS.md
@@ -19,3 +20,35 @@ mobile.png
 /review_rag_experiment.md
 /待更新文档清单.md
 /说明
+
+# Interview preparation and internal experiment records
+/INTERVIEW.md
+/interview.html
+/agentic_plan.md
+/exports/showcase/interview.fragment.html
+/mymind/docs/rag_optimization_experiment_plan.md
+/mymind/experiments/GEMINI_RAG_REPORT.md
+/mymind/experiments/INTENT_ROUTING_REPORT.md
+/mymind/experiments/QWEN_EMBEDDING_MIGRATION_REPORT.md
+/mymind/experiments/QWEN_RAG_OPTIMIZATION_REPORT.md
+/mymind/experiments/RAG_OPTIMIZATION_V2_REPORT.md
+/data/agentic_rl/calibration/sources.json
+/data/agentic_rl/**/generation_record.json
+
+# Personal server operations and resource locations
+/mymind/api/POLICY_APP.md
+/exports/stage8-20261016/README.md
+/exports/stage8-20261016/selected-models.json
+/scripts/sync_agentic.ps1
+/scripts/remote_check_pre_stage7_fixes.py
+/scripts/launch_stage7.sh
+/scripts/run_agentic.sh
+/scripts/stage6_setup.py
+
+# Local service credentials; keep configuration examples public
+.env
+.env.*
+!.env.example
+!.env.example.env
+service.env
+service.env.*
