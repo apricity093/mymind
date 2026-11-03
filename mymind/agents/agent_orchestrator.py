@@ -194,7 +194,7 @@ class Request:
     intent_confidence: float = 0.0
     entities: Dict[str, List[str]] = field(default_factory=dict)
     request_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    tool_result_cache: Dict[str, Dict[str, Any]] = field(default_factory=dict, repr=False)
+    tool_result_cache: Dict[Tuple[str, int], Dict[str, Any]] = field(default_factory=dict, repr=False)
 
 
 @dataclass
@@ -400,12 +400,12 @@ class BaseAgent:
                     })
                 usages.append(result.usage)
                 metadata = dict(result.metadata)
-                calls = list(getattr(result, "tool_calls", []) or [])
+                calls = result.tool_calls
                 if not calls:
                     metadata["tool_rounds"] = round_index
                     return AgentCallResult(result.text, True, metadata, list(dict.fromkeys(tools_used)), traces, _aggregate_usage(usages))
 
-                assistant_message = getattr(result, "assistant_message", None)
+                assistant_message = result.assistant_message
                 if assistant_message:
                     messages.append(assistant_message)
                 tool_results: List[Dict[str, Any]] = []
@@ -427,8 +427,8 @@ class BaseAgent:
                             output = spec.handler(req, call.arguments)
                             if inspect.isawaitable(output):
                                 output = await output
-                            if isinstance(output, dict) and "success" in output:
-                                result_success = bool(output.get("success"))
+                            if "success" in output:
+                                result_success = bool(output["success"])
                         except ValueError as ex:
                             execution_success = False
                             error_code = "invalid_tool_arguments"
@@ -446,13 +446,13 @@ class BaseAgent:
                         "success": execution_success,
                         "result_success": result_success,
                         "latency_ms": round(latency_ms, 3),
-                        "cached": bool(output.get("cached") or output.get("request_cached")) if isinstance(output, dict) else False,
-                        "reranked": bool(output.get("reranked")) if isinstance(output, dict) else False,
-                        "degraded": bool(output.get("degraded")) if isinstance(output, dict) else False,
+                        "cached": bool(output.get("cached") or output.get("request_cached")),
+                        "reranked": bool(output.get("reranked")),
+                        "degraded": bool(output.get("degraded")),
                         "error_code": error_code or ("tool_result_error" if result_success is False else ""),
                     })
                     if call.name == "search_knowledge_base":
-                        traces[-1]["knowledge_status"] = output.get("knowledge_status", "error") if isinstance(output, dict) else "error"
+                        traces[-1]["knowledge_status"] = output.get("knowledge_status", "error")
                     tool_results.append({"id": call.id, "output": output})
                 self._append_tool_results(messages, tool_results)
 

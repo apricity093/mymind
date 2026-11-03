@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import re
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, List, Optional, TYPE_CHECKING, Union
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
     from agents.agent_orchestrator import Request
 
 
-AgentToolHandler = Callable[["Request", Dict[str, Any]], Union[Any, Awaitable[Any]]]
+AgentToolHandler = Callable[["Request", Dict[str, Any]], Union[Dict[str, Any], Awaitable[Dict[str, Any]]]]
 
 
 @dataclass(frozen=True)
@@ -204,9 +203,9 @@ def create_handoff_summary(req: Request, arguments: Dict[str, Any]) -> Dict[str,
 
 def build_shared_rag_tools(tool_manager: Any) -> Dict[str, AgentToolSpec]:
     async def search_knowledge_base(req: Request, arguments: Dict[str, Any]) -> Dict[str, Any]:
-        query = str(arguments.get("query") or req.message or "").strip()
-        top_k = max(1, min(int(arguments.get("top_k", 5) or 5), 20))
-        cache_key = json.dumps({"query": query, "top_k": top_k}, ensure_ascii=True, sort_keys=True)
+        query = (arguments["query"] or req.message).strip()
+        top_k = max(1, min(arguments.get("top_k", 5) or 5, 20))
+        cache_key = (query, top_k)
         if cache_key in req.tool_result_cache:
             cached = dict(req.tool_result_cache[cache_key])
             cached["request_cached"] = True
@@ -217,14 +216,14 @@ def build_shared_rag_tools(tool_manager: Any) -> Dict[str, AgentToolSpec]:
             return {"success": False, "error": "RAG 工具未初始化", "results": []}
         result = await tool_manager.search_with_rewrite("knowledge_search", query, top_k=top_k)
         payload = {
-            "success": bool(getattr(result, "success", False)),
+            "success": result.success,
             "query": query,
             "top_k": top_k,
-            "results": getattr(result, "data", []) if getattr(result, "success", False) else [],
-            "cached": bool(getattr(result, "cached", False)),
-            "reranked": bool(getattr(result, "reranked", False)),
-            "degraded": bool(getattr(result, "degraded", False)),
-            "error": getattr(result, "error", None),
+            "results": result.data if result.success else [],
+            "cached": result.cached,
+            "reranked": result.reranked,
+            "degraded": result.degraded,
+            "error": result.error,
         }
         if payload["degraded"]:
             payload["knowledge_status"] = "degraded"

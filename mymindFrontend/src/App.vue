@@ -21,8 +21,8 @@
           <span class="pill">{{ currentBackend.label }}</span>
         </div>
         <div class="segmented">
-          <button :class="{ active: settings.backend === 'java' }" @click="switchBackend('java')">Java</button>
-          <button :class="{ active: settings.backend === 'python' }" @click="switchBackend('python')">Python</button>
+          <button :class="{ active: settings.backend === 'java' }" :disabled="busy" @click="switchBackend('java')">Java</button>
+          <button :class="{ active: settings.backend === 'python' }" :disabled="busy" @click="switchBackend('python')">Python</button>
         </div>
 
         <label>
@@ -215,10 +215,7 @@ const docContent = ref('大促期间退款审核时间可能延长到 3-5 个工
 const messageList = ref(null)
 
 const currentBackend = computed(() => backendMeta(settings.backend, settings))
-const docsUrl = computed(() => {
-  if (settings.backend === 'java') return `${currentBackend.value.baseUrl}/docs`
-  return `${currentBackend.value.baseUrl}/docs`
-})
+const docsUrl = computed(() => `${currentBackend.value.baseUrl}/docs`)
 
 watch(
   () => settings.conversationId,
@@ -231,13 +228,19 @@ onMounted(() => {
 })
 
 function switchBackend(type) {
+  if (settings.backend === type) return
   settings.backend = type
+  settings.conversationId = ''
+  messages.value = []
+  draft.value = ''
+  knowledgeCount.value = '-'
   persist()
   healthOk.value = false
   healthLabel.value = '未检查'
   statusText.value = ''
   searchResults.value = []
   checkHealth()
+  loadStats()
 }
 
 function persist() {
@@ -308,12 +311,15 @@ function formatJson(value) {
 }
 
 async function checkHealth() {
+  const backend = settings.backend
   try {
-    const data = await requestHealth(settings.backend, settings)
+    const data = await requestHealth(backend, settings)
+    if (settings.backend !== backend) return
     healthOk.value = data.status === 'ok'
     healthLabel.value = data.status || 'ok'
     statusText.value = JSON.stringify(data, null, 2)
   } catch (error) {
+    if (settings.backend !== backend) return
     healthOk.value = false
     healthLabel.value = '不可用'
     statusText.value = error.message
@@ -321,11 +327,13 @@ async function checkHealth() {
 }
 
 async function loadStats() {
+  const backend = settings.backend
   try {
     const [stats, monitor] = await Promise.allSettled([
-      requestKnowledgeStats(settings.backend, settings),
-      requestMonitor(settings.backend, settings)
+      requestKnowledgeStats(backend, settings),
+      requestMonitor(backend, settings)
     ])
+    if (settings.backend !== backend) return
     if (stats.status === 'fulfilled') {
       knowledgeCount.value = stats.value.total_chunks ?? stats.value.totalChunks ?? '-'
     }
@@ -333,6 +341,7 @@ async function loadStats() {
       statusText.value = JSON.stringify(monitor.value, null, 2)
     }
   } catch (error) {
+    if (settings.backend !== backend) return
     statusText.value = error.message
   }
 }

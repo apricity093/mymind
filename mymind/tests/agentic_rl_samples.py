@@ -4,7 +4,7 @@ from copy import deepcopy
 from pathlib import Path
 
 from agents.customer_policy.protocol import VisibleTrajectory
-from experiments.agentic_rl.tasks import (
+from rl.tasks import (
     RESOURCES, load_policy_support, load_private_standards, load_public_tasks,
 )
 
@@ -35,7 +35,7 @@ def trajectory(task_id, billing_text=BILLING, technical_text=TECHNICAL):
 
 
 def accepted_result(task_id, optional=False):
-    """将私有必要项转换为测试输入，用于检查全部资源的装载与一致性。"""
+    """构造判分测试输入；独立手写的 s04_result 覆盖基础奖励档位。"""
     standard = STANDARDS[task_id]
     result = {"disposition": standard.dispositions[0], "reasons": [], "facts": [],
               "next_steps": [], "missing_info": []}
@@ -79,10 +79,3 @@ def s04_result():
         ],
         "missing_info": [],
     }
-def retained_path(path):
-    """历史轨迹复核需要本地记录；公开仓库仅运行随附输入的回归。"""
-    import pytest
-
-    if not path.is_file():
-        pytest.skip(f"需要本地保留的实验记录：{path.name}")
-    return path

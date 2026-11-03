@@ -1,8 +1,6 @@
-"""
-mymind 智能客服系统 — FastAPI 入口
+"""Python 算法应用验证入口：意图融合、Agent 工具编排、记忆与混合检索。
 
-启动时打印小熊饼干图案。
-所有核心组件在 lifespan 中初始化，通过环境变量配置。
+SFT/RL Customer Policy 由 api.policy_app 独立提供推理服务。
 """
 import asyncio
 import logging
@@ -273,7 +271,8 @@ async def lifespan(app: FastAPI):
 
 # ── FastAPI ───────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title="mymind 智能客服",
+    title="MyMind Python 算法应用",
+    description="意图融合、工具式 RAG 与应用编排验证；SFT/RL 策略由独立服务提供。",
     version="2.0.0",
     lifespan=lifespan,
     docs_url="/docs",
@@ -289,7 +288,7 @@ app.add_middleware(
 
 # ── 请求/响应模型 ─────────────────────────────────────────────────────────────
 class ChatRequest(BaseModel):
-    message:     str
+    message:     str = Field(min_length=1)
     user_id:     str = "anonymous"
     conv_id:     Optional[str] = None
 

@@ -13,7 +13,6 @@
   5. 降级策略（Fallback）—— 工具不可用时返回有意义的降级结果。
 """
 import asyncio
-import hashlib
 import json
 import logging
 import os
@@ -28,7 +27,7 @@ from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
-from core.cache_store import CacheStore, InMemoryCacheStore
+from core.cache_store import CacheStore, InMemoryCacheStore, freeze_cache_key
 from core.retrieval import dedupe_items, deterministic_rank, parse_rerank_indices
 
 logger = logging.getLogger(__name__)
@@ -157,7 +156,7 @@ class MCPToolManager:
         self._model  = model
         self._tools: Dict[str, Tool] = {}
         self._cache_store = cache_store or InMemoryCacheStore(max_entries=5000)
-        self._cache_locks: "weakref.WeakValueDictionary[str, asyncio.Lock]" = weakref.WeakValueDictionary()
+        self._cache_locks: "weakref.WeakValueDictionary[tuple, asyncio.Lock]" = weakref.WeakValueDictionary()
         self._cache_namespace = "knowledge"
         self.rerank_stats = Counter()
 
@@ -250,7 +249,7 @@ class MCPToolManager:
             # 重排（针对返回列表的检索工具）
             reranked = False
             diagnostics = {"rerank_status": "disabled"}
-            if rerank_top_k > 0 and tool.supports_rerank and isinstance(data, list):
+            if rerank_top_k > 0 and tool.supports_rerank:
                 query = params.get("query", "")
                 diagnostics["candidates"] = data
                 data = await self._rerank(query, data, rerank_top_k, diagnostics)
@@ -364,7 +363,7 @@ class MCPToolManager:
         ]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
-        # 3. 合并去重：优先稳定 chunk_id，其次规范化内容哈希（修复旧 repr 去重误判）。
+        # 3. 合并去重：优先稳定 chunk_id，其次规范化内容（修复旧 repr 去重误判）。
         merged = []
         degraded_errors = []
         for r in results:
@@ -449,9 +448,8 @@ class MCPToolManager:
 
     # ── 缓存 ──────────────────────────────────────────────────────────────────
 
-    def _cache_key(self, name: str, params: Dict, rerank_top_k: int = 0) -> str:
-        payload = {"params": params, "rerank_top_k": rerank_top_k}
-        return f"{name}:{hashlib.md5(json.dumps(payload, sort_keys=True).encode()).hexdigest()}"
+    def _cache_key(self, name: str, params: Dict, rerank_top_k: int = 0) -> tuple:
+        return name, freeze_cache_key(params), rerank_top_k
 
     def _get_cache(self, name: str, params: Dict, rerank_top_k: int = 0) -> Optional[Tuple[Any, bool]]:
         key = self._cache_key(name, params, rerank_top_k)
@@ -460,9 +458,9 @@ class MCPToolManager:
         except Exception as ex:
             logger.warning(f"缓存读取失败，继续执行工具: {ex}")
             return None
-        if not isinstance(cached, dict) or "data" not in cached:
+        if cached is None:
             return None
-        return cached["data"], bool(cached.get("reranked", False))
+        return cached["data"], cached["reranked"]
 
     def _set_cache(
         self,

@@ -3,19 +3,29 @@
 from __future__ import annotations
 
 import json
+from hashlib import sha256
 import time
 from collections import OrderedDict
 from threading import RLock
-from typing import Any, Callable, Dict, Optional, Protocol
+from typing import Any, Callable, Dict, Hashable, Optional, Protocol
+
+
+def freeze_cache_key(value: Any) -> Hashable:
+    """Represent JSON parameters as immutable values without serialization."""
+    if isinstance(value, dict):
+        return "object", tuple((key, freeze_cache_key(item)) for key, item in sorted(value.items()))
+    if isinstance(value, list):
+        return "array", tuple(freeze_cache_key(item) for item in value)
+    return type(value).__name__, value
 
 
 class CacheStore(Protocol):
     def get_generation(self, namespace: str) -> int: ...
 
-    def get(self, namespace: str, key: str) -> Optional[Any]: ...
+    def get(self, namespace: str, key: Hashable) -> Optional[Any]: ...
 
     def set(
-        self, namespace: str, key: str, value: Any, ttl: float,
+        self, namespace: str, key: Hashable, value: Any, ttl: float,
         *, generation: Optional[int] = None,
     ) -> None: ...
 
@@ -28,19 +38,19 @@ class InMemoryCacheStore:
     def __init__(self, max_entries: int = 5000, clock: Callable[[], float] = time.monotonic):
         self.max_entries = max(1, int(max_entries))
         self._clock = clock
-        self._items: "OrderedDict[str, tuple[Any, float]]" = OrderedDict()
+        self._items: "OrderedDict[tuple, tuple[Any, float]]" = OrderedDict()
         self._generations: Dict[str, int] = {}
         self._lock = RLock()
 
-    def _full_key(self, namespace: str, key: str) -> str:
+    def _full_key(self, namespace: str, key: Hashable) -> tuple:
         generation = self._generations.get(namespace, 0)
-        return f"{namespace}:{generation}:{key}"
+        return namespace, generation, key
 
     def get_generation(self, namespace: str) -> int:
         with self._lock:
             return self._generations.get(namespace, 0)
 
-    def get(self, namespace: str, key: str) -> Optional[Any]:
+    def get(self, namespace: str, key: Hashable) -> Optional[Any]:
         with self._lock:
             full_key = self._full_key(namespace, key)
             item = self._items.get(full_key)
@@ -54,7 +64,7 @@ class InMemoryCacheStore:
             return value
 
     def set(
-        self, namespace: str, key: str, value: Any, ttl: float,
+        self, namespace: str, key: Hashable, value: Any, ttl: float,
         *, generation: Optional[int] = None,
     ) -> None:
         if ttl <= 0:
@@ -71,8 +81,7 @@ class InMemoryCacheStore:
     def invalidate_namespace(self, namespace: str) -> int:
         with self._lock:
             self._generations[namespace] = self._generations.get(namespace, 0) + 1
-            prefix = f"{namespace}:"
-            stale = [key for key in self._items if key.startswith(prefix)]
+            stale = [key for key in self._items if key[0] == namespace]
             for key in stale:
                 self._items.pop(key, None)
             return self._generations[namespace]
@@ -106,10 +115,12 @@ class RedisCacheStore:
         raw = self.client.get(self._generation_key(namespace))
         return int(raw or 0)
 
-    def _key(self, namespace: str, key: str, generation: int) -> str:
+    def _key(self, namespace: str, key: Hashable, generation: int) -> str:
+        if not isinstance(key, str):
+            key = sha256(json.dumps(key, ensure_ascii=True, separators=(",", ":")).encode()).hexdigest()
         return f"{self.prefix}:{namespace}:{generation}:{key}"
 
-    def get(self, namespace: str, key: str) -> Optional[Any]:
+    def get(self, namespace: str, key: Hashable) -> Optional[Any]:
         raw = self.client.get(self._key(namespace, key, self.get_generation(namespace)))
         if raw is None:
             return None
@@ -119,7 +130,7 @@ class RedisCacheStore:
             return None
 
     def set(
-        self, namespace: str, key: str, value: Any, ttl: float,
+        self, namespace: str, key: Hashable, value: Any, ttl: float,
         *, generation: Optional[int] = None,
     ) -> None:
         if ttl <= 0:

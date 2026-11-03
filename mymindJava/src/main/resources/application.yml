@@ -49,8 +49,6 @@ springdoc:
     path: /v3/api-docs
 
 mymind:
-  llm:
-    fallback-enabled: ${LLM_FALLBACK_ENABLED:true}
   memory:
     ttl-seconds: ${MEMORY_TTL_SECONDS:86400}
     working-max: ${MEMORY_WORKING_MAX:20}

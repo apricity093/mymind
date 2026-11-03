@@ -1,4 +1,6 @@
-# mymind（Python 主版本）
+# MyMind Python 算法与 Agentic RL 引擎
+
+Python 端承担 AI Native 算法研发、SFT/GRPO 训练、Customer Policy 推理与混合检索实验；`api.main` 提供应用验证入口。Java 端承担面向生产的接入治理、角色编排与监控，当前独立运行。双端职责和接入边界见[系统架构设计](../CONTEXT.md)。
 
 mymind 是面向客服场景的多 Agent 智能客服系统。本目录为 Python / FastAPI 主版本实现，承担细粒度意图识别、多 Agent 路由、RAG 检索、三级记忆、在线监控与实验评测。
 
@@ -48,7 +50,7 @@ mymind/
 │   └── skill_loader.py                # Skill 热加载器
 ├── data/                              # 数据目录
 │   ├── demo_docs/                     # 示例知识文档
-│   ├── eval/                          # 评测语料、标注数据与构建脚本
+│   ├── eval/                          # 评测语料与标注数据；构建器在 benchmarks/scripts/
 │   └── chroma/                        # 运行时 ChromaDB 数据（Git 忽略）
 ├── docs/                              # 设计文档
 │   ├── agentic_rl_architecture.md     # 共享客服策略与训练架构
@@ -56,8 +58,9 @@ mymind/
 ├── evaluation/                        # 评测框架
 │   ├── evaluator.py                   # 端到端 Agent 评测
 │   └── retrieval_metrics.py           # RAG 检索指标与统计
+├── rl/                               # SFT、GRPO、评分与正式评测
+├── benchmarks/                       # 数据构建、离线评估与展示模板
 ├── experiments/                       # 可复现实验（说明见 experiments/README.md）
-│   ├── agentic_rl/                    # 教师示范、SFT、GRPO、评分与正式评测
 │   ├── intent_routing.py              # 主辅Agent路由回归与历史分类重放
 │   ├── qwen_application_acceptance.py # 当前应用检索与服务验收
 │   ├── offline.py                     # 离线 / 字符代理实验
@@ -83,7 +86,7 @@ mymind/
 │   ├── billing_support/               # 账单支持技能
 │   ├── general_customer_service/      # 通用客服技能
 │   └── technical_support/             # 技术支持技能
-├── tests/                             # pytest 测试（含 e2e_contract_server.py 契约测试）
+├── tests/                             # 五个业务域的离线 pytest 测试
 ├── wiki/                              # 使用、业务流程、技术讲解和 PNG / SVG 流程图
 ├── tools/                             # 预留工具目录（当前为空）
 ├── Dockerfile                         # 镜像构建
@@ -93,11 +96,10 @@ mymind/
 ├── requirements-local.txt             # 本地开发、运行与 CPU 检查依赖
 ├── requirements-agentic-rl.txt        # 服务器模型推理与训练依赖
 ├── requirements.txt / requirements-dev.txt
-├── .env.example / .env.example.env    # 环境变量样例（真实 .env 不入库）
-└── .gitignore
+└── .env.example                       # 环境变量样例；忽略规则由仓库根目录统一维护
 ```
 
-> 说明：这里的 `mymind/` 是项目根目录下的 Python 后端；根目录结构见[项目说明](../README.md#文件结构)。工作根目录 `data/agentic_rl/` 保存策略实验数据和标准，`agentic_runs/` 保存本地实验记录；这些资源单独保留，不随公开仓库提供。`.venv/`、`.idea/`、`.pytest_cache/`、`__pycache__/` 等运行环境、IDE 与缓存目录未在上图中列出。
+> 说明：这里的 `mymind/` 是项目根目录下的 Python 后端；根目录结构见[项目说明](../README.md#系统组成)。工作根目录 `data/agentic_rl/` 保存策略实验数据和标准，`agentic_runs/` 保存本地实验记录；这些资源单独保留，不随公开仓库提供。`.venv/`、`.idea/`、`.pytest_cache/`、`__pycache__/` 等运行环境、IDE 与缓存目录未在上图中列出。
 
 ## 目录职责速览
 
@@ -171,6 +173,8 @@ TRACE_MAX_ENTRIES=200
 生产环境使用 Redis 键 `mymind:trace:tool:{request_id}` 和 Sorted Set `mymind:trace:recent`；默认 TTL 为 24 小时、最近列表最多 200 条。密码、Token、验证码、密钥和支付凭证不会写入 Trace。
 
 ## 验证
+
+`tests/` 按意图路由、RAG 管线、Agent 编排、记忆与缓存、RL 核心组织为五个测试文件。HTTP 接口使用进程内 TestClient/ASGITransport，模型调用使用轻量替身或 MockTransport；不启动契约服务器，不依赖历史实验结果 JSON。协议和判分用例使用随代码提供的小型开发资源。该套件不覆盖真实模型、GPU 训练或外部服务性能。
 
 ```powershell
 D:\anaconda3\envs\agentic_rl\python.exe -m pytest -q

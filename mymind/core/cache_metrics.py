@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from threading import Lock
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Hashable, Optional
 
 try:
     from prometheus_client import Counter
@@ -150,7 +150,7 @@ class ObservedCacheStore:
             self.metrics.record_application(namespace, "error")
             raise
 
-    def get(self, namespace: str, key: str) -> Any:
+    def get(self, namespace: str, key: Hashable) -> Any:
         try:
             value = self.store.get(namespace, key)
         except Exception:
@@ -160,7 +160,7 @@ class ObservedCacheStore:
         return value
 
     def set(
-        self, namespace: str, key: str, value: Any, ttl: float,
+        self, namespace: str, key: Hashable, value: Any, ttl: float,
         *, generation: Optional[int] = None,
     ) -> None:
         try:

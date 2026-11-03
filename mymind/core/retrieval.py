@@ -238,7 +238,7 @@ def stable_chunk_id(source_id: str, section_path: str, chunk_index: int) -> str:
 def normalize_content_key(text: str) -> str:
     """按规范化内容去重：忽略空白差异，避免同一内容被重复注入。"""
     normalized = re.sub(r"\s+", "", text or "").casefold()
-    return hashlib.sha1(normalized.encode("utf-8")).hexdigest()
+    return normalized
 
 
 # ── 切块 ──────────────────────────────────────────────────────────────────────
@@ -607,13 +607,13 @@ def item_key(item: Dict[str, Any]) -> str:
 
 
 def dedupe_items(items: Iterable[Dict[str, Any]], mode: str = "chunk_id") -> List[Dict[str, Any]]:
-    """正确去重：优先 chunk_id，其次规范化内容哈希；保留最高分先出现的位置。"""
+    """正确去重：优先 chunk_id，其次规范化内容；保留最高分先出现的位置。"""
     selected: List[Dict[str, Any]] = []
     seen: set = set()
     for item in items:
         if mode == "legacy_repr":
             # R0 回放：与旧实现一致，按整条 dict 的字符串表示去重。
-            key = hashlib.md5(str(item).encode("utf-8")).hexdigest()
+            key = str(item)
         elif mode == "chunk_id":
             key = item_key(item)
         else:
@@ -782,7 +782,7 @@ class RetrievalPipeline:
             stats.vector_calls += 1
             if isinstance(result, BaseException):
                 continue
-            ranked.extend(result if isinstance(result, list) else [])
+            ranked.extend(result)
         stats.vector_latency_ms += (time.perf_counter() - phase_started) * 1000
         return ranked
 

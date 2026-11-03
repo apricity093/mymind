@@ -1,4 +1,6 @@
-import json
+"""仅实现测试所需的 Redis、集合及模型客户端接口。"""
+from core.embedding import EmbeddingError, EmbeddingTelemetry
+from unittest.mock import AsyncMock
 from types import SimpleNamespace
 
 
@@ -19,11 +21,6 @@ class FakeRedis:
 
     async def setex(self, key, ttl, value):
         self.values[key] = str(value)
-
-    async def incr(self, key):
-        value = int(self.values.get(key, 0)) + 1
-        self.values[key] = str(value)
-        return value
 
     async def delete(self, key):
         self.values.pop(key, None)
@@ -101,17 +98,29 @@ class FakeChroma:
         return self.collections.setdefault(name, FakeCollection())
 
 
-class FakeMessages:
-    def __init__(self, outputs):
-        self.outputs = list(outputs)
+def fake_llm(outputs=()):
+    responses = [SimpleNamespace(content=[{"type": "text", "text": text}], usage=SimpleNamespace())
+                 for text in outputs]
+    return SimpleNamespace(messages=SimpleNamespace(create=AsyncMock(side_effect=responses)))
+
+
+class StubEmbedding:
+    INPUT_LIMIT = 2048
+
+    def __init__(self, enabled=True):
+        self.enabled = enabled
+        self.settings = SimpleNamespace(model="gemini-embedding-001" if enabled else "", dimensions=4)
+        self.telemetry = EmbeddingTelemetry()
+        self.identity = "test:4"
+        self.counting_mode = "test_characters"
         self.calls = []
+        self.fail = False
 
-    async def create(self, **kwargs):
-        self.calls.append(kwargs)
-        output = self.outputs.pop(0) if self.outputs else "summary"
-        return SimpleNamespace(content=[{"type": "text", "text": output}], usage=SimpleNamespace())
+    def count_tokens(self, text):
+        return len(text)
 
-
-class FakeLlm:
-    def __init__(self, outputs):
-        self.messages = FakeMessages(outputs)
+    def embed(self, texts, task, titles=None):
+        self.calls.append((list(texts), task, titles))
+        if self.fail:
+            raise EmbeddingError("HTTP_503")
+        return [[1.0, 0.0, 0.0, 0.0] for _ in texts]

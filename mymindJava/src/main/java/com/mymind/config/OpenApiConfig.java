@@ -16,9 +16,9 @@ public class OpenApiConfig {
     public OpenAPI mymindOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("mymind Java API")
+                        .title("MyMind Java Gateway API")
                         .version("0.1.0")
-                        .description("mymind Java 智能客服系统接口文档，支持在线调试 /chat、/search、知识库、监控和评测接口。")
+                        .description("Java 网关与多角色编排接口：知识工具熔断、应用监控和 Spring AI 模型调用。当前独立运行，未代理 Python Customer Policy 服务。")
                         .license(new License().name("Internal Project")))
                 .servers(List.of(
                         new Server().url("http://localhost:8080").description("Local Java App"),

@@ -1,10 +1,89 @@
-# MyMind 客服任务与证据决策
+# MyMind 系统架构设计文档
 
-本词汇表描述客服任务中证据获取与处置的含义。
+MyMind 以客服政策中的检索与终止决策为研究主线，以 Python 算法引擎和 Java 网关编排展示工程实现。系统使用合成案例与个人环境演示，业务规则不代表外部平台政策。
 
-系统模块与接口见[架构说明](mymind/docs/agentic_rl_architecture.md)，本文说明领域术语。
+## 职责与部署边界
 
-## Language
+| 组件 | 职责 | 当前实现 |
+| --- | --- | --- |
+| Python 算法引擎 | AI Native 算法开发、SFT/GRPO 训练、Customer Policy 推理、混合检索与意图融合实验 | `rl/`、`agents/customer_policy/`、`core/`、`experiments/` |
+| Python 应用接口 | 为算法提供可交互的应用验证入口 | `api.main` 的 `/chat`、知识库与诊断接口，默认 8000 |
+| Python 策略服务 | 加载所选模型与 LoRA，执行给定角色的单策略任务 | `api.policy_app` 的 `/requests`、`/status`，独立启动 |
+| Java 网关与编排层 | 面向高并发生产场景的接入治理、多角色编排与企业监控 | Spring Boot + Spring AI、知识工具熔断、Nginx 限流、Actuator/Micrometer |
+| Vue 控制台 | 同一页面调试两端的应用 HTTP 契约 | `src/lib/backends.js` 负责请求字段适配与响应归一化，默认 5173 |
+
+Python 与 Java 当前是可独立运行的两个应用后端。Java 通过 Spring AI 调用配置的模型供应商，尚未调用 Python 策略服务；前端切换的是两端 `/chat`，不切换 Base/SFT/RL checkpoint。生产级与高并发是 Java 层的设计定位，现有实现尚无生产部署或容量压测验收。
+
+```mermaid
+flowchart TB
+    UI[Vue 控制台] --> A[backends.js 契约适配]
+    A --> P[Python /chat 应用验证]
+    A --> N[Nginx 限流入口]
+    N --> J[Java /chat 网关与编排]
+    P --> PR[意图融合 / Agent 工具循环 / 混合 RAG]
+    J --> JR[角色编排 / 知识工具 / 回答校验]
+    JR --> AI[Spring AI 模型调用]
+    J --> M[Actuator / Micrometer / Prometheus]
+    D[教师示范] --> S[SFT]
+    S --> G[GRPO 工具交互训练]
+    G --> E[验证选模与固定测试集评估]
+    E --> PS[Python Customer Policy 独立推理]
+```
+
+开发时控制台也可直连 Java 8080；只有经过所配置的 Nginx 入口才受到其限流规则约束。
+
+## 算法训练与推理闭环
+
+`rl/teacher.py` 采集教师轨迹，`sft_data.py` 转换模型输入并构造 assistant-only 监督；system、用户、工具观察与 padding 不参与直接 loss。`sft.py` 完成 LoRA SFT，`grpo.py` 在同一任务的多条轨迹上计算奖励与优势。正式配置采用四轨迹分组、DAPO 有效模型 token 归一化、不按组标准差缩放优势、β=0。
+
+运行时共用 `agents/customer_policy/` 的协议、检索环境与任务执行器。输入包含给定账单或技术角色、用户描述和公开材料；策略选择检索或输出结构化终止处置。私有评分标准只在评分侧读取，模型可见证据来自实际工具返回。
+
+`api.policy_app` 启动时复用生成器和检索器，请求创建独立轨迹；同步生成移出事件循环，完整任务仍串行执行。此链路训练检索与终止策略，没有训练主辅 Agent 路由。模块细节及启动配置见[策略架构与运行](mymind/docs/agentic_rl_architecture.md)、[训练评测说明](mymind/rl/README.md)。
+
+## 应用编排与检索
+
+### Python 算法验证链路
+
+`api.main` 读取记忆，经 LLM、embedding、关键词三路意图融合后形成主辅路由；`ContextBuilder` 控制上下文长度，角色 Agent 按需调用 `search_knowledge_base`。工具管理器负责查询改写、并行召回、去重、融合与重排，并返回检索状态和请求级工具轨迹。
+
+当前知识库使用 Qwen 主向量索引、MiniLM 备用索引及 BM25；主索引故障时可返回实际备用正文，降级状态随结果记录。导入更新触发缓存失效，旧查询不能重新写入失效前的数据。Redis 保存工作记忆，Chroma 保存情景记忆、画像与知识索引；请求缓存、应用缓存和供应商 Prompt Cache 分别统计。
+
+### Java 网关编排链路
+
+`mymindController` 完成 DTO 校验、记忆读取和知识预取，再交由 `AgentOrchestrator` 分配 General、Technical、Billing 等角色；复合问题通过 `CompletableFuture` 并行处理，`AnswerVerifier` 检查生成回复，随后写回记忆。Java 使用自己的本地 BM25 + 字符 hash vector 检索与 LLM 重排，知识和长期记忆持久化为 JSON；不共享 Python 的 Chroma 索引或模型权重。
+
+| 治理能力 | 实现边界 |
+| --- | --- |
+| 工具熔断 | `tool/CircuitBreaker` 的 CLOSED / OPEN / HALF_OPEN 状态，知识工具连续失败后暂时拒绝执行 |
+| 接入限流 | `config/nginx/nginx.conf` 按客户端 IP 配置 10 请求/秒、burst 20 和连接限制；不是 CircuitBreaker 的职责 |
+| 并行编排 | Agent 与检索子任务使用 CompletableFuture；当前使用默认线程执行资源 |
+| 监控反馈 | `PerformanceMonitor` 采集成功率、延迟和路由惩罚，Actuator/Micrometer 暴露 Prometheus 指标 |
+
+回答校验、熔断和规则路由属于应用工程贡献，不计为 SFT/RL 收益。两端检索和编排策略不同，公共 HTTP 契约不意味着模型行为或召回质量等价。
+
+## 前端契约
+
+差异集中在 `mymindFrontend/src/lib/backends.js`；页面消费统一的 camelCase 对象，原始响应保留在 `raw` 中。Java 的 Jackson 配置为 SNAKE_CASE。
+
+| 操作 | Python 线格式 | Java 线格式 | 页面契约 |
+| --- | --- | --- | --- |
+| POST /chat | message、user_id、conv_id | message、user_id、conversation_id | message、userId、conversationId |
+| 聊天响应 | conv_id、agent_type、latency_ms | conversation_id、agent_type、latency_ms | conversationId、agentType、latencyMs |
+| POST /search | query、top_k 查询参数 | query、topK 查询参数 | query、topK |
+| 知识导入 | documents 数组 | documents 数组 | title、content |
+| 文件上传 | multipart 字段 file | multipart 字段 file | 同一上传方法 |
+| 健康与监控 | /health、/monitor、/knowledge/stats | 同名端点 | 通用状态区；完整监控结构保留后端差异 |
+
+Python 额外提供细粒度路由、工具轨迹与 RAG 状态；Java 返回 verified、grounded。缺少的诊断字段不构成等价能力证明。切换后端清空当前会话和聊天展示，避免把一个后端的会话当成另一个后端的上下文；正在发送消息时暂停切换。
+
+## 证据与限制
+
+固定合成 120 题上，Base/SFT120/RL40 的完整成功为 0/43/43，严重错误为 38/38/27，协议错误为 76/24/19。RL 新增 3 道成功并失去 3 道，完整成功率未提升。单 seed、有限题集不支持泛化或稳定收益结论；正式测试未观察到补检。
+
+公开仓库提供代码、小型开发资源、测试和结果摘要。正式数据、私有标准、训练轨迹、模型和索引单独保存。离线测试验证程序行为，不代替 GPU 训练、真实服务或高并发验收。
+
+## 领域语言
+
 
 **客服任务**：用户提出的一项需要解决的咨询或处置请求。它可以包含多个相关条件，完成任务可能需要多次获取证据。
 
@@ -55,6 +134,13 @@ _Avoid_：将其称为多轮用户对话或多 Agent 协作。
 
 **检索与终止策略**：根据用户请求和已获得的证据，选择查询、补充检索、回答或升级的决策方式。
 该策略也可以在必要信息缺失时请求补充信息，作为当前任务的终止处置。
+
+**观察驱动的检索决策**：依据实际获得的材料判断证据是否充分，并据此决定停止检索或继续查询，以及下一次查询的目标。
+_Avoid_：仅凭搜索次数增加，认定策略利用了工具反馈。
+
+**首检证据充分**：第一次检索返回的可见材料已覆盖当前业务判断所需的适用规则与依据，可以结合用户提供的信息形成结论。取得充分材料本身不等于已经正确完成任务。
+
+**观察依赖补检**：当前材料尚不足以支持完整结论，下一次查询所需的新线索在先前工具观察中才被揭示的补充检索。
 
 **请求补充信息**：明确指出继续处理所缺少的必要信息，并结束当前任务。当前实验不包括收到用户补充后继续对话。
 

@@ -36,7 +36,6 @@ public class KnowledgeToolManager {
     }
 
     public ToolResult<List<SearchResult>> searchWithRewrite(String query, int topK) {
-        validate(query, topK);
         if (!breaker.allow()) {
             return new ToolResult<>(true, fallback(query, "工具熔断中，请稍后重试"), "knowledge_search", "circuit open", false, 0, false);
         }
@@ -72,7 +71,6 @@ public class KnowledgeToolManager {
     }
 
     public ToolResult<List<SearchResult>> search(String query, int topK) {
-        validate(query, topK);
         String key = query + ":" + topK;
         CacheEntry cached = cache.get(key);
         if (cached != null && !cached.expired()) {
@@ -159,15 +157,6 @@ public class KnowledgeToolManager {
         } catch (Exception ignored) {
         }
         return results.stream().sorted(Comparator.comparingDouble(SearchResult::score).reversed()).limit(topK).toList();
-    }
-
-    private void validate(String query, int topK) {
-        if (query == null || query.isBlank()) {
-            throw new IllegalArgumentException("query 不能为空");
-        }
-        if (topK < 1 || topK > 50) {
-            throw new IllegalArgumentException("topK 必须在 1 到 50 之间");
-        }
     }
 
     private String truncate(String value, int max) {

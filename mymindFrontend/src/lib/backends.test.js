@@ -5,7 +5,8 @@ import {
   normalizeChatResponse,
   normalizeSearchResponse,
   normalizeSearchResults,
-  requestSearch
+  requestSearch,
+  requestChat
 } from './backends.js'
 
 test('normalizes rich Python diagnostics without changing legacy fields', () => {
@@ -27,8 +28,8 @@ test('normalizes rich Python diagnostics without changing legacy fields', () => 
 
 test('keeps Java legacy responses compatible when diagnostics are absent', () => {
   const result = normalizeChatResponse('java', {
-    conversationId: 'j1', response: 'ok', intent: 'billing', agentType: 'billing',
-    knowledgeUsed: false, verified: true, grounded: true
+    conversation_id: 'j1', response: 'ok', intent: 'billing', agent_type: 'billing',
+    knowledge_used: false, verified: true, grounded: true
   })
 
   assert.equal(result.primaryAgent, 'billing')
@@ -92,4 +93,30 @@ test('requestSearch sends top_k to Python and topK to Java', async () => {
 
   assert.ok(calls[0][0].includes('top_k=7'))
   assert.ok(calls[1][0].includes('topK=7'))
+})
+
+
+test('chat adapter preserves each backend wire contract and returns one page model', async (t) => {
+  const calls = []
+  t.mock.method(global, 'fetch', async (url, options) => {
+    calls.push({ url, payload: JSON.parse(options.body) })
+    const raw = url.includes('/python/')
+      ? { conv_id: 'p-next', request_id: 'trace-1', response: 'ok', agent_type: 'billing' }
+      : { conversation_id: 'j-next', response: 'ok', agent_type: 'billing', verified: true }
+    return { ok: true, text: async () => JSON.stringify(raw) }
+  })
+  const settings = { userId: 'u1', conversationId: 'existing', endpoints: {
+    python: 'http://test/python/', java: 'http://test/java/'
+  } }
+  const python = await requestChat('python', settings, '退款')
+  const java = await requestChat('java', settings, '退款')
+  assert.deepEqual(calls, [
+    { url: 'http://test/python/chat', payload: { message: '退款', user_id: 'u1', conv_id: 'existing' } },
+    { url: 'http://test/java/chat', payload: { message: '退款', user_id: 'u1', conversation_id: 'existing' } }
+  ])
+  assert.equal(python.conversationId, 'p-next')
+  assert.equal(java.conversationId, 'j-next')
+  assert.equal(python.requestId, 'trace-1')
+  assert.equal(java.verified, true)
+  assert.equal(python.agentType, java.agentType)
 })

@@ -1,3 +1,4 @@
+// 应用接口适配：Python /chat 与 Java /chat；Customer Policy /requests 独立运行。
 const ENV = import.meta.env || {}
 
 const DEFAULT_BACKENDS = {
@@ -143,6 +144,7 @@ export function normalizeChatResponse(type, raw) {
   const primaryAgent = raw.primary_agent || raw.primaryAgent || agentType
   return {
     backend: type,
+    requestId: raw.request_id || raw.requestId || '',
     conversationId: raw.conversation_id || raw.conversationId || raw.conv_id || '',
     response: raw.response || '',
     intent: raw.intent || 'other',

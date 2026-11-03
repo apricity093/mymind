@@ -1,10 +1,8 @@
-# mymind Java 版本说明
+# MyMind Java 网关与编排层
 
-mymind Java 是 Python 版 mymind 的 Java/Spring 技术栈重构版，目录位于：
+Java 端定位为面向高并发生产场景的企业网关与多角色编排层，基于 Spring Boot 与 Spring AI，负责应用接入、知识工具熔断、并行 Agent 编排和监控反馈。Nginx 承担入口限流，Actuator/Micrometer 暴露 Prometheus 指标。
 
-
-
-当前版本已经覆盖智能客服主链路：对话请求、Redis 工作记忆、知识库检索、多 Agent 路由、Spring AI 模型调用、回答校验、评测、监控、Swagger 文档和 Docker 部署。
+Python 端承担 SFT/GRPO、Customer Policy 推理、意图融合与混合检索实验。当前 Java 通过 Spring AI 独立调用模型供应商，没有调用 Python 策略服务，也不加载其 LoRA 权重。生产级是设计定位，尚未完成生产部署和高并发容量验收。双端调用链见[系统架构设计](../CONTEXT.md)。
 
 ## 技术栈
 
@@ -43,32 +41,20 @@ POST /chat
 - `src/main/java/com/mymind/agent/AgentOrchestrator.java`
 - `src/main/java/com/mymind/agent/AnswerVerifier.java`
 
-## Python 与 Java 版本对照
+## 双端分工
 
-| 能力 | Python 版本 | Java 版本 | 当前状态 |
-|------|-------------|-----------|----------|
-| Web 框架 | FastAPI | Spring Boot MVC | 已对齐 |
-| 模型调用 | Anthropic Async SDK | Spring AI ChatModel | 已对齐，调用栈不同 |
-| DeepSeek | 未内置 | Spring AI DeepSeek profile | Java 增强 |
-| Agent 类型 | General / Technical / Billing | General / Technical / Billing | 已对齐 |
-| Agent 路由 | 意图路由 + 性能路由 + 降级 | 意图路由 + 性能路由 + 降级 | 已对齐 |
-| 复合问题并行处理 | 支持 | 支持 | 已对齐 |
-| 意图识别 | LLM + embedding/hash + pattern | LLM + char n-gram semantic + pattern | 基本对齐 |
-| 工作记忆 | Redis | Redis | 已对齐 |
-| 情景记忆 | ChromaDB `episodic` collection | JSON 持久化 + 本地向量检索 | 功能对齐，存储不同 |
-| 用户画像 | ChromaDB `user_profile` collection | JSON 持久化 | 功能对齐，存储不同 |
-| 知识库 | ChromaDB `knowledge_base` collection | JSON 持久化 Hybrid RAG | 功能对齐，主检索实现不同 |
-| 查询改写 | LLM 改写 | LLM 改写 | 已对齐 |
-| 检索重排 | LLM rerank | LLM rerank，失败回退融合分 | 已对齐 |
-| 工具框架 | 通用 MCPToolManager | 专用 KnowledgeToolManager | 部分对齐 |
-| 熔断/缓存/超时/fallback | 支持 | 支持 | 已对齐到知识库工具 |
-| 评测 | Intent、Macro-F1、LLM Judge、baseline | Intent、Macro-F1、LLM Judge、baseline | 基本对齐 |
-| 监控 | Prometheus client、Webhook、Z-score | Actuator、Micrometer、Webhook、阈值告警 | 部分对齐 |
-| API 文档 | FastAPI `/docs` | Springdoc Swagger UI `/docs` | 已对齐 |
-| Docker | App、Redis、ChromaDB、Prometheus、Nginx | App、Redis、ChromaDB、Prometheus、Nginx | 已对齐 |
-| CLI | `api/main.py --cli` | 未实现 | Java 缺失 |
+| 能力 | Python 算法引擎 | Java 网关与编排 |
+| --- | --- | --- |
+| 策略训练与独立推理 | SFT、GRPO、证据评分、Customer Policy | 当前不承载训练，也未代理策略推理 |
+| 应用对话 | 细粒度意图融合、主辅 Agent 工具循环 | 记忆与知识预取、角色编排、回答校验 |
+| 检索 | Qwen/MiniLM 双索引、BM25、融合与重排 | 本地字符 hash vector、BM25、融合与重排 |
+| 状态存储 | Redis + Chroma | Redis + 本地 JSON |
+| 接入与监控 | FastAPI、Prometheus、诊断接口 | Spring MVC、Nginx 限流、工具熔断、Actuator/Micrometer |
+| 前端契约 | conv_id、top_k | conversation_id、topK；由前端适配 |
 
-## Java 版已补齐的能力
+`CircuitBreaker` 管理知识工具失败后的熔断与恢复；它不是请求限流器。Nginx 按客户端 IP 配置 10 请求/秒、burst 20 和连接限制。Agent 与检索并行调用使用 CompletableFuture 的默认执行资源，目前不宣称线程资源隔离或稳定吞吐能力。
+
+## 服务能力
 
 ### DeepSeek 兼容
 
@@ -81,13 +67,7 @@ DEEPSEEK_BASE_URL=https://api.deepseek.com
 DEEPSEEK_MODEL=deepseek-chat
 ```
 
-当前还做了启动容错：缺少真实 API Key 时使用 `mymind-local-placeholder` 避免 Spring AI 自动配置阶段直接失败。真实调用时如果没有配置真实 key，并且：
-
-```env
-LLM_FALLBACK_ENABLED=true
-```
-
-系统会返回本地降级回复。
+缺少真实 API Key 时，启动占位值仅用于完成 Spring AI 自动配置。真实调用缺少凭据、模型服务异常或响应缺少消息时直接抛出错误；网关不生成本地业务回复。
 
 Anthropic 配置：
 
@@ -125,7 +105,7 @@ EVAL_BASELINE_PATH=data/eval/baseline.json
 
 ### Hybrid RAG
 
-Python 版知识库主要通过 ChromaDB 做语义检索。
+Python 侧使用 Chroma 向量索引与 BM25 混合检索，另有主备索引恢复机制。
 
 Java 版当前检索链路：
 
@@ -145,7 +125,7 @@ Java 版当前检索链路：
   -> fallback 到融合分排序
 ```
 
-这比 Python 版多了 BM25 + vector 融合检索，但没有把 ChromaDB 作为主召回源。
+Java 的融合基于本地检索实现，没有把 ChromaDB 作为主召回源；其召回质量需独立评估。
 
 ### 评测和监控
 
@@ -168,96 +148,9 @@ Java 版已经实现：
 - `src/main/java/com/mymind/evaluation/LLMJudge.java`
 - `src/main/java/com/mymind/monitor/PerformanceMonitor.java`
 
-### Swagger / OpenAPI
+## 实现边界
 
-Python 版 FastAPI 默认提供 `/docs`。
-
-Java 版现在通过 Springdoc OpenAPI 提供同名入口：
-
-- Swagger UI：`http://localhost:8080/docs`
-- Nginx 代理：`http://localhost:8081/docs`
-- OpenAPI JSON：`http://localhost:8080/v3/api-docs`
-
-相关实现：
-
-- `pom.xml`
-- `src/main/resources/application.yml`
-- `src/main/java/com/mymind/config/OpenApiConfig.java`
-- `src/main/java/com/mymind/api/SwaggerDocsController.java`
-- `src/main/java/com/mymind/api/mymindController.java`
-
-`/docs` 页面会从 jsdelivr CDN 加载 Swagger UI 静态资源；如果部署在不能访问外网的环境，需要把 Swagger UI 静态资源放到项目本地。
-
-## 当前仍然不同的地方
-
-### 通用 MCPToolManager 未完整迁移
-
-Python 版 `MCPToolManager` 可以注册任意 Tool，并统一处理：
-
-- register / unregister
-- JSON Schema 参数校验
-- timeout
-- circuit breaker
-- TTL cache
-- fallback
-- rerank
-- 工具统计
-
-Java 版当前是专用 `KnowledgeToolManager`，只服务 `knowledge_search`，但已经具备查询改写、并行召回、缓存、超时、熔断、fallback、rerank 和统计。
-
-要完全对齐，可以继续新增：
-
-- `ToolDefinition`
-- `ToolRegistry`
-- `ToolExecutor`
-- JSON Schema validator
-
-### ChromaDB 不是 Java 版主检索源
-
-Java 版保留 ChromaDB 容器，并引入了 Spring AI Chroma VectorStore starter，但当前 profile 中排除了 Chroma VectorStore 自动配置，主检索仍然走本地 Hybrid RAG。
-
-原因：
-
-- DeepSeek Chat starter 不提供 EmbeddingModel。
-- 当前实现优先保证 DeepSeek / Anthropic 都能启动和运行。
-
-后续可增强为：
-
-```text
-ChromaDB VectorStore semantic search
-  + BM25 keyword recall
-  + RRF / weighted fusion
-  + LLM rerank
-```
-
-### CLI 模式未迁移
-
-Python 版支持：
-
-```bash
-python api/main.py --cli
-```
-
-Java 版当前没有 CLI。如果需要对齐，可以使用 Spring Shell 或 `CommandLineRunner` 实现。
-
-### 监控算法仍有差异
-
-Python 版监控包含 Z-score 异常检测。
-
-Java 版当前是：
-
-- 成功率阈值告警
-- 平均延迟阈值告警
-- Webhook
-- Micrometer 指标
-- 路由惩罚反馈
-
-可继续补：
-
-- Z-score 异常检测
-- 告警 resolved 状态
-- 请求 latency histogram
-- tool success rate gauge
+Java 使用专用 KnowledgeToolManager，不承担 Python 通用工具实验和训练模块。Chroma 自动配置在当前 profile 中被排除；主召回为本地 Hybrid RAG。监控采用成功率与延迟阈值、Webhook 和路由惩罚反馈。CLI、算法实验和策略训练保留在 Python 端。
 
 ## 主要接口
 

@@ -5,16 +5,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "mymind")
 public class mymindProperties {
 
-    private final Llm llm = new Llm();
     private final Memory memory = new Memory();
     private final Rag rag = new Rag();
     private final Storage storage = new Storage();
     private final Monitor monitor = new Monitor();
     private final Eval eval = new Eval();
-
-    public Llm getLlm() {
-        return llm;
-    }
 
     public Memory getMemory() {
         return memory;
@@ -34,18 +29,6 @@ public class mymindProperties {
 
     public Eval getEval() {
         return eval;
-    }
-
-    public static class Llm {
-        private boolean fallbackEnabled = true;
-
-        public boolean isFallbackEnabled() {
-            return fallbackEnabled;
-        }
-
-        public void setFallbackEnabled(boolean fallbackEnabled) {
-            this.fallbackEnabled = fallbackEnabled;
-        }
     }
 
     public static class Memory {

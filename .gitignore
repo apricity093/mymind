@@ -25,7 +25,8 @@ mobile.png
 /INTERVIEW.md
 /interview.html
 /agentic_plan.md
-/exports/showcase/interview.fragment.html
+/mymind-plan.md
+/scripts/stage_repo_refactor.ps1
 /mymind/docs/rag_optimization_experiment_plan.md
 /mymind/experiments/GEMINI_RAG_REPORT.md
 /mymind/experiments/INTENT_ROUTING_REPORT.md
@@ -36,25 +37,59 @@ mobile.png
 
 # Personal server operations and resource locations
 /mymind/api/POLICY_APP.md
-/exports/stage8-20261016/README.md
-/exports/stage8-20261016/selected-models.json
-/exports/stage8-20261016/dependencies.json
-/exports/stage8-20261016/run-agent.sh
 /scripts/sync_agentic.ps1
-/scripts/remote_check_pre_stage7_fixes.py
-/scripts/launch_stage7.sh
 /scripts/run_agentic.sh
-/scripts/stage6_setup.py
-/scripts/launch_stage*.sh
 /scripts/*_sync_files.txt
-/scripts/check_stage7_evaluation.sh
-/scripts/run_stage8_demo.py
-/scripts/run_stage8a_sequence.py
 
 # Local service credentials; keep configuration examples public
 .env
 .env.*
 !.env.example
-!.env.example.env
 service.env
 service.env.*
+
+# mymind
+/mymind/__pycache__/
+/mymind/*.egg-info/
+/mymind/dist/
+/mymind/build/
+/mymind/.venv/
+/mymind/venv/
+/mymind/data/*
+!/mymind/data/eval/
+!/mymind/data/demo_docs/
+/mymind/logs/
+/mymind/.idea/
+/mymind/.vscode/
+*.swp
+*.swo
+build-image*.sh
+*.sqlite3
+*~
+*.bak
+docker-compose(1).yml
+/mymind/artifacts/
+AGENTS.md
+
+# mymindJava
+/mymindJava/target/
+/mymindJava/.idea/
+/mymindJava/.vscode/
+/mymindJava/data/
+
+# mymindFrontend
+/mymindFrontend/node_modules/
+/mymindFrontend/dist/
+/mymindFrontend/.idea/
+/mymindFrontend/.vscode/
+
+# Generated archives, exports and local caches
+*.zip
+*.jar
+!/mymindJava/.mvn/wrapper/maven-wrapper.jar
+exports/
+output/
+*.fragment.html
+/cache/
+/mymind_agent.md
+/mymindJava/.mvn/apache-maven-*/

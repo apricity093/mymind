@@ -16,7 +16,6 @@ ChromaDB 在这里的角色：
   - 传入 variant 时使用独立、版本化的 collection，并从原始文档重建索引。
 """
 import asyncio
-import hashlib
 import json
 import logging
 from typing import Any, Dict, List, Optional

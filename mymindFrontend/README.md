@@ -1,10 +1,10 @@
 # mymind Frontend
 
-独立 Vue 前端项目，可同时连接 mymind Python 版本和 mymind Java 版本。
+Vue 应用控制台，统一调试 Python 算法应用接口与 Java 网关编排接口。前端不直接调用独立 Customer Policy 服务。
 
 ## 功能
 
-- 在页面中切换 Java / Python 后端。
+- 在页面中切换 Java / Python 后端；切换时清空当前会话与聊天展示，发送消息期间暂停切换。
 - 统一适配 `/chat` 响应字段：
   - Python：`conv_id`、`agent_type`、`latency_ms`
   - Java：`conversation_id`、`agent_type`、`latency_ms`
@@ -12,6 +12,8 @@
 - Python 回复可展开查看细粒度意图、实体、主/辅助 Agent、路由原因与 RAG 状态。
 - Java 缺少新增诊断字段时自动使用兼容默认值。
 - 支持 Docker + Nginx 部署。
+
+请求差异集中在 `src/lib/backends.js`：聊天发送 Python `conv_id` / Java `conversation_id`，搜索发送 Python `top_k` / Java `topK`；页面使用统一 camelCase 字段。Java 缺少的细粒度诊断不代表双方能力等价。
 
 ## 默认后端地址
 

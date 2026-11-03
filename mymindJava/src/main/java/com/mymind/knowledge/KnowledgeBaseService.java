@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -84,9 +85,6 @@ public class KnowledgeBaseService {
     }
 
     public List<SearchResult> search(String query, int topK) {
-        if (query == null || query.isBlank()) {
-            return List.of();
-        }
         Map<String, Double> bm25 = bm25Scores(query);
         Map<String, Double> vector = vectorScores(query);
         Map<String, Double> fused = new HashMap<>();
@@ -115,21 +113,7 @@ public class KnowledgeBaseService {
     }
 
     private List<TextSegment> split(String content) {
-        try {
-            return splitter.split(Document.from(content == null ? "" : content));
-        } catch (Exception ex) {
-            log.warn("LangChain4j splitter failed, using simple splitter: {}", ex.getMessage());
-            return simpleSplit(content);
-        }
-    }
-
-    private List<TextSegment> simpleSplit(String content) {
-        String text = content == null ? "" : content;
-        List<TextSegment> segments = new ArrayList<>();
-        for (int start = 0; start < text.length(); start += 500) {
-            segments.add(TextSegment.from(text.substring(start, Math.min(text.length(), start + 500))));
-        }
-        return segments;
+        return splitter.split(Document.from(content));
     }
 
     private void addToSpringAiVectorStore(KnowledgeDocument doc) {
@@ -285,8 +269,8 @@ public class KnowledgeBaseService {
                 sb.append(String.format("%02x", b));
             }
             return sb.toString();
-        } catch (Exception ex) {
-            return Integer.toHexString(value.hashCode());
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("MD5 is unavailable", ex);
         }
     }
 

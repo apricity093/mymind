@@ -23,6 +23,9 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -120,8 +123,8 @@ public class mymindController {
     @PostMapping("/search")
     @Operation(summary = "知识库检索", description = "对用户查询做查询改写、并行召回和 LLM rerank。")
     public Map<String, Object> search(
-            @Parameter(description = "检索关键词或用户问题", example = "退款多久能到账") @RequestParam String query,
-            @Parameter(description = "返回结果数量", example = "5") @RequestParam(defaultValue = "5") int topK) {
+            @Parameter(description = "检索关键词或用户问题", example = "退款多久能到账") @RequestParam @NotBlank String query,
+            @Parameter(description = "返回结果数量", example = "5") @RequestParam(defaultValue = "5") @Min(1) @Max(50) int topK) {
         ToolResult<List<SearchResult>> result = knowledgeToolManager.searchWithRewrite(query, topK);
         return Map.of("query", query, "results", result.data(), "reranked", result.reranked());
     }

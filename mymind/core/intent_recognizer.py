@@ -27,7 +27,7 @@ from anthropic import AsyncAnthropic
 
 from core.llm_utils import extract_text_content
 from core.llm_gateway import LLMGateway, LLMRequest
-from core.cache_store import CacheStore, InMemoryCacheStore
+from core.cache_store import CacheStore, InMemoryCacheStore, freeze_cache_key
 from core.embedding import TextEmbedding, build_embedding, EmbeddingError
 
 logger = logging.getLogger(__name__)
@@ -303,6 +303,7 @@ class IntentRecognizer:
                 raw = extract_text_content(resp.content)
             s, e = raw.find("{"), raw.rfind("}") + 1
             data = json.loads(raw[s:e])
+            data["confidence"] = float(data["confidence"])
             try:
                 data["intent"] = IntentCategory(data["intent"])
             except ValueError:
@@ -375,9 +376,9 @@ class IntentRecognizer:
     def _vote(self, llm: Dict, emb: Dict, pat: Dict) -> tuple[IntentCategory, float, Dict[str, float]]:
         """返回融合意图、最终置信度和各路原始置信度。"""
         source_scores = {
-            "llm": float(llm.get("confidence", 0.0) or 0.0),
-            "embedding": float(emb.get("confidence", 0.0) or 0.0),
-            "pattern": float(pat.get("confidence", 0.0) or 0.0),
+            "llm": llm["confidence"],
+            "embedding": emb["confidence"],
+            "pattern": pat["confidence"],
         }
         if llm.get("failed"):
             if not emb.get("failed") and emb.get("intent") != IntentCategory.OTHER and emb.get("confidence", 0.0) > 0:
@@ -393,8 +394,8 @@ class IntentRecognizer:
         scores: Dict[IntentCategory, float] = {}
         group_scores: Dict[IntentCategory, float] = {}
         for result, w in weights:
-            cat  = result.get("intent", IntentCategory.OTHER)
-            conf = result.get("confidence", 0.0)
+            cat  = result["intent"]
+            conf = result["confidence"]
             weighted_score = w * conf
             scores[cat] = scores.get(cat, 0.0) + weighted_score
             group = _INTENT_GROUPS.get(cat, cat)
@@ -532,24 +533,13 @@ class IntentRecognizer:
             return UrgencyLevel.MEDIUM
         return UrgencyLevel.LOW
 
-    def _cache_key(self, message: str, history: Optional[List[Dict[str, str]]] = None) -> str:
-        normalized_history = [
-            {
-                "role": self._clean_text(item.get("role", "")),
-                "content": self._clean_text(item.get("content", ""))[:500],
-            }
-            for item in (history or [])[-3:]
-        ]
-        payload = {
-            "message": " ".join(self._clean_text(message).casefold().split())[:1000],
-            "history": normalized_history,
-            "model": self.model,
-            "rules_version": "intent-gemini-v1",
-            "embedding": self.embedding.identity,
-            "threshold": self.threshold,
-            "template_revision": self._template_revision,
-        }
-        return hashlib.sha256(json.dumps(payload, ensure_ascii=True, sort_keys=True).encode()).hexdigest()
+    def _cache_key(self, message: str, history: Optional[List[Dict[str, str]]] = None) -> tuple:
+        return (
+            " ".join(message.casefold().split()),
+            tuple((item["role"], item["content"]) for item in (history or [])[-3:]),
+            self.model, "intent-gemini-v1", freeze_cache_key(self.embedding.identity),
+            self.threshold, self._template_revision,
+        )
 
     @staticmethod
     def _unique(values: List[str]) -> List[str]:

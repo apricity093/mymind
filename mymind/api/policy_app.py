@@ -90,7 +90,11 @@ async def lifespan(app):
             "requests_completed": app.state.requests_completed})
 
 
-app = FastAPI(title="MyMind 独立客服策略", lifespan=lifespan)
+app = FastAPI(
+    title="MyMind Customer Policy 推理引擎",
+    description="给定账单或技术角色，执行 SFT/RL 共享策略的检索与终止决策。",
+    lifespan=lifespan,
+)
 
 
 @app.get("/status")

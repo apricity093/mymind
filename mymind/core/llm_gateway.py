@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from hashlib import sha256
 import json
 import logging
 from typing import Any, Dict, List, Optional, Protocol
@@ -29,15 +28,11 @@ def _as_dict(value: Any) -> Dict[str, Any]:
     for method in ("model_dump", "to_dict"):
         fn = getattr(value, method, None)
         if callable(fn):
-            try:
-                result = fn()
-                if isinstance(result, dict):
-                    extra = getattr(value, "model_extra", None)
-                    if isinstance(extra, dict):
-                        result.update(extra)
-                    return result
-            except Exception:
-                pass
+            result = fn()
+            extra = getattr(value, "model_extra", None)
+            if extra:
+                result.update(extra)
+            return result
     return dict(getattr(value, "__dict__", {}) or {})
 
 
@@ -89,10 +84,6 @@ class LLMRequest:
     temperature: Optional[float] = None
     retry_incomplete: bool = True
 
-    @property
-    def stable_hash(self) -> str:
-        return sha256(self.stable_prompt.encode("utf-8")).hexdigest()[:16]
-
 
 @dataclass(frozen=True)
 class ToolCall:
@@ -131,7 +122,6 @@ class ProviderGateway:
             "provider": usage.provider,
             "model": request.model,
             "cache_identity": request.cache_identity,
-            "stable_prefix_hash": request.stable_hash,
             "stable_prefix_chars": len(request.stable_prompt),
             "dynamic_prompt_chars": len(request.dynamic_prompt),
             "cache_mode": request.cache_mode,

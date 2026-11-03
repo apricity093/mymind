@@ -13,3 +13,12 @@ def isolate_embedding_configuration(monkeypatch, tmp_path):
     """默认单元测试不调用本机配置的真实 embedding；配置契约测试可显式覆盖。"""
     monkeypatch.setenv("EMBEDDING_MODEL", "")
     monkeypatch.setenv("INTENT_TEMPLATE_CACHE_PATH", str(tmp_path / "intent_templates.json"))
+
+
+@pytest.fixture
+def policy_service(monkeypatch):
+    from api.policy_app import app
+    from starlette.datastructures import State
+
+    monkeypatch.setattr(app, "state", State())
+    return app
