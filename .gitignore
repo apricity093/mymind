@@ -11,6 +11,7 @@ __pycache__/
 desktop.png
 mobile.png
 /agentic_runs/
+/runs/
 
 # Local project documents
 /AGENTS.md
@@ -40,6 +41,8 @@ mobile.png
 /scripts/sync_agentic.ps1
 /scripts/run_agentic.sh
 /scripts/*_sync_files.txt
+/mymind/benchmarks/scripts/encode_three_branch_pilot.py
+/mymind/benchmarks/scripts/prepare_second_candidates.py
 
 # Local service credentials; keep configuration examples public
 .env

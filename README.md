@@ -20,6 +20,8 @@ Java 的高并发生产级定位目前体现为工程实现：知识工具熔断
 
 RL 新增 3 道成功、失去 3 道，完整成功率未提升；严重错误与协议错误减少。结论限于单 seed、固定合成政策和题集，不能外推稳定提升或泛化。两类错误可重叠，提前返回未检查项保持未知。详见[训练评测说明](mymind/rl/README.md)。
 
+2026-11-06完成另一组三分支小规模先导：23条教师成功任务按来源族划为train/validation/test=11/6/6。SFT训练9次更新，RL训练11组、44轨迹，选SFT9/RL8；最终各6题完整成功均0，严重错误均1，协议错误为2/2/3。该先导未观察到提升，不能与原120题直接比较；也不代表生产部署效果。
+
 ## 系统组成
 
 | 目录 | 职责与入口 |
@@ -46,6 +48,7 @@ RL 新增 3 道成功、失去 3 道，完整成功率未提升；严重错误�
 | 前端代理、适配与部署 | [控制台说明](mymindFrontend/README.md) |
 | 检索与路由实验 | [实验入口](mymind/experiments/README.md) |
 | 数据构建、分析和结果页生成 | [Benchmarks](mymind/benchmarks/README.md) |
+| 合成数据来源、划分、筛选偏差与失败实例 | [合成数据说明](mymind/docs/synthetic_data.md) |
 
 公开仓库提供实现、小型合成开发样例、配置模板、测试及结果摘要。正式数据、私有评分标准、原始轨迹、模型权重和索引单独保留，不具备直接重跑全部正式实验的完整资源。结果页可由 `python mymind/benchmarks/scripts/build_mymind_results.py` 生成至 `output/`，需要本地正式记录。
 
@@ -86,7 +89,7 @@ npm run dev
 python -m pytest -q
 ```
 
-五个测试域覆盖意图路由、RAG 管线、Agent 编排、记忆与缓存、RL 核心；测试使用进程内客户端与轻量替身，不读取历史实验结果 JSON。
+离线测试覆盖意图路由、RAG 管线、Agent 编排、记忆与缓存、RL 核心，使用进程内客户端与轻量替身；事实来源、证据契约与采集回归另需要本地保留的合成材料，缺少对应实验目录时明确跳过。
 
 前端在 `mymindFrontend/` 运行 `npm test` 和 `npm run build`；Java 在 `mymindJava/` 使用 JDK 21 运行 `./mvnw.cmd compile`。本地检查不代表真实模型效果、远程 GPU 或高并发压测通过。
 

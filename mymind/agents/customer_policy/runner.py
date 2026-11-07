@@ -50,10 +50,14 @@ def restore_progress(task, generation, environment, budget, state):
     return deepcopy(state["messages"]), generations, state["initial_tokens"]
 
 
-async def run_task(task, generation, environment, budget=None, on_progress=None, resume_state=None):
+async def run_task(task, generation, environment, budget=None, on_progress=None, resume_state=None, public_guidance=None):
     messages = environment.reset(task)
+    if public_guidance:
+        messages[0]['content'] += '\n' + public_guidance
     generations, result, error = [], None, None
-    initial_tokens = generation.token_count(messages) if budget else None
+    teacher_units = bool(budget and budget.get('length_unit') in {'utf8_token_upper_bound', 'retained-text-v1'})
+    count_input = generation.input_token_upper_bound if teacher_units else getattr(generation, 'token_count', None)
+    initial_tokens = count_input(messages) if budget else None
     if resume_state is not None:
         messages, generations, initial_tokens = restore_progress(task, generation, environment, budget, resume_state)
 
@@ -68,8 +72,9 @@ async def run_task(task, generation, environment, budget=None, on_progress=None,
     checkpoint()
 
     def remaining():
-        tokens = generation.token_count(messages)
-        return min(budget["completion_tokens"] - (tokens - initial_tokens),
+        tokens = count_input(messages)
+        output_used = sum(g['output_token_budget_used'] for g in generations) if teacher_units else tokens - initial_tokens
+        return min(budget["completion_tokens"] - output_used,
                    budget["context_tokens"] - tokens)
 
     for _ in range(len(generations), environment.max_searches + 1):
@@ -99,8 +104,18 @@ async def run_task(task, generation, environment, budget=None, on_progress=None,
             break
         generations.append({"input_messages": deepcopy(messages), "raw_text": generated.text,
                             "assistant_message": deepcopy(generated.assistant), **generated.diagnostics})
+        if teacher_units:
+            usage = (generated.diagnostics.get('raw_response') or {}).get('usage') or {}
+            used = usage.get('completion_tokens')
+            trusted = type(used) is int and 0 <= used <= options['max_new_tokens']
+            generations[-1].update(output_token_budget_used=used if trusted else options['max_new_tokens'],
+                output_token_budget_basis='provider_completion_tokens' if trusted else 'requested_output_cap_usage_missing')
         messages.append(generated.assistant)
         checkpoint()
+        choices = (generated.diagnostics.get('raw_response') or {}).get('choices') or []
+        if choices and choices[0].get('finish_reason') == 'length':
+            error = {'kind':'generation_truncated', 'detail':'供应商达到生成或上下文长度上限'}
+            break
         if not generated.calls:
             try:
                 result = parse_result(generated.text)

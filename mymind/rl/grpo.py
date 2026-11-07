@@ -245,6 +245,13 @@ def make_trainer_class():
     from trl.chat_template_utils import parse_response
 
     class PolicyGRPOTrainer(ResumeEvidence, GRPOTrainer):
+        def _get_train_sampler(self, dataset=None):
+            if self.run_config.get('dataset_mode') == 'three_branch_pilot':
+                from trl.trainer.utils import RepeatSampler
+                return RepeatSampler(dataset if dataset is not None else self.train_dataset,
+                    mini_repeat_count=4, batch_size=1, repeat_count=2, shuffle=False, seed=42)
+            return super()._get_train_sampler(dataset)
+
         def _tool_call_loop(self, *args):
             return policy_tool_call_loop(self, *args, parse_response=parse_response)
 
@@ -337,7 +344,7 @@ def make_trainer_class():
                             counts["resampled_groups"] += 1
                     write_json(self.evidence_output / f"fault-counts-rank{self.accelerator.process_index}.json", self.fault_counts)
 
-            result = complete_group(sample, record, max_attempts=2)
+            result = complete_group(sample, record, max_attempts=self.run_config.get('group_attempts', 2))
             if self.state.global_step < self.state.max_steps:
                 self.zero_signal_groups = 0 if self.group_evidence["nonzero_advantage"] else self.zero_signal_groups + 1
                 if (self.run_config.get("run_kind") == "formal"
@@ -415,14 +422,18 @@ def main():
     if config.get("run_purpose"):
         from rl.run_control import check_inputs
         check_inputs(root, config, tasks, standards, "grpo")
-    elif any(standards[t].split != "dev" for t in config["task_ids"]):
+    elif any(standards[t].split != ('train' if config.get('dataset_mode') == 'three_branch_pilot' else 'dev') for t in config["task_ids"]):
         raise ValueError("开发闭环只使用开发任务")
     gateway = rerank_gateway(config["retrieval"])
     rerank_http_requests = [0]
     async def on_rerank_request(request):
         rerank_http_requests[0] += 1
     gateway.client._client.event_hooks["request"].append(on_rerank_request)
-    retrieval = build_retrieval(root, config["retrieval"], gateway)
+    retrieval = build_retrieval(root, config["retrieval"], gateway,
+        prepared_only=config.get('dataset_mode') == 'three_branch_pilot')
+    if config.get('dataset_mode') == 'three_branch_pilot':
+        from rl.three_branch_pilot import attach_budget
+        attach_budget(root, config, output, gateway, retrieval)
     if retrieval.knowledge.stats()["pending_main"] or not retrieval.knowledge._main.count():
         raise RuntimeError("须复用完整 Qwen 实验索引")
     model, tokenizer = load_trainable_model(root, config)

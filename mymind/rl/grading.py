@@ -7,9 +7,21 @@ from dataclasses import asdict, dataclass, field
 
 from pydantic import ValidationError
 
-from agents.customer_policy.protocol import VisibleTrajectory, parse_result
+from agents.customer_policy.protocol import SCOPED_FACTS, VisibleTrajectory, parse_result
 from agents.customer_policy.vocabulary import REASON_FACT_CLAIMS
 from rl.tasks import PolicyClause, PrivateStandard
+
+
+GRADING_REVISION = "v17-policy-constant-equivalence"
+
+# 仅这两类规则常量允许与同对象的独立前提事实组合表达。
+POLICY_CONSTANT_RULES = {
+    'limit_workdays': ('payment_channel', {
+        'online_payment': (3, 'refund_online_limit'),
+        'bank_card': (5, 'refund_bank_limit')}),
+    'platform_enablement_required': ('required_capability', {
+        'basic_query': (False, 'capabilities'), 'export': (True, 'capabilities')}),
+}
 
 
 @dataclass
@@ -79,6 +91,34 @@ def _supported(expected, evidence, trajectory, standard, clauses):
         return any(needle in _compact(text) for text in texts) or needle in _compact("".join(texts))
 
     return all(any(visible(support) for support in group) for group in expected.supports)
+
+
+def _constant_supported(expected, item, facts, trajectory, standard, clauses):
+    """常量只引适用政策时，另验同对象前提；不继承其他结论的证据。"""
+    rule = POLICY_CONSTANT_RULES.get(item.get('type'))
+    if expected.section != 'facts' or rule is None:
+        return False
+    # 显式给出用户引用却引用错记录时，不能用组合表达兜底。
+    snippets = {s.reference_id for turn in trajectory.searches for s in turn.observation.snippets}
+    if not item['evidence'] or any(ref not in snippets for ref in item['evidence']):
+        return False
+    prerequisite, values = rule
+    for fact in facts:
+        if fact.target != item['target'] or fact.type != prerequisite:
+            continue
+        value = values.get(fact.value)
+        if value is None or item['value'] != value[0]:
+            continue
+        # 对应规则正文必须在本常量的引用中；相邻政策或另一渠道规则不替代。
+        policy = expected.model_copy(update={'supports': [[value[1]]]})
+        if not _supported(policy, item['evidence'], trajectory, standard, clauses):
+            continue
+        payload = _payload(fact.model_dump(exclude_none=True))
+        if any(e.section == 'facts' and any(_same_item(payload, a, e.required) for a in e.alternatives)
+               and _supported(e, fact.evidence, trajectory, standard, clauses)
+               for e in standard.expectations):
+            return True
+    return False
 
 
 def _fact_conflicts(item, expectations):
@@ -164,6 +204,12 @@ def _reason_conflicts(item, standard):
 
 
 def _unprovided_claim(item, standard):
+    components = standard.user_fact_components.get(item.get('target'), {}).get(item.get('type'))
+    value = item.get('value')
+    if components is not None and isinstance(value, dict):
+        return any(v is not None and v != 'unknown' and
+                   components.get(k, {}).get('state') not in {'known', 'derived'}
+                   for k, v in value.items())
     unprovided = standard.unprovided_user_facts
     fields = unprovided.get(item.get("target"))
     if fields is None:
@@ -174,9 +220,23 @@ def _unprovided_claim(item, standard):
     if item.get("type") not in fields:
         return False
     value = item.get("value")
+    if (item.get("type") in SCOPED_FACTS
+            and "status" in SCOPED_FACTS[item["type"]] and isinstance(value, dict)):
+        # 已知作用域不表示状态已知；作用域仍由事实冲突、协议与证据匹配核查。
+        return value.get("status") is not None and value["status"] != "unknown"
     if isinstance(value, dict):
         return any(v is not None and v != "unknown" for v in value.values())
     return value is not None and value != "unknown"
+
+
+def _component_conflicts(item, standard):
+    components = standard.user_fact_components.get(item.get('target'), {}).get(item.get('type'), {})
+    value = item.get('value')
+    if not isinstance(value, dict):
+        return False
+    return any(k in components and components[k]['state'] in {'known', 'derived'}
+               and v is not None and v != 'unknown' and v != components[k]['value']
+               for k, v in value.items())
 
 
 def _equivalent_fact(expected, supported_facts):
@@ -222,7 +282,8 @@ def grade_result(standard: PrivateStandard, raw_result, trajectory: VisibleTraje
                     if not isinstance(item, dict):
                         continue
                     payload = _payload(item)
-                    if section == "facts" and _fact_conflicts(payload, standard.expectations):
+                    if section == "facts" and (_fact_conflicts(payload, standard.expectations)
+                                               or _component_conflicts(payload, standard)):
                         severe.append(f"facts:{payload.get('target')}:{payload.get('type')}:与用户事实或适用规则矛盾")
                     if section == "facts" and _unprovided_claim(payload, standard):
                         severe.append(f"facts:{payload.get('target')}:{payload.get('type')}:将题面未提供的用户事实写成已确认")
@@ -241,6 +302,7 @@ def grade_result(standard: PrivateStandard, raw_result, trajectory: VisibleTraje
 
     matched = set()
     supported_facts = []
+    supported_diagnostics = []
     for section in ("reasons", "facts", "next_steps", "missing_info"):
         for submitted in getattr(result, section):
             item = submitted.model_dump(exclude_none=True)
@@ -250,16 +312,27 @@ def grade_result(standard: PrivateStandard, raw_result, trajectory: VisibleTraje
                                                                   for alt in expected.alternatives)]
             accepted = [i for i, expected in candidates if _supported(
                 expected, item["evidence"], trajectory, standard, clauses
-            )]
+            ) or (section == 'facts' and _constant_supported(
+                expected, item, result.facts, trajectory, standard, clauses))]
             if accepted:
                 matched.update(accepted)
                 if section == "facts":
                     supported_facts.append(payload)
+                elif section == "next_steps" and payload.get("code") == "record_diagnostics":
+                    supported_diagnostics.append(item)
             else:
                 errors.append(f"{section}:{payload}:" + ("引用不存在或正文不支持" if candidates
                                                         else "对象、值、范围或建议不符合任务"))
     # 只补足缺失字段的等价信息；已提交条目的值及独立引用仍按上面的核查结果处理。
     for i, expected in enumerate(standard.expectations):
+        if expected.section == "missing_info" and any(
+                alt.get('purpose') == 'handoff' and not alt.get('condition')
+                and any(item['target'] == alt['target']
+                        and alt['field'] in item['params']['fields']
+                        and _supported(expected, item['evidence'], trajectory, standard, clauses)
+                        for item in supported_diagnostics)
+                for alt in expected.alternatives):
+            matched.add(i)
         if expected.section != "facts":
             continue
         if any(_equivalent_fact(alt, supported_facts) for alt in expected.alternatives):

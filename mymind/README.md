@@ -1,194 +1,72 @@
-# MyMind Python 算法与 Agentic RL 引擎
+# MyMind Python 后端
 
-Python 端承担 AI Native 算法研发、SFT/GRPO 训练、Customer Policy 推理与混合检索实验；`api.main` 提供应用验证入口。Java 端承担面向生产的接入治理、角色编排与监控，当前独立运行。双端职责和接入边界见[系统架构设计](../CONTEXT.md)。
+本目录提供客服Agent、混合RAG、记忆与工具编排，以及独立的Customer Policy训练和推理。`api.main`的`/chat`与`api.policy_app`分别运行，训练策略尚未接入`/chat`。系统边界见[项目说明](../README.md)和[架构设计](../CONTEXT.md)。
 
-mymind 是面向客服场景的多 Agent 智能客服系统。本目录为 Python / FastAPI 主版本实现，承担细粒度意图识别、多 Agent 路由、RAG 检索、三级记忆、在线监控与实验评测。
+## 环境与启动
 
-当前 Qwen/MiniLM 双索引、检索与意图路由评测见[实验说明](experiments/README.md)。
+从仓库根目录创建本地环境：
 
-多 Agent 应用入口为 `api.main:app`；SFT120／RL40 的共享策略通过独立的 `api.policy_app:app` 推理，未接入 `/chat` 或训练主辅路由。接口实现见[策略服务](api/policy_app.py)。
-
-## 项目目录架构
-
-```text
-mymind/
-├── agents/                            # 多 Agent 路由、编排与共享客服策略
-│   ├── agent_orchestrator.py          # Profile、主/辅路由、工具循环、升级与 Composer
-│   ├── tools.py                       # 角色白名单工具、Schema 校验和 Trace 脱敏
-│   ├── trace_store.py                 # 内存 / Redis 请求级工具 Trace
-│   └── customer_policy/               # SFT/RL 共用的客服策略运行时
-│       ├── configuration.py           # 工作根目录与策略配置加载
-│       ├── protocol.py                # 动作、观察与终止输出协议
-│       ├── environment.py             # 工具交互环境与预算
-│       ├── generation.py              # 模型生成与 LoRA 推理
-│       ├── retrieval.py               # 原子检索与策略可见证据
-│       ├── rendering.py               # 最终客服正文渲染
-│       ├── runner.py                  # 单任务策略执行
-│       └── resources/                 # 随源码提供的客服知识
-├── api/                               # Web 服务入口
-│   ├── main.py                        # FastAPI 应用（/chat、/search、/knowledge/* 等）
-│   ├── policy_app.py                  # 所选 SFT/RL 策略的独立推理服务
-│   ├── configs/agent-dev.json         # 策略服务开发配置
-├── artifacts/                         # 实验产物（评测报告、Chroma 实验库、模型等，Git 忽略）
-│   └── experiments/
-├── config/                            # 部署与可观测性配置
-│   ├── alerts/                        # Prometheus 告警规则
-│   ├── grafana/                       # Grafana dashboards 与 provisioning
-│   ├── nginx/                         # nginx.conf 与 ssl/
-│   └── prometheus.yml                 # Prometheus 抓取配置
-├── core/                              # 核心业务组件
-│   ├── cache_metrics.py               # 应用 / Provider 级缓存指标
-│   ├── cache_store.py                 # 运行时与实验共享的缓存接口
-│   ├── intent_recognizer.py           # LLM / Qwen embedding / 关键词并行意图融合
-│   ├── knowledge_policy.py            # R0–R4 检索实验的确定性知识门控
-│   ├── llm_gateway.py                 # 多 Provider 统一 LLM 网关
-│   ├── llm_utils.py                   # LLM 响应处理工具
-│   ├── prompt_cache.py                # Anthropic prompt-cache 边界构造
-│   ├── retrieval.py                   # BM25 / RRF / 检索统计与实验基线
-│   ├── embedding.py                   # 独立 embedding API 与查询预算
-│   ├── document_chunking.py           # 结构解析、模型预算与递归切分
-│   └── skill_loader.py                # Skill 热加载器
-├── data/                              # 数据目录
-│   ├── demo_docs/                     # 示例知识文档
-│   ├── eval/                          # 评测语料与标注数据；构建器在 benchmarks/scripts/
-│   └── chroma/                        # 运行时 ChromaDB 数据（Git 忽略）
-├── docs/                              # 设计文档
-│   ├── agentic_rl_architecture.md     # 共享客服策略与训练架构
-│   └── adr/                           # 架构决策记录
-├── evaluation/                        # 评测框架
-│   ├── evaluator.py                   # 端到端 Agent 评测
-│   └── retrieval_metrics.py           # RAG 检索指标与统计
-├── rl/                               # SFT、GRPO、评分与正式评测
-├── benchmarks/                       # 数据构建、离线评估与展示模板
-├── experiments/                       # 可复现实验（说明见 experiments/README.md）
-│   ├── intent_routing.py              # 主辅Agent路由回归与历史分类重放
-│   ├── qwen_application_acceptance.py # 当前应用检索与服务验收
-│   ├── offline.py                     # 离线 / 字符代理实验
-│   ├── integration.py                 # 集成实验
-│   ├── real_model.py                  # 真实模型实验
-│   ├── rag_retrieval.py               # R0–R4 检索消融实验（离线确定性层）
-│   ├── rag_chroma.py                  # 真实 Chroma + all-MiniLM 检索实验
-│   ├── agent_migration.py             # 240 条数据的 E0–E5 确定性消融
-│   ├── agent_migration_real.py        # 有费用确认和硬预算的 DeepSeek 配对实验
-│   ├── reporting.py                   # 实验报告生成
-│   └── run_experiments.py             # 实验运行入口
-├── logs/                              # 运行日志（Git 忽略）
-├── mcp/                               # MCP 工具与知识库
-│   ├── knowledge_base.py              # 原生产切块与 R0–R4 实验基线
-│   ├── indexed_knowledge_base.py      # 生产双索引、原文状态与补齐
-│   └── tool_manager.py                # MCP 工具调用管理
-├── memory/                            # 多轮对话记忆
-│   ├── conversation_memory.py         # 三级记忆（工作记忆 / 情景记忆 / 用户画像）
-│   └── context_builder.py             # 上下文预算构建
-├── monitor/                           # 在线表现监控
-│   └── performance_monitor.py         # 性能与业务指标监控
-├── skills/                            # 可热加载技能定义（每个目录一个 SKILL.md）
-│   ├── billing_support/               # 账单支持技能
-│   ├── general_customer_service/      # 通用客服技能
-│   └── technical_support/             # 技术支持技能
-├── tests/                             # 五个业务域的离线 pytest 测试
-├── wiki/                              # 使用、业务流程、技术讲解和 PNG / SVG 流程图
-├── tools/                             # 预留工具目录（当前为空）
-├── Dockerfile                         # 镜像构建
-├── docker-compose.yml                 # 本地依赖编排（Redis、ChromaDB 等）
-├── build-image.sh / run-image.sh      # 镜像构建 / 运行脚本
-├── docker-deploy.sh                   # 部署脚本
-├── requirements-local.txt             # 本地开发、运行与 CPU 检查依赖
-├── requirements-agentic-rl.txt        # 服务器模型推理与训练依赖
-├── requirements.txt / requirements-dev.txt
-└── .env.example                       # 环境变量样例；忽略规则由仓库根目录统一维护
+```powershell
+conda env create -f environment-local.yml
+conda activate agentic_rl
+cd mymind
+Copy-Item .env.example .env
 ```
 
-> 说明：这里的 `mymind/` 是项目根目录下的 Python 后端；根目录结构见[项目说明](../README.md#系统组成)。工作根目录 `data/agentic_rl/` 保存策略实验数据和标准，`agentic_runs/` 保存本地实验记录；这些资源单独保留，不随公开仓库提供。`.venv/`、`.idea/`、`.pytest_cache/`、`__pycache__/` 等运行环境、IDE 与缓存目录未在上图中列出。
+首次创建`.env`后填写模型、Embedding及Redis配置；已有文件直接编辑，不覆盖。配置项及默认值见[环境模板](.env.example)。
 
-## 目录职责速览
+只启动依赖、在宿主机运行后端：
+
+```powershell
+docker compose up -d redis chromadb
+python -m uvicorn api.main:app --host 127.0.0.1 --port 8000
+```
+
+用Docker运行完整应用：
+
+```sh
+docker compose up -d --build
+docker compose logs -f mymind
+docker compose stop
+```
+
+单独构建镜像可执行`docker build --target production -t mymind:local .`。Compose读取`.env`；`.dockerignore`避免把真实环境文件和本地缓存打进镜像。
+
+## 两套依赖
+
+| 文件 | 环境 |
+| --- | --- |
+| [requirements.txt](requirements.txt) | 本地应用、离线分析与测试；Conda和Docker共用 |
+| [requirements-agentic-rl.txt](requirements-agentic-rl.txt) | 服务器CUDA、SFT/RL及独立策略服务 |
+
+两套环境分别安装，不叠加。服务器的OpenAI SDK和Chroma版本与本地不同。应用镜像采用统一依赖清单，也包含离线分析和测试包。整理清单不代表已安装或升级环境。
+
+## 模块与接口
 
 | 目录 | 职责 |
 | --- | --- |
-| `agents/` | 多 Agent 路由编排与共享客服策略运行时 |
-| `api/` | 多 Agent 应用及独立 SFT/RL 策略的 FastAPI 入口 |
-| `artifacts/` | 实验与评测产物（Git 忽略） |
-| `config/` | Prometheus、Grafana、Nginx 等部署配置 |
-| `core/` | 意图识别、LLM 网关、RAG、缓存、Skill 加载等核心能力 |
-| `data/` | 示例文档、评测数据与运行时 ChromaDB 数据 |
-| `docs/` | 策略训练架构与 ADR |
-| `evaluation/` | 端到端 Agent 评测与检索指标 |
-| `experiments/` | 缓存、记忆、RAG、多 Agent 与 SFT/GRPO 实验 |
-| `logs/` | 运行日志（Git 忽略） |
-| `mcp/` | 知识库与 MCP 工具调用 |
-| `memory/` | 多轮对话三级记忆与上下文构建 |
-| `monitor/` | Agent 在线表现与性能监控 |
-| `skills/` | 按业务域划分的可热加载技能 |
-| `tests/` | pytest 单元、集成与契约测试 |
-| `wiki/` | 当前 Python 实现的完整文档与流程图 |
-| `tools/` | 工具扩展预留目录 |
+| `api/` | 应用`/chat`、知识接口及独立策略`/requests`服务 |
+| `agents/` | 角色路由、工具循环、升级与回复组合 |
+| `agents/customer_policy/` | 训练与推理共用的协议、检索环境和执行器 |
+| `core/`、`mcp/` | 模型网关、Embedding、混合检索与缓存 |
+| `memory/`、`monitor/` | 会话记忆、上下文与监控 |
+| `rl/` | 原始教师轨迹、SFT、RL、评分和评测 |
+| `benchmarks/`、`experiments/` | 数据构造、离线分析和应用实验 |
+| `skills/`、`config/` | 业务技能与部署配置 |
+| `tests/` | 轻量替身测试及本地材料回归 |
 
-## Agent Profile、工具调用与人工升级
+应用默认使用工具式检索：模型主动调用知识工具，`/chat`不预先按意图检索。Profile、独立升级、Composer及Trace默认关闭，工具调用默认启用。Trace查询须同时开启采集与API开关；具体变量以环境模板为准。
 
-Python 主版本用请求级 Agent 运行时连接路由、Skills、记忆与工具式 RAG：
+接口交互见`http://127.0.0.1:8000/docs`。独立策略服务的模型、adapter、索引和工作根目录见[策略架构与运行](docs/agentic_rl_architecture.md)。
 
-- General、Technical、Billing 定义不同的 `AgentProfile` 和工具白名单；角色温度和 Token 上限在启用 Profile 时生效。
-- Anthropic、OpenAI 与 DeepSeek 的工具调用统一转换为 `ToolCall`，每个 Agent 最多续轮 3 次。
-- 未授权工具和不符合 JSON Schema 的参数只会产生脱敏 Trace，不会执行处理函数。
-- 启用独立升级节点时，`EscalationAgent` 确定性生成待人工处理摘要，不调用 LLM；默认由 GeneralAgent 接待升级请求并标记 `escalated`。
-- Composer 默认关闭，主辅结果按既有方式拼接；开启后由 `ResponseComposer` 合成，失败时保留成功结论。
-- `AgentCallResult` 在单次模型调用中保存工具名称、轨迹和用量，`Request` 保存请求内工具结果缓存。模型续轮失败和 GeneralAgent 回退后继续保留已发生的工具轨迹。
-- 监控降权达到阈值的专业实例退出选择；同类实例全部降权时移除该专业路由并记录 `monitor_fallback=[...]`，有健康实例时继续使用健康实例。
+## 检查与阅读
 
-角色默认参数为 General `0.3/900`、Technical `0.1/1200`、Billing `0.0/1100`、Composer `0.1/1000`（温度/最大输出 Token）。角色模型可由 `MYMIND_GENERAL_MODEL`、`MYMIND_TECHNICAL_MODEL`、`MYMIND_BILLING_MODEL`、`MYMIND_COMPOSER_MODEL` 覆盖；未配置时继续使用统一网关模型。
+仓库根目录运行`python -m pytest -q`。基础测试使用轻量替身，部分评分/采集回归需要本地保留材料；本地检查不代表真实服务、GPU或模型质量验收。
 
-## 功能开关与知识检索模式
+- [训练与评测](rl/README.md)
+- [数据与离线分析](benchmarks/README.md)
+- [检索与路由实验](experiments/README.md)
+- [完整使用指南](wiki/完整使用指南.md)
+- [业务流程](wiki/业务流程说明.md)
 
-```dotenv
-AGENT_PROFILE_ENABLED=false
-AGENT_TOOL_USE_ENABLED=true
-AGENT_ESCALATION_ENABLED=false
-AGENT_COMPOSER_ENABLED=false
-AGENT_TRACE_ENABLED=false
-TRACE_API_ENABLED=false
-KNOWLEDGE_TOOL_MODE=tool_only
-AGENT_MAX_TOOL_ROUNDS=3
-MYMIND_MONITOR_FALLBACK_PENALTY=0.5
-TRACE_TTL_SECONDS=86400
-TRACE_MAX_ENTRIES=200
-```
-
-`KNOWLEDGE_TOOL_MODE=tool_only` 是默认值，模型在工具循环中自主调用 `search_knowledge_base`；`disabled` 关闭知识工具。`/chat` 始终不按意图预检索。`MYMIND_MONITOR_FALLBACK_PENALTY` 优先于 `ECHOMIND_MONITOR_FALLBACK_PENALTY`，未配置时采用 `0.5`。
-
-工具调用与工具式 RAG 默认启用；Profile、独立升级、Composer、内部 Trace 与 Trace 查询保持默认关闭。历史 DeepSeek E0/E5 实验未通过质量、Judge 完整性和 Token 成本门槛；当前默认配置不等于完整 E5，也不代表真实模型质量门禁已经通过。
-
-## API 增量契约
-
-`POST /chat` 保留所有旧字段，并增加完整 UUID `request_id` 与去重后的 `tools_used`。完整工具参数和结果不会直接返回给聊天客户端。
-
-`knowledge_used` 表示实际进入检索工具处理。`knowledge_status` 区分 `used/empty/degraded/error/skipped`，多次检索按 `used → degraded → error → empty` 汇总；`knowledge_reason` 为 `agent_tool:<状态>` 或 `agent_did_not_search`。`knowledge_gate_accuracy` 评测实际工具调用。
-
-检索调用评测偏低时，建议核对用例预期、Agent 工具使用规则与工具配置。Anthropic 协议扩容重试成功后，用量包含首轮与重试响应返回的 Token；工具续轮用量在 Agent 层进一步聚合。
-
-- `GET /trace/tool/{request_id}`：返回单请求脱敏 Trace；过期或不存在时 `found=false`。
-- `GET /trace/tools?limit=20`：按时间倒序返回最近 Trace，`limit` 会限制到 1–100。
-- `TRACE_API_ENABLED=false` 时两个接口均返回 404。
-- 同时开启 `AGENT_TRACE_ENABLED=true` 才会保存 Trace；仅开放查询接口不会自动开始采集。
-
-生产环境使用 Redis 键 `mymind:trace:tool:{request_id}` 和 Sorted Set `mymind:trace:recent`；默认 TTL 为 24 小时、最近列表最多 200 条。密码、Token、验证码、密钥和支付凭证不会写入 Trace。
-
-## 验证
-
-`tests/` 按意图路由、RAG 管线、Agent 编排、记忆与缓存、RL 核心组织为五个测试文件。HTTP 接口使用进程内 TestClient/ASGITransport，模型调用使用轻量替身或 MockTransport；不启动契约服务器，不依赖历史实验结果 JSON。协议和判分用例使用随代码提供的小型开发资源。该套件不覆盖真实模型、GPU 训练或外部服务性能。
-
-```powershell
-D:\anaconda3\envs\agentic_rl\python.exe -m pytest -q
-D:\anaconda3\envs\agentic_rl\python.exe -m experiments.run_experiments --layer agent-migration
-```
-
-迁移正式评测集位于 `data/eval/agent_migration_dataset.json`：共 240 条，六类各 40 条，其中 60 条多轮、60 条对抗或缺失信息场景。原 EchoMind 的 11 条意图和 5 组对话保存在 `data/eval/echomind_smoke.json`，明确标记为 `formal_gate=false`，只用于 Smoke Test。
-
-2026-10-07 的程序同步回归为 `86 passed`，包含 E0–E5 离线门禁；API 契约和 Compose 配置检查通过。该结果基于假模型与内存组件，不替代真实服务或付费模型实验。
-
-## 文档入口
-
-- [完整使用指南](wiki/完整使用指南.md)：环境、HTTP/CLI、接口、知识库、记忆、监控与评测。
-- [业务流程说明](wiki/业务流程说明.md)：请求执行顺序与五张流程图。
-- [技术亮点](wiki/技术亮点.md)：设计动机、实现方式与能力边界。
-- [重点代码](wiki/重点代码.md)：当前源码中的关键数据结构和方法。
-- [学习文档](wiki/EchoMind学习文档.md)：从架构到模块的系统阅读路线。
+真实凭据、模型权重、索引和运行产物单独保存。真实模型调用、检索和训练可能产生费用，按项目授权规则执行。

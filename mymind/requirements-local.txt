@@ -1,5 +1,0 @@
-# Windows 本地后端、检索、离线实验与测试；GPU 训练使用服务器依赖清单。
--r requirements-dev.txt
-numpy==2.2.5              # 本地 RAG 实验的向量计算
-matplotlib==3.10.9        # 本地实验质量/成本图导出
-PyMuPDF==1.28.2           # 本地 PDF 字体与布局检查

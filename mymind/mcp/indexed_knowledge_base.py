@@ -48,7 +48,7 @@ class KnowledgeBase:
 
     def __init__(self, chroma_host="localhost", chroma_port=8000, chroma_path="./data/chroma",
                  embedding=None, client=None, backup_function=None, backup_counter=None,
-                 on_change=None, load_defaults=True, collection_prefix="knowledge"):
+                 on_change=None, load_defaults=True, collection_prefix="knowledge", prepared_only=False):
         self.embedding = embedding or build_embedding()
         self._main_space = "qwen" if self.embedding.settings.model == "qwen3.7-text-embedding-flash" else "gemini"
         self._failure_outcome = "provider_failed" if self._main_space == "qwen" else "google_failed"
@@ -61,15 +61,18 @@ class KnowledgeBase:
         self.query_budget_s = float(os.getenv("RAG_EMBEDDING_QUERY_BUDGET_S", "8"))
         if not 0 < self.query_budget_s <= 20:
             raise ValueError("主 embedding 查询预算须大于 0 且不超过 20 秒，工具保留至少 10 秒")
-        Path(chroma_path).mkdir(parents=True, exist_ok=True)
-        self._db = sqlite3.connect(str(Path(chroma_path) / f"{collection_prefix}_sources.sqlite3"),
-                                   check_same_thread=False)
+        database = Path(chroma_path) / f"{collection_prefix}_sources.sqlite3"
+        if not prepared_only:
+            Path(chroma_path).mkdir(parents=True, exist_ok=True)
+        self._db = sqlite3.connect(database.as_uri() + '?mode=ro' if prepared_only else str(database),
+                                   check_same_thread=False, uri=prepared_only)
         self._db.row_factory = sqlite3.Row
-        self._db.execute("""CREATE TABLE IF NOT EXISTS sources (
+        if not prepared_only:
+            self._db.execute("""CREATE TABLE IF NOT EXISTS sources (
             source_id TEXT PRIMARY KEY, title TEXT NOT NULL, content TEXT NOT NULL,
             format TEXT NOT NULL, main_ready INTEGER NOT NULL DEFAULT 0,
             backup_ready INTEGER NOT NULL DEFAULT 0, main_config TEXT NOT NULL DEFAULT '')""")
-        self._db.commit()
+            self._db.commit()
         if client is None:
             try:
                 client = chromadb.HttpClient(host=chroma_host, port=chroma_port,
@@ -79,7 +82,11 @@ class KnowledgeBase:
                 client = chromadb.PersistentClient(path=chroma_path,
                                                    settings=chromadb.Settings(anonymized_telemetry=False))
         self._client = client
-        if backup_function is None or backup_counter is None:
+        if prepared_only:
+            def unavailable_backup(texts):
+                raise RuntimeError("采集仅使用已准备的主索引；不加载备用模型")
+            backup_function, backup_counter = unavailable_backup, lambda text: len(text.encode('utf-8'))
+        elif backup_function is None or backup_counter is None:
             backup_function, backup_counter = prepare_minilm(os.getenv("RAG_ONNX_PATH") or None)
         self._backup_function = backup_function
         self._backup_chunker = BudgetChunker(backup_counter, self.BACKUP_BUDGET,
@@ -92,6 +99,19 @@ class KnowledgeBase:
         self._signature = json.dumps({"embedding": self.embedding.identity,
                                       "counting": self.embedding.counting_mode if self._main_space == "qwen" else "gemini_auto_v1",
                                       **self._main_chunker.config}, sort_keys=True)
+        if prepared_only:
+            if any(not row['main_ready'] or row['main_config'] != self._signature for row in self._rows()):
+                raise RuntimeError("主索引配置不匹配或未准备；停止，不重建")
+            main_name = 'qwen3_7_text_embedding_flash' if self._main_space == 'qwen' else 'gemini_001'
+            self._main = client.get_collection(name=f'{collection_prefix}_{main_name}_{self.embedding.settings.dimensions}_v1', embedding_function=None)
+            self._backup = None
+            self._bm25 = {'main': BM25Index(), 'backup': BM25Index()}
+            present = self._reload_bm25('main')
+            if {row['source_id'] for row in self._rows()} != present:
+                raise RuntimeError('主索引缺少来源切块；停止，不重建')
+            self._route, self.last_import = 'main', {}
+            self.prepared_only = True
+            return
         invalidated = self._db.execute("UPDATE sources SET main_ready=0 WHERE main_config != ?", (self._signature,)).rowcount
         self._db.commit()
         # 维度不同必须使用不同 collection；分块变更由原文状态要求显式补齐。
@@ -159,7 +179,7 @@ class KnowledgeBase:
         with self._lock:
             rows = self._rows()
             return {"documents": len(rows), "main_chunks": self._main.count(),
-                    "backup_chunks": self._backup.count(),
+                    "backup_chunks": self._backup.count() if self._backup is not None else 0,
                     "pending_main": sum(not r["main_ready"] for r in rows),
                     "pending_backup": sum(not r["backup_ready"] for r in rows),
                     "main_complete": bool(self._main_complete), "active_index": self._route,
@@ -351,6 +371,8 @@ class KnowledgeBase:
                     diagnostics["embedding_usage"] = usage
                 route = "main"
             except Exception as ex:
+                if getattr(self, 'prepared_only', False):
+                    raise
                 if diagnostics is not None:
                     diagnostics["embedding_error"] = self._reason(ex)
                 self.telemetry.record("query", identity, self._failure_outcome, self._reason(ex))

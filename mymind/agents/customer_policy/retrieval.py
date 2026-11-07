@@ -49,7 +49,7 @@ class PolicyRetrieval:
         return observation, diagnostics
 
 
-def build_retrieval(root, config, gateway):
+def build_retrieval(root, config, gateway, *, prepared_only=False):
     import chromadb
     from chromadb.config import Settings
     from core.embedding import build_embedding
@@ -64,7 +64,7 @@ def build_retrieval(root, config, gateway):
     client = chromadb.PersistentClient(path=str(directory / "chroma"),
                                       settings=Settings(anonymized_telemetry=False))
     knowledge = KnowledgeBase(chroma_path=str(directory), embedding=embedding, client=client,
-                              load_defaults=False, collection_prefix=config["collection_prefix"])
+                              load_defaults=False, collection_prefix=config["collection_prefix"], prepared_only=prepared_only)
     manager = MCPToolManager(api_key="unused", model=config["rerank_model"], gateway=gateway)
     manager.register(Tool(name="knowledge_search", description="原子客服政策检索",
         handler=knowledge.search_handler, schema={"type": "object", "required": ["query"],

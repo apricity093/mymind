@@ -52,16 +52,23 @@ class DeepSeekGeneration:
                                   timeout=config["timeout_s"], max_retries=config["retries"])
         self.config = config
 
-    async def generate(self, messages, tools_enabled=True):
+    def input_token_upper_bound(self, messages):
+        from agents.customer_policy.teacher_length import input_token_upper_bound, calibrated_input_estimate
+        if self.config.get('length_estimator') == 'retained-text-v1':
+            return calibrated_input_estimate(messages, TOOLS)
+        return input_token_upper_bound(messages, TOOLS)
+
+    async def generate(self, messages, tools_enabled=True, max_new_tokens=None):
         start = time.monotonic()
+        mode_options = ({'reasoning_effort': self.config['reasoning_effort']}
+                        if self.config['thinking'] == 'enabled' else
+                        {'temperature': self.config['temperature']})
         # 原始响应包含供应商工具历史及实际返回的模型名。
         response = await self.client.chat.completions.create(model=self.config["model"], messages=messages,
             tools=TOOLS if tools_enabled else None,
-            temperature=self.config["temperature"] if self.config["thinking"] == "disabled" else None,
             top_p=self.config["top_p"],
-            reasoning_effort=self.config.get("reasoning_effort") if self.config["thinking"] == "enabled" else None,
-            max_tokens=self.config["max_new_tokens"], response_format={"type": self.config["response_format"]},
-            extra_body={"thinking": {"type": self.config["thinking"]}})
+            max_tokens=max_new_tokens or self.config["max_new_tokens"], response_format={"type": self.config["response_format"]},
+            extra_body={"thinking": {"type": self.config["thinking"]}}, **mode_options)
         raw = response.model_dump()
         assistant = {"role": "assistant", **raw["choices"][0]["message"]}
         calls = assistant.get("tool_calls") or []

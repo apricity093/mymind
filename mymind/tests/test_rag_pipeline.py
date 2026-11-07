@@ -1380,3 +1380,19 @@ def test_cache_outage_fails_open_and_does_not_cache_fallbacks():
         assert manager.invalidate_cache() == -1
 
     asyncio.run(run())
+
+def test_prepared_collection_opens_without_models_or_index_writes(knowledge, tmp_path, monkeypatch):
+    kb, embedding, backup, changed = knowledge
+    kb.import_documents([{'source_id':'policy', 'title':'政策', 'content':'退款在审核通过后处理。', 'format':'md'}])
+    prefix=kb._backup.name.removesuffix('_minilm_v1')
+    db=tmp_path/f'{prefix}_sources.sqlite3'
+    before=db.read_bytes()
+    from mcp import indexed_knowledge_base as module
+    monkeypatch.setattr(module,'prepare_minilm',lambda *a,**k: pytest.fail('must not load or download a model'))
+    opened=KnowledgeBase(chroma_path=str(tmp_path),embedding=embedding,client=kb._client,
+                         collection_prefix=prefix,prepared_only=True)
+    assert opened.stats()['main_complete'] and opened.search('退款')
+    assert db.read_bytes()==before
+    embedding.fail=True
+    with pytest.raises(Exception): opened.search('退款')
+    opened.close()

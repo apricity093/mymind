@@ -674,3 +674,27 @@ def test_rerank_reports_success_skip_fallback_and_usage_per_call():
         assert result.diagnostics["rerank_status"] == "failed_fallback"
         assert "rerank_usage" not in result.diagnostics
     asyncio.run(run())
+
+
+@pytest.mark.parametrize("kind,payload", [
+    ("feature_enabled", {"project": "Alpha", "environment": "production", "status": "unknown"}),
+    ("outbound_ip_allowed", {"project": "Alpha", "outbound_ip": "203.0.113.10", "status": "unknown"}),
+    ("user_can_configure", {"project": "Alpha", "status": "unknown"}),
+])
+def test_unprovided_scoped_status_does_not_assert_known_scope(kind, payload):
+    from rl.grading import _unprovided_claim
+    standard = STANDARDS["P05"].model_copy(deep=True)
+    standard.unprovided_user_facts = {"Q1": [kind]}
+    item = {"target": "Q1", "type": kind, "value": payload}
+    assert not _unprovided_claim(item, standard)
+    for status in (True, False):
+        item["value"] = {**payload, "status": status}
+        assert _unprovided_claim(item, standard)
+
+
+def test_unprovided_request_scope_is_still_a_claim():
+    from rl.grading import _unprovided_claim
+    standard = STANDARDS["P05"].model_copy(deep=True)
+    standard.unprovided_user_facts = {"Q1": ["request_scope"]}
+    assert _unprovided_claim({"target": "Q1", "type": "request_scope",
+                              "value": {"project": "Alpha", "environment": "production"}}, standard)

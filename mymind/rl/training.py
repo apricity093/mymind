@@ -113,6 +113,10 @@ def evidence_callback(output, root=None, config=None, on_update=None):
                 reserve_distributed(root, config, config["run_purpose"] + "_updates", 1, f"optimizer-step-{state.global_step+1}")
 
         def on_train_begin(self, args, state, control, model, **kwargs):
+            if config and config.get('dataset_mode') == 'three_branch_pilot':
+                expected = config['expected_updates']
+                if state.max_steps != expected:
+                    raise RuntimeError(f'先导实际更新数 {state.max_steps} 与冻结值 {expected} 不符')
             self.path = output / f"updates-rank{args.process_index}.jsonl"
             self.parameters = {n: p for n, p in model.named_parameters() if p.requires_grad}
             self.previous = {n: p.detach().cpu().clone() for n, p in self.parameters.items()}
@@ -140,6 +144,8 @@ def evidence_callback(output, root=None, config=None, on_update=None):
             self.start = now
             if on_update:
                 on_update(record)
+            if config and config.get('checkpoint_steps'):
+                control.should_save = state.global_step in config['checkpoint_steps']
             return control
 
     return EvidenceCallback()

@@ -36,7 +36,7 @@ SFT 使用训练侧筛选的 158 条教师示范，训练 120 步；system、用
 
 推理需要匹配 revision 的本地基座、SFT120 或 RL40 adapter，以及按相同政策与检索参数构建的知识索引。上述资源和真实凭据不随仓库提供。配置模板为 [agent-dev.json](../api/configs/agent-dev.json)；配置内的模型、adapter、知识库和输出路径均相对 `MYMIND_WORK_ROOT`。
 
-在具备 GPU 和模型依赖的环境安装 `mymind/requirements-agentic-rl.txt` 及后端基础依赖，然后从仓库根目录设置：
+在具备 GPU 和模型依赖的环境安装独立的 `mymind/requirements-agentic-rl.txt`（已包含策略服务基础依赖，不与应用环境清单叠加安装），然后从仓库根目录设置：
 
 ```powershell
 $env:MYMIND_WORK_ROOT = (Resolve-Path '<运行资源目录>').Path
@@ -51,7 +51,7 @@ python -m dotenv -f "$env:MYMIND_WORK_ROOT/service.env" run --no-override -- pyt
 
 ## 仓库验证与资源边界
 
-在根目录创建并激活 `environment-local.yml` 定义的环境后，运行 `python -m pytest -q`。协议、评分、mask、预算、模型接口和服务契约使用合成输入或替身，不需要本地 CUDA 训练依赖。当前五个测试域使用合成输入与轻量替身，不读取外部实验 JSON。历史数据核验作为独立命令运行，不属于 pytest 的跳过项。
+在根目录创建并激活 `environment-local.yml` 定义的环境后，运行 `python -m pytest -q`。协议、评分、mask、预算、模型接口和服务契约使用合成输入或替身，不需要本地 CUDA 训练依赖。事实来源、证据契约与采集集成测试还使用单独保留的实验原件；缺少对应实验目录时，相关模块明确跳过，不能将跳过计为验证通过。正式历史数据核验另有独立命令。
 
 正式与校准数据集、各版本标准和来源记录，以及 158 条实际教师示范、token 导出和作业账本单独保存。少量自包含的合成开发样例位于 `rl/resources/`，用于协议与评分器回归。`mymind/benchmarks/scripts/verify_agentic_retained.py` 与结果页构建器用于持有这些记录的本地复核，不能在缺少原始记录时重建历史实验证据。
 

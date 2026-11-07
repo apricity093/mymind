@@ -118,6 +118,7 @@ class TextEmbedding:
         return f"{self.settings.model}:{self.settings.dimensions}"
 
     def _send(self, method, url, headers, payload=None, units=1):
+        collection_budget = getattr(self, "collection_budget", None)
         if self.min_interval:
             delay = self._next_request - time.monotonic()
             if delay > 0:
@@ -129,6 +130,7 @@ class TextEmbedding:
             self._next_request = time.monotonic() + self.min_interval * units
         self.usage["requests"] += 1
         remaining = self._remaining()
+        reservation = collection_budget.reserve("embedding", payload) if collection_budget else None
         try:
             kwargs = dict(headers=headers, json=payload,
                           timeout=min(30.0, remaining))
@@ -150,6 +152,12 @@ class TextEmbedding:
             raise EmbeddingError("query_budget_exhausted") from None
         except httpx.HTTPError as ex:
             raise EmbeddingError(type(ex).__name__) from None
+        if collection_budget:
+            try:
+                body = response.json()
+            except ValueError:
+                body = {}
+            collection_budget.finish(reservation, response.status_code, body)
         self._remaining()
         return response
 

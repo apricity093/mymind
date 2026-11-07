@@ -30,3 +30,9 @@ python mymind/benchmarks/scripts/export_demo.py
 数据来源审计可写入独立目录：`python mymind/benchmarks/scripts/audit_optimization_data.py --root . --output output/data-audit`。`analyze_optimization_failures.py --root <工作根目录>` 当前固定写入该根下的 `agentic_runs/optimization-20261022/`，应使用包含输入原件的工作副本，避免覆盖已有报告证据。两个分析脚本均不调用模型。
 
 历史报告内的旧 `scripts/` 命令和测试文件记录当时运行；当前测试统一从根目录执行 `python -m pytest -q`。零模型核验检查输入、来源与监督 mask，不代表历史 GPU 更新或当前模型服务已重新运行。
+
+## 当前候选与先导数据
+
+当前生成逻辑集中于balanced_policy_*、success_pool_contract及teacher_contract_candidate。prepare_mainline_candidates、prepare_source_expansion生成候选；verify_mainline_candidates、verify_source_expansion检查公开/私有一致性。数据先筛选教师成功，再整族划分。
+
+prepare_three_branch_pilot、configure_three_branch_pilot分别准备固定先导划分及运行配置；学生监督通过rl.sft_data编码。已有实验目录不能覆盖后重跑。参考回答只是检查夹具，不能当教师示范。数据规模、筛选偏差和当前失败实例见[合成数据说明](../docs/synthetic_data.md)。

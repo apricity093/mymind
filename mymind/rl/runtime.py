@@ -34,7 +34,9 @@ def initialize():
     inputs.mkdir(exist_ok=True)
     for key in ("tasks", "standards", "policy_support"):
         source = root / config[key]
-        shutil.copy2(source, inputs / source.name)
+        destination = inputs / source.name
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
     write_json(output / "configuration.json", config)
     invocation = {"argv": sys.argv, "cwd": str(Path.cwd()),
         "work_root": str(root), "cuda_visible_devices": os.getenv("CUDA_VISIBLE_DEVICES"),

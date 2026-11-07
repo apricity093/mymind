@@ -25,13 +25,15 @@ class Expectation(ProtocolModel):
 class PrivateStandard(ProtocolModel):
     task_id: str
     group_id: str
-    split: Literal["dev", "train", "validation", "test"]
+    split: Literal["candidate", "dev", "train", "validation", "test"]
     dispositions: list[Literal["answer", "request_info", "escalate"]]
     materials: dict[str, str]
     expectations: list[Expectation]
     severe_items: dict[str, list[dict]] = Field(default_factory=dict)
     # 经题面核查确未提供的用户事实；不因此把无关 unknown 项加入允许输出。
     unprovided_user_facts: dict[str, list[str]] = Field(default_factory=dict)
+    # 复合用户事实逐分量的来源状态；不扩展模型可见输出协议。
+    user_fact_components: dict[str, dict[str, dict[str, dict]]] = Field(default_factory=dict)
 
 
 class PolicyClause(ProtocolModel):
